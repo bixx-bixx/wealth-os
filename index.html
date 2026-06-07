@@ -1372,7 +1372,7 @@ function renderCF(){
     <div class="cfrow"><span class="cfl" style="color:var(--t1);font-weight:500">Potential Saving Rate</span><span class="cfv up">${potentialSavingRate.toFixed(1)}%</span></div>
     <div class="arow" style="margin-top:12px"><div class="ameta"><span class="an">ลงทุน</span><span class="ap">${investmentRate.toFixed(1)}%</span></div><div class="btrack"><div class="bfill" style="width:${Math.min(100,Math.max(0,investmentRate))}%;background:var(--blue)"></div></div></div>`;
   if(chartCF)chartCF.destroy();
-  chartCF=new Chart(document.getElementById('cCF'),{type:'bar',data:{labels:['ส่งแม่/ครอบครัว','ลงทุน DCA','เที่ยว/Climbing','ประกัน','อื่นๆ'],datasets:[{data:[cf.family||0,cf.invest||0,cf.travel||0,cf.insurance||0,cf.other||0],backgroundColor:['#f06060','#4f9cf9','#f5a623','#9896a8','#a78bfa'],borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9896a8'},grid:{display:false}},y:{ticks:{color:'#9896a8',callback:v=>'฿'+v.toLocaleString()},grid:{color:'rgba(255,255,255,.05)'}}}}});
+  chartCF=new Chart(document.getElementById('cCF'),{type:'bar',data:{labels:['ส่งแม่/ครอบครัว','ลงทุน DCA','เที่ยว/Climbing','ประกัน','อื่นๆ'],datasets:[{data:[cf.family||0,cf.invest||0,cf.travel||0,cf.insurance||0,cf.other||0],backgroundColor:['#f06060','#4f9cf9','#f5a623','#9896a8','#a78bfa'],borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9896a8'},grid:{display:false}},y:{afterFit:s=>{s.width=56},ticks:{color:'#9896a8',font:{size:10},callback:v=>'฿'+(Math.abs(v)>=1000?(v/1000).toFixed(0)+'K':v)},grid:{color:'rgba(255,255,255,.05)'}}}}});
   document.getElementById('cfhist').innerHTML=cfs.length?cfs.map(x=>{
     const xout=(x.family||0)+(x.invest||0)+(x.travel||0)+(x.insurance||0)+(x.other||0);
     const xrem=(x.income||0)-xout;
@@ -1463,7 +1463,7 @@ function buildProjChart(dca){
   const line=(rate,color,label)=>({label,data:yrs.map((_,i)=>Math.round(projectFutureValue(V0,dca,rate,i))),borderColor:color,tension:.3,pointRadius:0,fill:false});
   const ds=[line(0.04,'#5a5868','4% Conservative'),line(0.06,'#4f9cf9','6% Base'),line(0.08,'#3ecf8e','8% Optimistic'),line(0.10,'#f5a623','10% Aggressive')];
   if(chartP)chartP.destroy();
-  chartP=new Chart(document.getElementById('cProj'),{type:'line',data:{labels:yrs,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9896a8',boxWidth:12,font:{size:11}}}},scales:{x:{ticks:{color:'#9896a8'},grid:{color:'rgba(255,255,255,.05)'}},y:{ticks:{color:'#9896a8',callback:v=>v>=1e6?'฿'+(v/1e6).toFixed(1)+'M':'฿'+(v/1e3).toFixed(0)+'K'},grid:{color:'rgba(255,255,255,.05)'}}}}}); 
+  chartP=new Chart(document.getElementById('cProj'),{type:'line',data:{labels:yrs,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9896a8',boxWidth:12,font:{size:11}}}},scales:{x:{ticks:{color:'#9896a8'},grid:{color:'rgba(255,255,255,.05)'}},y:{afterFit:s=>{s.width=56},ticks:{color:'#9896a8',font:{size:10},callback:v=>v>=1e6?'฿'+(v/1e6).toFixed(1)+'M':'฿'+(v/1e3).toFixed(0)+'K'},grid:{color:'rgba(255,255,255,.05)'}}}}}); 
 }
 function newGoal(){
   ['gname','gtgt','gcur','gyear'].forEach(id=>document.getElementById(id).value='');
@@ -1581,7 +1581,7 @@ function drawDcaCharts(year,startMonth,byMonth,target,activeTarget){
     cash.push(d&&d.cashLeft!=null?d.cashLeft:null);
   }
   const grid='rgba(255,255,255,.05)',tick='#9896a8',bk=v=>'฿'+(Math.abs(v)>=1000?(v/1000).toFixed(0)+'K':v);
-  const opts=()=>({responsive:true,maintainAspectRatio:false,spanGaps:true,plugins:{legend:{labels:{color:tick,boxWidth:10,font:{size:11}}}},scales:{x:{ticks:{color:tick},grid:{display:false}},y:{ticks:{color:tick,callback:bk},grid:{color:grid}}}});
+  const opts=()=>({responsive:true,maintainAspectRatio:false,spanGaps:true,plugins:{legend:{labels:{color:tick,boxWidth:10,font:{size:11}}}},scales:{x:{ticks:{color:tick},grid:{display:false}},y:{afterFit:s=>{s.width=56},ticks:{color:tick,font:{size:10},callback:bk},grid:{color:grid}}}});
   if(chartDcaBar)chartDcaBar.destroy();
   chartDcaBar=new Chart(document.getElementById('cDcaBar'),{data:{labels,datasets:[
     {type:'bar',label:'ลงทุน',data:inv,backgroundColor:inv.map(v=>v==null?'#2e2e36':v>=target?'#3ecf8e':v>=20000?'#f5a623':'#4f9cf9'),borderRadius:4},
