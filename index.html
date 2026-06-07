@@ -1011,6 +1011,8 @@ function nav(id,el){
   document.getElementById('page-'+id).classList.add('active');
   el.classList.add('active');
   ({dashboard:renderDash,holdings:renderHoldings,cashflow:renderCF,journal:renderJournal,goals:renderGoals,dcafire:renderDcaFire,export:renderExport})[id]?.();
+  // re-fit charts now the page is visible at full width (fixes clipped axis labels on mobile)
+  requestAnimationFrame(()=>{document.querySelectorAll('#page-'+id+' canvas').forEach(cv=>{const c=window.Chart&&Chart.getChart(cv);if(c){try{c.resize()}catch(e){}}})});
 }
 
 // DASHBOARD
