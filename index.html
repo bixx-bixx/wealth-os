@@ -126,6 +126,8 @@ textarea{resize:vertical;min-height:72px}
 .sdot.on{background:var(--green)}.sdot.off{background:var(--red)}
 /* ===== Mobile responsive ===== */
 @media(max-width:760px){
+  html,body{overflow-x:hidden;max-width:100%}
+  .main,.page,.card,.g2,.metrics{min-width:0}
   .app{grid-template-columns:1fr;grid-template-rows:52px auto 1fr;height:100vh}
   .topbar{padding:0 12px;gap:10px}
   .topbar .live-pill,.topbar .spill,.topbar #price-updated,.topbar #td{display:none}
