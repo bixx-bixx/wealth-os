@@ -123,6 +123,27 @@ textarea{resize:vertical;min-height:72px}
 .spill:hover{border-color:var(--green)}
 .sdot{width:5px;height:5px;border-radius:50%;background:var(--t3);flex-shrink:0}
 .sdot.on{background:var(--green)}.sdot.off{background:var(--red)}
+/* ===== Mobile responsive ===== */
+@media(max-width:760px){
+  .app{grid-template-columns:1fr;grid-template-rows:52px auto 1fr;height:100vh}
+  .topbar{padding:0 12px;gap:10px}
+  .topbar .live-pill,.topbar .spill,.topbar #price-updated,.topbar #td{display:none}
+  .topbar-right{gap:8px}
+  .sidebar{grid-column:1/-1;flex-direction:row;overflow-x:auto;overflow-y:hidden;padding:6px 8px;border-right:none;border-bottom:1px solid var(--b1);gap:4px}
+  .sidebar .ns,.sidebar .ndiv{display:none}
+  .ni{border-left:none;border-bottom:2px solid transparent;padding:8px 12px;white-space:nowrap;border-radius:8px 8px 0 0}
+  .ni.active{border-left:none;border-bottom-color:var(--green)}
+  .nbadge{display:none}
+  .page{padding:14px;gap:16px}
+  .ph{flex-wrap:wrap}
+  .pt{font-size:18px}
+  .metrics{grid-template-columns:1fr 1fr;gap:10px}
+  .mv{font-size:19px}
+  .g2,.fgrid{grid-template-columns:1fr}
+  .card{padding:16px}
+  .modal{padding:18px;border-radius:18px}
+  .brow{flex-wrap:wrap}
+}
 </style>
 </head>
 <body>
