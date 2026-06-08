@@ -611,13 +611,10 @@ const _setItem=localStorage.setItem.bind(localStorage); // raw, bypasses sync
 let _syncTimer=null,_syncing=false;
 function _ss(t,c){const s=document.getElementById('sync-status');if(s){s.textContent=t;s.style.color=c||'var(--green)';}}
 function scheduleSync(){
-  window._schedN=(window._schedN||0)+1;
-  window._lastSched='#'+window._schedN+' @'+new Date().toLocaleTimeString()+' user='+(CURRENT_USER?'Y':'N');
-  if(window._dbgRender)window._dbgRender();
   if(!CURRENT_USER)return;
   clearTimeout(_syncTimer);
   _ss('• saving…','var(--amber)');
-  _syncTimer=setTimeout(()=>{window._autoFire='auto-fire @'+new Date().toLocaleTimeString();pushCloud();},1500);
+  _syncTimer=setTimeout(pushCloud,1500);
 }
 // stamp local edit time + auto-sync to cloud. Called explicitly by DB.set & direct w_ writes.
 // (Previously monkey-patched localStorage.setItem, but iOS Safari silently ignores that override -> mobile never synced.)
@@ -634,10 +631,8 @@ async function pushCloud(){
     const mt=parseInt(localStorage.getItem('wos_mtime'))||Date.now();
     const {error}=await sb.from('wealth_data').upsert({user_id:CURRENT_USER.id,data:collectBlob(),updated_at:new Date(mt).toISOString()});
     _ss(error?'• sync error':'• synced',error?'var(--red)':'var(--green)');
-    window._lastSync='push '+(error?('ERR '+(error.code||'')+': '+error.message):'OK')+' @'+new Date().toLocaleTimeString();
-  }catch(e){_ss('• offline','var(--red)');window._lastSync='push EXCEPTION: '+e.message;}
+  }catch(e){_ss('• offline','var(--red)');}
   _syncing=false;
-  if(window._dbgRender)window._dbgRender();
 }
 async function pullCloud(){
   try{
@@ -1930,70 +1925,6 @@ function initApp(){
 }
 document.addEventListener('DOMContentLoaded',boot);
 
-// ===== TEMP DEBUG PANEL (remove after diagnosing mobile sync) =====
-(function(){
-  const box=document.createElement('div');
-  box.id='_dbg';
-  box.style.cssText='position:fixed;left:6px;right:6px;bottom:6px;z-index:99999;background:#111;color:#0f0;font:11px/1.5 monospace;padding:8px 10px;border:1px solid #0f0;border-radius:8px;white-space:pre-wrap;word-break:break-all;max-height:45vh;overflow:auto';
-  document.body.appendChild(box);
-  window._dbgRender=async function(){
-    let sess='(checking…)';
-    try{const {data}=await sb.auth.getSession();sess=data&&data.session?('YES '+data.session.user.email):'NONE';}catch(e){sess='ERR '+e.message;}
-    const mt=localStorage.getItem('wos_mtime');
-    const hold=localStorage.getItem('w_holdings');
-    box.firstChild&&box.removeChild(box.firstChild);
-    const pre=document.createElement('div');
-    pre.textContent=
-      'VERSION: sync-dbg-4\n'+
-      'session: '+sess+'\n'+
-      'CURRENT_USER: '+(CURRENT_USER?CURRENT_USER.id:'null')+'\n'+
-      'sb loaded: '+(typeof sb!=='undefined')+'  _syncing: '+_syncing+'\n'+
-      'wos_mtime: '+mt+(mt?' ('+new Date(parseInt(mt)).toLocaleTimeString()+')':'')+'\n'+
-      'sched: '+(window._lastSched||'(none)')+'  cnt='+(window._schedN||0)+'\n'+
-      'autoFire: '+(window._autoFire||'(never)')+'\n'+
-      'lastSync: '+(window._lastSync||'(never)')+'\n'+
-      'w_holdings len: '+(hold?hold.length:'null');
-    box.appendChild(pre);
-    const bar=document.createElement('div');bar.style.marginTop='6px';
-    const mk=(t,fn)=>{const b=document.createElement('button');b.textContent=t;b.style.cssText='margin:2px 4px 0 0;background:#0f0;color:#000;border:0;border-radius:5px;padding:4px 8px;font:11px monospace';b.onclick=fn;return b;};
-    // supabase-js push with 7s timeout so a hang reports instead of hanging forever
-    bar.appendChild(mk('Force Push',async()=>{
-      window._lastSync='(pushing via sb…)';_dbgRender();
-      try{
-        const mt2=parseInt(localStorage.getItem('wos_mtime'))||Date.now();
-        const p=sb.from('wealth_data').upsert({user_id:CURRENT_USER.id,data:collectBlob(),updated_at:new Date(mt2).toISOString()});
-        const r=await Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('TIMEOUT 7s — sb client hung')),7000))]);
-        window._lastSync='sb push '+(r.error?('ERR '+(r.error.code||'')+': '+r.error.message):'OK');
-      }catch(e){window._lastSync='sb push '+e.message;}
-      _dbgRender();
-    }));
-    // raw REST push bypassing supabase-js client entirely (tests if client/lock is the hang)
-    bar.appendChild(mk('Raw Push',async()=>{
-      window._lastSync='(raw pushing…)';_dbgRender();
-      try{
-        const {data:sd}=await sb.auth.getSession();
-        const tok=sd&&sd.session?sd.session.access_token:'';
-        const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),7000);
-        const r=await fetch(SB_URL+'/rest/v1/wealth_data',{method:'POST',signal:ctrl.signal,
-          headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
-          body:JSON.stringify({user_id:CURRENT_USER.id,data:collectBlob(),updated_at:new Date().toISOString()})});
-        clearTimeout(to);
-        window._lastSync='RAW '+r.status+' '+((await r.text())||'(empty body)').slice(0,140);
-      }catch(e){window._lastSync='RAW '+(e.name==='AbortError'?'TIMEOUT 7s':e.message);}
-      _dbgRender();
-    }));
-    // exercises the EXACT auto-save path: patched setItem -> scheduleSync -> 1.5s timer -> pushCloud
-    bar.appendChild(mk('Test Write',()=>{
-      window._autoFire='(waiting…)';
-      DB.set('synctest',Date.now()); // real save path: DB.set -> markDirty -> scheduleSync -> 1.5s -> pushCloud
-      _dbgRender(); // panel should auto-update again ~1.5s later when timer fires pushCloud
-    }));
-    bar.appendChild(mk('Pull',async()=>{await pullCloud();_dbgRender();}));
-    bar.appendChild(mk('Hide',()=>box.style.display='none'));
-    box.appendChild(bar);
-  };
-  setTimeout(()=>window._dbgRender(),1200);
-})();
 </script>
 </body>
 </html>
