@@ -611,10 +611,13 @@ const _setItem=localStorage.setItem.bind(localStorage); // raw, bypasses sync
 let _syncTimer=null,_syncing=false;
 function _ss(t,c){const s=document.getElementById('sync-status');if(s){s.textContent=t;s.style.color=c||'var(--green)';}}
 function scheduleSync(){
+  window._schedN=(window._schedN||0)+1;
+  window._lastSched='#'+window._schedN+' @'+new Date().toLocaleTimeString()+' user='+(CURRENT_USER?'Y':'N');
+  if(window._dbgRender)window._dbgRender();
   if(!CURRENT_USER)return;
   clearTimeout(_syncTimer);
   _ss('• saving…','var(--amber)');
-  _syncTimer=setTimeout(pushCloud,1500);
+  _syncTimer=setTimeout(()=>{window._autoFire='auto-fire @'+new Date().toLocaleTimeString();pushCloud();},1500);
 }
 // hook every w_* write: stamp local edit time + auto-sync to cloud
 localStorage.setItem=function(k,v){_setItem(k,v);if(typeof k==='string'&&k.startsWith('w_')){_setItem('wos_mtime',String(Date.now()));scheduleSync();}};
@@ -1940,11 +1943,13 @@ document.addEventListener('DOMContentLoaded',boot);
     box.firstChild&&box.removeChild(box.firstChild);
     const pre=document.createElement('div');
     pre.textContent=
-      'VERSION: sync-dbg-2\n'+
+      'VERSION: sync-dbg-3\n'+
       'session: '+sess+'\n'+
       'CURRENT_USER: '+(CURRENT_USER?CURRENT_USER.id:'null')+'\n'+
       'sb loaded: '+(typeof sb!=='undefined')+'  _syncing: '+_syncing+'\n'+
       'wos_mtime: '+mt+(mt?' ('+new Date(parseInt(mt)).toLocaleTimeString()+')':'')+'\n'+
+      'sched: '+(window._lastSched||'(none)')+'  cnt='+(window._schedN||0)+'\n'+
+      'autoFire: '+(window._autoFire||'(never)')+'\n'+
       'lastSync: '+(window._lastSync||'(never)')+'\n'+
       'w_holdings len: '+(hold?hold.length:'null');
     box.appendChild(pre);
@@ -1975,6 +1980,12 @@ document.addEventListener('DOMContentLoaded',boot);
         window._lastSync='RAW '+r.status+' '+((await r.text())||'(empty body)').slice(0,140);
       }catch(e){window._lastSync='RAW '+(e.name==='AbortError'?'TIMEOUT 7s':e.message);}
       _dbgRender();
+    }));
+    // exercises the EXACT auto-save path: patched setItem -> scheduleSync -> 1.5s timer -> pushCloud
+    bar.appendChild(mk('Test Write',()=>{
+      window._autoFire='(waiting…)';
+      localStorage.setItem('w_synctest',String(Date.now()));
+      _dbgRender(); // panel should auto-update again ~1.5s later when timer fires pushCloud
     }));
     bar.appendChild(mk('Pull',async()=>{await pullCloud();_dbgRender();}));
     bar.appendChild(mk('Hide',()=>box.style.display='none'));
