@@ -616,24 +616,36 @@ function scheduleSync(){
   _ss('• saving…','var(--amber)');
   _syncTimer=setTimeout(pushCloud,1500);
 }
-// hook every w_* write so it auto-syncs to cloud
-localStorage.setItem=function(k,v){_setItem(k,v);if(typeof k==='string'&&k.startsWith('w_'))scheduleSync();};
+// hook every w_* write: stamp local edit time + auto-sync to cloud
+localStorage.setItem=function(k,v){_setItem(k,v);if(typeof k==='string'&&k.startsWith('w_')){_setItem('wos_mtime',String(Date.now()));scheduleSync();}};
+// flush pending sync before leaving/backgrounding (mobile Safari throttles timers)
+function flushSync(){if(_syncTimer){clearTimeout(_syncTimer);_syncTimer=null;pushCloud();}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushSync();});
+window.addEventListener('pagehide',flushSync);
 function collectBlob(){const b={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('w_'))b[k]=localStorage.getItem(k);}return b;}
 async function pushCloud(){
   if(!CURRENT_USER||_syncing)return;
   _syncing=true;
   try{
-    const {error}=await sb.from('wealth_data').upsert({user_id:CURRENT_USER.id,data:collectBlob(),updated_at:new Date().toISOString()});
+    const mt=parseInt(localStorage.getItem('wos_mtime'))||Date.now();
+    const {error}=await sb.from('wealth_data').upsert({user_id:CURRENT_USER.id,data:collectBlob(),updated_at:new Date(mt).toISOString()});
     _ss(error?'• sync error':'• synced',error?'var(--red)':'var(--green)');
   }catch(e){_ss('• offline','var(--red)');}
   _syncing=false;
 }
 async function pullCloud(){
   try{
-    const {data,error}=await sb.from('wealth_data').select('data').eq('user_id',CURRENT_USER.id).maybeSingle();
+    const {data,error}=await sb.from('wealth_data').select('data,updated_at').eq('user_id',CURRENT_USER.id).maybeSingle();
     if(error){console.warn('pull error',error);return;}
     if(data&&data.data&&Object.keys(data.data).length){
-      Object.entries(data.data).forEach(([k,v])=>_setItem(k,typeof v==='string'?v:JSON.stringify(v)));
+      const cloudMt=Date.parse(data.updated_at)||0;
+      const localMt=parseInt(localStorage.getItem('wos_mtime'))||0;
+      if(localMt>cloudMt){
+        await pushCloud(); // local has newer unsynced edits -> keep & push up (don't let cloud overwrite)
+      }else{
+        Object.entries(data.data).forEach(([k,v])=>_setItem(k,typeof v==='string'?v:JSON.stringify(v)));
+        _setItem('wos_mtime',String(cloudMt)); // local now matches cloud
+      }
     }else{
       await pushCloud(); // cloud empty -> seed from this device's local data
     }
