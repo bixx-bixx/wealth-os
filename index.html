@@ -619,8 +619,9 @@ function scheduleSync(){
   _ss('• saving…','var(--amber)');
   _syncTimer=setTimeout(()=>{window._autoFire='auto-fire @'+new Date().toLocaleTimeString();pushCloud();},1500);
 }
-// hook every w_* write: stamp local edit time + auto-sync to cloud
-localStorage.setItem=function(k,v){_setItem(k,v);if(typeof k==='string'&&k.startsWith('w_')){_setItem('wos_mtime',String(Date.now()));scheduleSync();}};
+// stamp local edit time + auto-sync to cloud. Called explicitly by DB.set & direct w_ writes.
+// (Previously monkey-patched localStorage.setItem, but iOS Safari silently ignores that override -> mobile never synced.)
+function markDirty(){_setItem('wos_mtime',String(Date.now()));scheduleSync();}
 // flush pending sync before leaving/backgrounding (mobile Safari throttles timers)
 function flushSync(){if(_syncTimer){clearTimeout(_syncTimer);_syncTimer=null;pushCloud();}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushSync();});
@@ -686,7 +687,7 @@ async function boot(){
 
 const DB={
   get:k=>{try{return JSON.parse(localStorage.getItem('w_'+k)||'null')}catch{return null}},
-  set:(k,v)=>localStorage.setItem('w_'+k,JSON.stringify(v)),
+  set:(k,v)=>{localStorage.setItem('w_'+k,JSON.stringify(v));markDirty();},
   def:(k,v)=>{if(DB.get(k)===null)DB.set(k,v)}
 };
 DB.def('settings',{name:'',income:0,dca:0});
@@ -1040,7 +1041,7 @@ function toggleAlerts(){
   const willHide=d.style.display!=='none';
   d.style.display=willHide?'none':'';
   btn.textContent=willHide?'แสดง':'ซ่อน';
-  localStorage.setItem('w_hideAlerts',willHide?'1':'0');
+  localStorage.setItem('w_hideAlerts',willHide?'1':'0');markDirty();
 }
 function renderDash(){
   const h=DB.get('holdings'),g=DB.get('goals'),s=DB.get('settings');
@@ -1317,7 +1318,7 @@ async function fetchFx(){
   // USD→THB rate from price server (THB=X). Falls back to last cached rate.
   try{
     const res=await fetch('http://localhost:5000/fx',{signal:AbortSignal.timeout(5000)});
-    if(res.ok){const d=await res.json();if(d.USDTHB){localStorage.setItem('w_fxrate',d.USDTHB);return d.USDTHB;}}
+    if(res.ok){const d=await res.json();if(d.USDTHB){localStorage.setItem('w_fxrate',d.USDTHB);markDirty();return d.USDTHB;}}
   }catch(e){/* fall through to cached */}
   return parseFloat(localStorage.getItem('w_fxrate'))||36.5;
 }
@@ -1943,7 +1944,7 @@ document.addEventListener('DOMContentLoaded',boot);
     box.firstChild&&box.removeChild(box.firstChild);
     const pre=document.createElement('div');
     pre.textContent=
-      'VERSION: sync-dbg-3\n'+
+      'VERSION: sync-dbg-4\n'+
       'session: '+sess+'\n'+
       'CURRENT_USER: '+(CURRENT_USER?CURRENT_USER.id:'null')+'\n'+
       'sb loaded: '+(typeof sb!=='undefined')+'  _syncing: '+_syncing+'\n'+
@@ -1984,7 +1985,7 @@ document.addEventListener('DOMContentLoaded',boot);
     // exercises the EXACT auto-save path: patched setItem -> scheduleSync -> 1.5s timer -> pushCloud
     bar.appendChild(mk('Test Write',()=>{
       window._autoFire='(waiting…)';
-      localStorage.setItem('w_synctest',String(Date.now()));
+      DB.set('synctest',Date.now()); // real save path: DB.set -> markDirty -> scheduleSync -> 1.5s -> pushCloud
       _dbgRender(); // panel should auto-update again ~1.5s later when timer fires pushCloud
     }));
     bar.appendChild(mk('Pull',async()=>{await pullCloud();_dbgRender();}));
