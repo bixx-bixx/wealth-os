@@ -1940,17 +1940,42 @@ document.addEventListener('DOMContentLoaded',boot);
     box.firstChild&&box.removeChild(box.firstChild);
     const pre=document.createElement('div');
     pre.textContent=
-      'VERSION: sync-dbg-1\n'+
+      'VERSION: sync-dbg-2\n'+
       'session: '+sess+'\n'+
       'CURRENT_USER: '+(CURRENT_USER?CURRENT_USER.id:'null')+'\n'+
-      'sb loaded: '+(typeof sb!=='undefined')+'\n'+
+      'sb loaded: '+(typeof sb!=='undefined')+'  _syncing: '+_syncing+'\n'+
       'wos_mtime: '+mt+(mt?' ('+new Date(parseInt(mt)).toLocaleTimeString()+')':'')+'\n'+
       'lastSync: '+(window._lastSync||'(never)')+'\n'+
       'w_holdings len: '+(hold?hold.length:'null');
     box.appendChild(pre);
     const bar=document.createElement('div');bar.style.marginTop='6px';
     const mk=(t,fn)=>{const b=document.createElement('button');b.textContent=t;b.style.cssText='margin:2px 4px 0 0;background:#0f0;color:#000;border:0;border-radius:5px;padding:4px 8px;font:11px monospace';b.onclick=fn;return b;};
-    bar.appendChild(mk('Force Push',async()=>{window._lastSync='(pushing…)';_dbgRender();await pushCloud();_dbgRender();}));
+    // supabase-js push with 7s timeout so a hang reports instead of hanging forever
+    bar.appendChild(mk('Force Push',async()=>{
+      window._lastSync='(pushing via sb…)';_dbgRender();
+      try{
+        const mt2=parseInt(localStorage.getItem('wos_mtime'))||Date.now();
+        const p=sb.from('wealth_data').upsert({user_id:CURRENT_USER.id,data:collectBlob(),updated_at:new Date(mt2).toISOString()});
+        const r=await Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('TIMEOUT 7s — sb client hung')),7000))]);
+        window._lastSync='sb push '+(r.error?('ERR '+(r.error.code||'')+': '+r.error.message):'OK');
+      }catch(e){window._lastSync='sb push '+e.message;}
+      _dbgRender();
+    }));
+    // raw REST push bypassing supabase-js client entirely (tests if client/lock is the hang)
+    bar.appendChild(mk('Raw Push',async()=>{
+      window._lastSync='(raw pushing…)';_dbgRender();
+      try{
+        const {data:sd}=await sb.auth.getSession();
+        const tok=sd&&sd.session?sd.session.access_token:'';
+        const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),7000);
+        const r=await fetch(SB_URL+'/rest/v1/wealth_data',{method:'POST',signal:ctrl.signal,
+          headers:{'apikey':SB_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+          body:JSON.stringify({user_id:CURRENT_USER.id,data:collectBlob(),updated_at:new Date().toISOString()})});
+        clearTimeout(to);
+        window._lastSync='RAW '+r.status+' '+((await r.text())||'(empty body)').slice(0,140);
+      }catch(e){window._lastSync='RAW '+(e.name==='AbortError'?'TIMEOUT 7s':e.message);}
+      _dbgRender();
+    }));
     bar.appendChild(mk('Pull',async()=>{await pullCloud();_dbgRender();}));
     bar.appendChild(mk('Hide',()=>box.style.display='none'));
     box.appendChild(bar);
