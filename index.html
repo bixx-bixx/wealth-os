@@ -630,8 +630,10 @@ async function pushCloud(){
     const mt=parseInt(localStorage.getItem('wos_mtime'))||Date.now();
     const {error}=await sb.from('wealth_data').upsert({user_id:CURRENT_USER.id,data:collectBlob(),updated_at:new Date(mt).toISOString()});
     _ss(error?'• sync error':'• synced',error?'var(--red)':'var(--green)');
-  }catch(e){_ss('• offline','var(--red)');}
+    window._lastSync='push '+(error?('ERR '+(error.code||'')+': '+error.message):'OK')+' @'+new Date().toLocaleTimeString();
+  }catch(e){_ss('• offline','var(--red)');window._lastSync='push EXCEPTION: '+e.message;}
   _syncing=false;
+  if(window._dbgRender)window._dbgRender();
 }
 async function pullCloud(){
   try{
@@ -1923,6 +1925,38 @@ function initApp(){
   }
 }
 document.addEventListener('DOMContentLoaded',boot);
+
+// ===== TEMP DEBUG PANEL (remove after diagnosing mobile sync) =====
+(function(){
+  const box=document.createElement('div');
+  box.id='_dbg';
+  box.style.cssText='position:fixed;left:6px;right:6px;bottom:6px;z-index:99999;background:#111;color:#0f0;font:11px/1.5 monospace;padding:8px 10px;border:1px solid #0f0;border-radius:8px;white-space:pre-wrap;word-break:break-all;max-height:45vh;overflow:auto';
+  document.body.appendChild(box);
+  window._dbgRender=async function(){
+    let sess='(checking…)';
+    try{const {data}=await sb.auth.getSession();sess=data&&data.session?('YES '+data.session.user.email):'NONE';}catch(e){sess='ERR '+e.message;}
+    const mt=localStorage.getItem('wos_mtime');
+    const hold=localStorage.getItem('w_holdings');
+    box.firstChild&&box.removeChild(box.firstChild);
+    const pre=document.createElement('div');
+    pre.textContent=
+      'VERSION: sync-dbg-1\n'+
+      'session: '+sess+'\n'+
+      'CURRENT_USER: '+(CURRENT_USER?CURRENT_USER.id:'null')+'\n'+
+      'sb loaded: '+(typeof sb!=='undefined')+'\n'+
+      'wos_mtime: '+mt+(mt?' ('+new Date(parseInt(mt)).toLocaleTimeString()+')':'')+'\n'+
+      'lastSync: '+(window._lastSync||'(never)')+'\n'+
+      'w_holdings len: '+(hold?hold.length:'null');
+    box.appendChild(pre);
+    const bar=document.createElement('div');bar.style.marginTop='6px';
+    const mk=(t,fn)=>{const b=document.createElement('button');b.textContent=t;b.style.cssText='margin:2px 4px 0 0;background:#0f0;color:#000;border:0;border-radius:5px;padding:4px 8px;font:11px monospace';b.onclick=fn;return b;};
+    bar.appendChild(mk('Force Push',async()=>{window._lastSync='(pushing…)';_dbgRender();await pushCloud();_dbgRender();}));
+    bar.appendChild(mk('Pull',async()=>{await pullCloud();_dbgRender();}));
+    bar.appendChild(mk('Hide',()=>box.style.display='none'));
+    box.appendChild(bar);
+  };
+  setTimeout(()=>window._dbgRender(),1200);
+})();
 </script>
 </body>
 </html>
