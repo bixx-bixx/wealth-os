@@ -676,6 +676,7 @@ async function boot(){
   if(!session){document.getElementById('auth-gate').style.display='flex';return;}
   CURRENT_USER=session.user;
   await pullCloud();
+  if(localStorage.getItem('w_synctest')!==null){localStorage.removeItem('w_synctest');markDirty();} // purge stray debug test key from local + cloud
   document.getElementById('auth-gate').style.display='none';
   initApp();
 }
