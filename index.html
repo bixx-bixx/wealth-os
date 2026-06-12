@@ -3292,7 +3292,7 @@ function initApp(){
   checkServer(false);
   document.getElementById('cfmon').value=new Date().toISOString().slice(0,7);
   document.getElementById('jdate').value=new Date().toISOString().slice(0,10);
-  setTimeout(refreshPricesSilent, 1500);          // auto-refresh ตอนเปิด page
+  refreshPricesSilent();                          // refresh ราคาทันทีตอนเปิด -> renderDash re-log net-worth snapshot ด้วยราคาสด (Phase 8B)
   setInterval(refreshPricesSilent, 15*60*1000);   // ทุก 15 นาที
   // auto-pull DCA จาก Sheet ตอนเปิด ถ้ายังไม่มีข้อมูล
   if(DB.get('fireSettings').csvUrl && !DB.get('dcaLog').length){
