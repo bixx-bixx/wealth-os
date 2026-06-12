@@ -1478,7 +1478,7 @@ const __rpAlloc    = __rpResolve('Allocation',     '../allocation/allocationEngi
 
 // text version of the DCA recommendation for the report.
 // `src` is the resolved monthly-DCA descriptor { amount, source, ... } (was resolveMonthlyDca()).
-function getDcaRecommendation(review, src) {
+function __rpGetDcaRecommendation(review, src) {
   const fmt = n => '฿' + Math.round(n).toLocaleString('th-TH');
   const plan = __rpDca.buildDcaPlan(review, src.amount);
   if (!plan.valid) return ['⚠ target ไม่ valid (รวม≠100%) — แก้ Bucket Target ใน Settings ก่อนใช้ DCA plan', `Source: ${src.source}`];
@@ -1561,13 +1561,13 @@ function __rpDecisionsSection(decisions, now) {
 //   emergency   : getEmergencyStatus() output
 //   toV4Holding : the monolith's holding -> v4 adapter (for per-holding risk flags)
 //   now         : Date used for the report date + goal "years left" (default new Date())
-function generateReport(opts) {
+function __rpGenerateReport(opts) {
   opts = opts || {};
   const review = opts.review, fx = opts.fx, monthlyDca = opts.monthlyDca, emg = opts.emergency, toV4Holding = opts.toV4Holding;
   const h = opts.holdings || [], s = opts.settings || {};
-  const cf = (opts.cashflows || []).slice().sort((a, b) => b.month.localeCompare(a.month))[0] || {};
+  const cf = (opts.cashflows || []).slice().sort((a, b) => String(b.month || '').localeCompare(String(a.month || '')))[0] || {};
   const g = opts.goals || [];
-  const j = (opts.journal || []).slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10);
+  const j = (opts.journal || []).slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0, 10);
   const _now = opts.now || new Date();
 
   const V = review.netWorth, I = h.reduce((acc, x) => acc + x.invested, 0), gain = V - I, gp = I > 0 ? (gain / I * 100) : 0;
@@ -1667,7 +1667,7 @@ function generateReport(opts) {
   });
 
   r += '\n--- NEXT DCA PLAN (from rebalance drift · DCA from DCA/FIRE sheet) ---\n';
-  getDcaRecommendation(review, monthlyDca).forEach(line => { r += line + '\n'; });
+  __rpGetDcaRecommendation(review, monthlyDca).forEach(line => { r += line + '\n'; });
 
   r += `\n--- JOURNAL (last ${j.length} entries) ---\n`;
   j.forEach(x => {
@@ -1686,7 +1686,9 @@ function generateReport(opts) {
   return r;
 }
 
-const __ReportEngine = { generateReport, getDcaRecommendation };
+// Public API names kept stable; internals are __rp-prefixed so the bundled
+// top-level `function generateReport` (the monolith's DOM glue) can't shadow them.
+const __ReportEngine = { generateReport: __rpGenerateReport, getDcaRecommendation: __rpGetDcaRecommendation };
 if (typeof module !== 'undefined' && module.exports) module.exports = __ReportEngine; // node tests
 if (typeof window !== 'undefined') window.ReportEngine = __ReportEngine;               // browser global
 
@@ -3108,20 +3110,25 @@ function resolveMonthlyDca(){
 // getDcaRecommendationV4 moved there too (was only used by the report). This stays as glue:
 // it gathers the DB-backed inputs and writes the result into the DOM.
 function generateReport(){
-  const r=ReportEngine.generateReport({
-    review:getV4Review(),
-    holdings:DB.get('holdings'),
-    settings:DB.get('settings'),
-    cashflows:DB.get('cashflows'),
-    goals:DB.get('goals'),
-    journal:DB.get('journal'),
-    majorDecisions:DB.get('majorDecisions'),
-    fx:fxRate(),
-    monthlyDca:resolveMonthlyDca(),
-    emergency:getEmergencyStatus(),
-    toV4Holding
-  });
-  document.getElementById('exp-out').value=r;
+  try{
+    const r=ReportEngine.generateReport({
+      review:getV4Review(),
+      holdings:DB.get('holdings'),
+      settings:DB.get('settings'),
+      cashflows:DB.get('cashflows'),
+      goals:DB.get('goals'),
+      journal:DB.get('journal'),
+      majorDecisions:DB.get('majorDecisions'),
+      fx:fxRate(),
+      monthlyDca:resolveMonthlyDca(),
+      emergency:getEmergencyStatus(),
+      toV4Holding
+    });
+    document.getElementById('exp-out').value=r;
+  }catch(e){
+    console.error('generateReport failed',e);
+    document.getElementById('exp-out').value='⚠ สร้างรายงานไม่สำเร็จ\n\n'+(e&&e.stack||e&&e.message||String(e))+'\n\n(ส่ง error นี้ให้ Claude เพื่อแก้ต้นเหตุ)';
+  }
   document.getElementById('exp-result').style.cssText='display:flex;flex-direction:column;gap:12px';
 }
 function copyReport(){
