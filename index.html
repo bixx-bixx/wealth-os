@@ -254,6 +254,9 @@ textarea{resize:vertical;min-height:72px}
       <div class="ct">Rebalance allocation <span style="color:var(--t3);text-transform:none">· ฐาน rebalance base (ไม่รวม PVD)</span></div>
       <div class="alist" id="dalloc"></div>
       <div style="margin-top:10px;font-size:10px;color:var(--t3)">เส้นขาว = target % · ตัวเลขขวา = drift</div>
+      <div style="border-top:1px solid rgba(255,255,255,.08);margin:12px 0 10px"></div>
+      <div style="font-size:11px;color:var(--t3);text-transform:none;margin-bottom:6px">Policy &amp; DCA status · 70/15/15</div>
+      <div id="dpolicy"></div>
     </div>
     <div class="card">
       <div class="ct">Goal progress</div>
@@ -474,6 +477,9 @@ textarea{resize:vertical;min-height:72px}
     </div>
     <div class="ff"><label>Tracking Mode</label>
       <select id="hmode"><option value="simple">Simple — กรอกมูลค่าเอง</option><option value="unit">Unit — units × ราคา</option></select>
+    </div>
+    <div class="ff"><label>DCA Status <span style="color:var(--t3);font-size:10px">(หุ้นรายตัว — คุม rotation)</span></label>
+      <select id="hdcastatus"><option value="active">Active — DCA ได้ปกติ</option><option value="under_review">Under review — พัก DCA</option><option value="paused">Paused — พักชั่วคราว</option><option value="thesis_broken">Thesis broken — พัก DCA</option></select>
     </div>
     <div class="ff"><label>วันที่ซื้อ</label><input type="date" id="hdate"></div>
     <div class="ff full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="hussitus" style="width:auto;margin:0"> US-situs asset? <span style="color:var(--t3);font-size:10px">(VOO/QQQM/TSM/LLY/LIN = ใช่ · Thai feeder = ไม่ · สำหรับ estate tax)</span></label></div>
@@ -708,8 +714,20 @@ textarea{resize:vertical;min-height:72px}
 
 // ---------------- CONFIG ----------------
 const RISK_CONFIG = {
-  SINGLE_NAME_PCT: 22,     // holding เดียว > % ของ investable (ex-cash) → HIGH
-  SECTOR_PCT: 33,          // sector เดียว  > % ของ investable (ex-cash) → HIGH
+  // individual stocks (single-name) — % ของพอร์ตลงทุน (ex-cash, ex-PVD)
+  STOCK_WARN_PCT: 7,       // หุ้นเดี่ยว > % → MEDIUM
+  STOCK_HIGH_PCT: 10,      // หุ้นเดี่ยว > % → HIGH
+  // ETF/กอง index — fund/theme concentration (ไม่ใช่ single-name) แยกตามชนิดกอง
+  FUND_TIERS: {
+    broad:    { med: 30, high: 40 }, // กองดัชนีตลาดกว้าง (S&P500/World)
+    thematic: { med: 25, high: 35 }, // กองธีม/กระจุก (Nasdaq/SCBNDQ)
+    fund:     { med: 25, high: 35 }, // กอง index อื่น ๆ
+  },
+  SECTOR_PCT: 33,          // sector หลายตัวรวมกัน > % → HIGH
+  // review triggers (% ของพอร์ตลงทุน / drift)
+  US_INDIVIDUAL_REVIEW_PCT: 20, // bucket US Individual > % → review
+  KKP_REVIEW_PCT: 20,           // KKP ตัวเดียว > % → review
+  DRIFT_REVIEW_PCT: 5,          // |bucket drift| > % → review
   PVD_NETWORTH_PCT: 50,    // PVD > % ของ net worth → MEDIUM (review annually)
   LOCKED_NETWORTH_PCT: 60, // locked+semi > % ของ net worth → liquidity alert
   EMERGENCY_MONTHS: 6,     // emergency fund ควร >= กี่เดือนของรายจ่าย
@@ -814,7 +832,10 @@ function computeDrift(holdings, targets, tv) {
            normalizedPreview: tv.normalizedPreview, rows };
 }
 
-// ---------------- CONCENTRATION (single-name + sector aggregate) ----------------
+// ---------------- CONCENTRATION (stocks vs funds + sector aggregate) ----------------
+// individual stocks use the single-name rule (7%/10%); ETFs/index funds use
+// fund/theme tiers (broad 30/40, thematic|fund 25/35) and are NEVER called
+// "single-name". base = concentrationBase (== rebalance base, ex-cash ex-PVD).
 function concentrationAlerts(holdings, cfg = RISK_CONFIG) {
   const base = concentrationBase(holdings);
   const alerts = [];
@@ -824,13 +845,31 @@ function concentrationAlerts(holdings, cfg = RISK_CONFIG) {
 
   for (const h of pool) {
     const pct = h.currentValue / base * 100;
-    if (pct > cfg.SINGLE_NAME_PCT)
-      alerts.push({ level: 'HIGH', kind: 'single-name',
-        msg: `${h.name} = ${pct.toFixed(1)}% ของพอร์ตเสี่ยง (ex-cash) — กระจุกรายตัวสูง` });
+    if (h.isSingleName) {
+      if (pct > cfg.STOCK_HIGH_PCT)
+        alerts.push({ level: 'HIGH', kind: 'single-name',
+          msg: `${h.name} = ${pct.toFixed(1)}% ของพอร์ตลงทุน — กระจุกหุ้นเดี่ยวสูง` });
+      else if (pct > cfg.STOCK_WARN_PCT)
+        alerts.push({ level: 'MEDIUM', kind: 'single-name',
+          msg: `${h.name} = ${pct.toFixed(1)}% ของพอร์ตลงทุน — เริ่มกระจุกหุ้นเดี่ยว` });
+    } else {
+      const tier = cfg.FUND_TIERS[h.fundClass] || cfg.FUND_TIERS.fund;
+      const tag = h.sector || h.fundClass || 'fund';
+      if (pct > tier.high)
+        alerts.push({ level: 'HIGH', kind: 'fund/theme concentration',
+          msg: `${h.name} = ${pct.toFixed(1)}% ของพอร์ตลงทุน — กระจุกในกองเดียว (${tag}) สูงมาก` });
+      else if (pct > tier.med)
+        alerts.push({ level: 'MEDIUM', kind: 'fund/theme concentration',
+          msg: `${h.name} = ${pct.toFixed(1)}% ของพอร์ตลงทุน — ${tag} tilt ชัด; ถ้าตั้งใจไม่ต้องทำอะไร แต่ดู overlap กับหุ้นเดี่ยว` });
+    }
   }
 
+  // sector concentration considers ONLY individual stocks — index/broad funds
+  // legitimately dominate a sector by design (e.g. 70% Global/US Index) and must
+  // not be flagged as a risk.
   const bySector = {};
   for (const h of pool) {
+    if (!h.isSingleName) continue;
     const s = h.sector || '(unspecified)';
     (bySector[s] ??= { value: 0, names: [] });
     bySector[s].value += h.currentValue;
@@ -840,7 +879,7 @@ function concentrationAlerts(holdings, cfg = RISK_CONFIG) {
     const pct = value / base * 100;
     if (pct > cfg.SECTOR_PCT && names.length > 1)
       alerts.push({ level: 'HIGH', kind: 'sector',
-        msg: `Sector "${sector}" = ${pct.toFixed(1)}% (${names.join(' + ')}) — กระจุก sector เดียว` });
+        msg: `Sector "${sector}" = ${pct.toFixed(1)}% (${names.join(' + ')}) — กระจุกหุ้นเดี่ยว sector เดียว` });
   }
   return alerts;
 }
@@ -897,6 +936,37 @@ function retirementAlerts(holdings, cfg = RISK_CONFIG) {
   return alerts;
 }
 
+// ---------------- REVIEW TRIGGERS ----------------
+// policy-level triggers that warrant a portfolio review (kind 'review').
+// drift = computeDrift() output (reused, not recomputed).
+function reviewTriggerAlerts(holdings, drift, cfg = RISK_CONFIG) {
+  const alerts = [];
+  const base = rebalanceBase(holdings);
+  const rows = (drift && drift.rows) || [];
+
+  const usRow = rows.find(r => r.bucket === 'US Individual Stocks');
+  if (usRow && usRow.currentPct > cfg.US_INDIVIDUAL_REVIEW_PCT)
+    alerts.push({ level: 'MEDIUM', kind: 'review',
+      msg: `US Individual Stocks = ${usRow.currentPct.toFixed(1)}% (> ${cfg.US_INDIVIDUAL_REVIEW_PCT}%) — trigger review, หยุดเพิ่มหุ้นเดี่ยว` });
+
+  if (base) {
+    const kkp = holdings.find(h => (h.name || '').toUpperCase() === 'KKP');
+    if (kkp) {
+      const pct = kkp.currentValue / base * 100;
+      if (pct > cfg.KKP_REVIEW_PCT)
+        alerts.push({ level: 'MEDIUM', kind: 'review',
+          msg: `KKP = ${pct.toFixed(1)}% ของพอร์ตลงทุน (> ${cfg.KKP_REVIEW_PCT}%) — trigger review, ไม่เพิ่ม KKP` });
+    }
+  }
+
+  for (const r of rows) {
+    if (Math.abs(r.driftPct) > cfg.DRIFT_REVIEW_PCT)
+      alerts.push({ level: 'INFO', kind: 'review',
+        msg: `${r.bucket} drift ${r.driftPct >= 0 ? '+' : ''}${r.driftPct.toFixed(1)}% (เกิน ±${cfg.DRIFT_REVIEW_PCT}%) — พิจารณา rebalance` });
+  }
+  return alerts;
+}
+
 // ---------------- MAIN ----------------
 function reviewPortfolio(holdings, targets, opts = {}) {
   const holdingErrors = holdings.flatMap(h => validateHolding(h).map(e => `[${h.name}] ${e}`));
@@ -907,14 +977,17 @@ function reviewPortfolio(holdings, targets, opts = {}) {
     ...(tv.valid ? [] : [tv.error]), // target error ไม่ซ่อนใน drift อย่างเดียว
   ];
 
+  const drift = computeDrift(holdings, targets, tv);
+
   return {
     netWorth: netWorth(holdings),
     rebalanceBase: rebalanceBase(holdings),
     concentrationBase: concentrationBase(holdings),
     systemErrors,
-    drift: computeDrift(holdings, targets, tv),
+    drift,
     alerts: [
       ...concentrationAlerts(holdings),
+      ...reviewTriggerAlerts(holdings, drift),
       ...liquidityAlerts(holdings, opts),
       ...retirementAlerts(holdings),
     ],
@@ -929,7 +1002,7 @@ const __RiskV4 = {
   RISK_CONFIG, validateHolding, deriveView,
   netWorth, rebalanceBase, concentrationBase,
   validateTargets, computeDrift,
-  concentrationAlerts, liquidityAlerts, retirementAlerts,
+  concentrationAlerts, liquidityAlerts, retirementAlerts, reviewTriggerAlerts,
   reviewPortfolio,
 };
 if (typeof module !== 'undefined' && module.exports) module.exports = __RiskV4;
@@ -950,6 +1023,10 @@ if (typeof window !== 'undefined') window.RiskV4 = __RiskV4;
 // (excludes Cash/Emergency = fixed reserve, PVD = locked, Other)
 const REBALANCE_BUCKETS = ["Global/US Index", "Thai Dividend/Thai Stocks", "Thai Equity Index", "US Individual Stocks", "Emerging/Other"];
 
+// buckets that hold individual single names (stocks) — concentration uses the
+// single-name rule (7%/10%) for these; everything else investable is a fund/ETF.
+const SINGLE_NAME_BUCKETS = ["US Individual Stocks", "Thai Dividend/Thai Stocks"];
+
 // classify a WealthOS holding into a strategic bucket
 function inferBucket(h) {
   const name = (h.name || '').toUpperCase(), type = h.type || '';
@@ -959,7 +1036,7 @@ function inferBucket(h) {
   if (name.includes('SET50')) return 'Thai Equity Index';
   if (name.includes('SCBS&P500') || name.includes('SCBNDQ') || name.includes('SCBWORLD') || name === 'VOO' || name === 'QQQM') return 'Global/US Index';
   if (name.includes('SCBEM') || name.includes('EMEQ')) return 'Emerging/Other';
-  if (['TSM', 'LLY', 'LIN'].includes(name)) return 'US Individual Stocks';
+  if (['TSM', 'LLY', 'LIN', 'GOOGL', 'META'].includes(name)) return 'US Individual Stocks';
   if (type === 'us') return 'US Individual Stocks';
   if (type === 'fund') return 'Global/US Index';
   return 'Other';
@@ -974,7 +1051,7 @@ function buildTargets(bucketTargets) {
   return targets;
 }
 
-const __Allocation = { REBALANCE_BUCKETS, inferBucket, buildTargets };
+const __Allocation = { REBALANCE_BUCKETS, SINGLE_NAME_BUCKETS, inferBucket, buildTargets };
 if (typeof module !== 'undefined' && module.exports) module.exports = __Allocation; // node tests
 if (typeof window !== 'undefined') window.Allocation = __Allocation;                // browser global
 
@@ -990,8 +1067,34 @@ if (typeof window !== 'undefined') window.Allocation = __Allocation;            
 // not depend on the risk module at runtime. Dual-export (node tests + window.DcaEngine).
 // ============================================================
 
-// DCA deployment policy: satellite caps (fraction of monthly DCA) + main bucket for excess
-const DCA_POLICY={ satelliteCaps:{'US Individual Stocks':0.10}, mainBucket:'Global/US Index' };
+// DCA deployment policy: FIXED split + guardrails (not drift-proportional).
+//   split            = fraction of monthly DCA per bucket (Thai = 0 by policy)
+//   pauseSatelliteAtPct = US Individual bucket ≥ this % of rebalance base → pause, redirect to main
+//   reviewSatelliteAtPct= US Individual bucket > this % → review flag (riskEngine emits the alert)
+//   thaiResumeBelowPct  = Thai stays 0 unless its current % falls below this (manual "after review")
+//   perStockPausePct    = skip a US-individual name if it is ≥ this % of rebalance base
+// US Individual = ฿5,000 into ONE name per month, chosen by a fixed rotation
+// schedule with guardrails (see pickUsIndividual): buy the scheduled name unless it
+// is materially overweight inside the basket or blocked (status / drawdown / size);
+// then fall back to the most-underweight eligible name; if none eligible, redirect
+// the whole amount to the broad index (mainBucket).
+const DCA_POLICY={
+  split:{ 'Global/US Index':0.75, 'US Individual Stocks':0.25 },
+  mainBucket:'Global/US Index',
+  satelliteBucket:'US Individual Stocks',
+  pauseSatelliteAtPct:17,
+  reviewSatelliteAtPct:20,
+  thaiBucket:'Thai Dividend/Thai Stocks',
+  thaiResumeBelowPct:13,
+  perStockPausePct:7,
+  // US Individual rotation
+  usRotationOrder:['GOOGL','LLY','META','TSM','LIN'],     // monthly schedule order
+  usBasketTargets:{ GOOGL:25, LLY:25, META:20, TSM:15, LIN:15 }, // target % INSIDE the basket
+  materialOverweightPct:5,  // basket weight > target + this → materially overweight → skip
+  drawdownWarnPct:-15,      // -15%..-20% from cost: warn but still buyable
+  drawdownBlockPct:-20,     // ≤ -20% from cost: block auto-buy, review_required
+  drawdownHighPct:-30,      // ≤ -30% from cost: high_review
+};
 
 // future value of current portfolio + monthly DCA over N years at an annual return
 function projectFutureValue(cur,monthlyDca,annual,years){
@@ -1030,28 +1133,99 @@ function dcaStatus(inv,cash,type,target){
   if(inv>=15000)return 'ยังห่าง';
   return 'ต้องเร่งเพิ่ม';
 }
-// DCA plan from v4 drift rows: allocate UNDER by underweight ratio, apply satellite caps -> main
-function buildDcaPlan(review,monthlyDca,policy){
+// Choose the single US-Individual name to buy this month.
+// Schedule = usRotationOrder[monthIndex] among currently-held names. Buy it unless it
+// is materially overweight or blocked; else buy the most-underweight ELIGIBLE name;
+// if none eligible, redirect (caller sends the amount to the broad index).
+//   eligible = status 'active' AND unrealized return > drawdownBlockPct AND size < perStockPausePct
+// Returns { subAllocations, picked, redirect, pausedStocks, reviewStocks, warnStocks }.
+function pickUsIndividual(amount, holdings, rebalanceBase, policy, monthIndex){
+  const sat=policy.satelliteBucket;
+  const basket=(holdings||[]).filter(h=>(h.bucket||'')===sat);
+  const basketValue=basket.reduce((s,h)=>s+(+h.value||0),0);
+  const ret=h=>{const inv=+h.invested||0;return inv>0?((+h.value||0)-inv)/inv*100:0;};
+  const portPct=h=>rebalanceBase>0?(+h.value||0)/rebalanceBase*100:0;
+  const basketPct=h=>basketValue>0?(+h.value||0)/basketValue*100:0;
+  const targetOf=h=>policy.usBasketTargets[(h.name||'').toUpperCase()]||0;
+
+  const pausedStocks=[],reviewStocks=[],warnStocks=[];
+  const meta=basket.map(h=>{
+    const r=ret(h),status=h.dcaStatus||'active',pp=portPct(h),bp=basketPct(h);
+    const pausedSize=pp>=policy.perStockPausePct;                              // rule 5
+    const blockedStatus=['under_review','paused','thesis_broken'].includes(status);
+    const blockedDraw=r<=policy.drawdownBlockPct;                             // ≤ -20%
+    if(pausedSize)pausedStocks.push(h.name);
+    if(blockedStatus)reviewStocks.push({name:h.name,reason:status,ret:+r.toFixed(1)});
+    else if(blockedDraw)reviewStocks.push({name:h.name,reason:r<=policy.drawdownHighPct?'high_review':'review_required',ret:+r.toFixed(1)});
+    else if(r<=policy.drawdownWarnPct)warnStocks.push({name:h.name,ret:+r.toFixed(1)});
+    return {h,name:h.name,gap:targetOf(h)-bp,
+      eligible:!(pausedSize||blockedStatus||blockedDraw),
+      materiallyOver:bp>targetOf(h)+policy.materialOverweightPct};
+  });
+  const eligible=meta.filter(m=>m.eligible);
+  if(!eligible.length)return{redirect:true,subAllocations:[],picked:null,pausedStocks,reviewStocks,warnStocks};
+
+  // most-underweight eligible name (largest target-minus-current gap)
+  const mostUnder=eligible.slice().sort((a,b)=>b.gap-a.gap)[0];
+  // scheduled name for this month, restricted to currently-held names
+  const order=policy.usRotationOrder.filter(n=>meta.some(m=>(m.name||'').toUpperCase()===n));
+  let picked=mostUnder;
+  if(order.length){
+    const schedName=order[((monthIndex%order.length)+order.length)%order.length];
+    const sched=meta.find(m=>(m.name||'').toUpperCase()===schedName);
+    if(sched&&sched.eligible&&!sched.materiallyOver)picked=sched; // on-schedule buy
+  }
+  return{subAllocations:[{name:picked.name,amount}],picked:picked.name,redirect:false,pausedStocks,reviewStocks,warnStocks};
+}
+
+// DCA plan: FIXED split (Index 75% / US Individual 25% / Thai 0) + guardrails.
+//   - pause US Individual bucket (redirect to main) if it is ≥ pauseSatelliteAtPct
+//   - flag review if US Individual > reviewSatelliteAtPct
+//   - split the US Individual amount across names < perStockPausePct of rebalance base
+//   - Thai stays 0 (thaiResumeEligible only flags when it falls below thaiResumeBelowPct)
+// `holdings` are the raw app holdings (need name/value/bucket) for the per-stock split.
+function buildDcaPlan(review,monthlyDca,policy,holdings,monthIndex){
   policy=policy||DCA_POLICY;
-  const rows=review.drift.rows||[];
-  if(!review.drift.targetValid)return{valid:false,error:review.drift.targetError||'target ไม่ valid',recommended:[],skip:[],total:monthlyDca};
-  const skip=rows.filter(r=>!r.action.startsWith('UNDER')).map(r=>r.bucket);
-  skip.push('PVD/Retirement');
-  if(!(monthlyDca>0))return{valid:true,zero:true,recommended:[],skip,total:monthlyDca||0};
-  const under=rows.filter(r=>r.action.startsWith('UNDER')).sort((a,b)=>a.driftPct-b.driftPct);
-  if(!under.length)return{valid:true,allOnTarget:true,recommended:[],skip,total:monthlyDca};
-  const totalGap=under.reduce((s,r)=>s+(-r.driftPct),0);
-  const alloc={};under.forEach(r=>{alloc[r.bucket]=Math.round(monthlyDca*(-r.driftPct)/totalGap);});
-  // satellite caps (scale with monthlyDca) -> redistribute excess to mainBucket
-  const caps=policy.satelliteCaps||{};let excess=0;
-  Object.keys(caps).forEach(bk=>{if(alloc[bk]==null)return;const cap=Math.round(monthlyDca*caps[bk]);if(alloc[bk]>cap){excess+=alloc[bk]-cap;alloc[bk]=cap;}});
-  let unallocated=0;
-  if(excess>0){if(alloc[policy.mainBucket]!=null)alloc[policy.mainBucket]+=excess;else unallocated=excess;}
-  const recommended=under.map(r=>({
-    bucket:r.bucket,amount:alloc[r.bucket],driftPct:r.driftPct,
-    role:r.bucket===policy.mainBucket?'main':(caps[r.bucket]!=null?`satellite capped at ${Math.round(caps[r.bucket]*100)}%`:'satellite')
+  monthIndex=monthIndex||0;
+  const drift=review.drift||{};
+  const rows=drift.rows||[];
+  if(!drift.targetValid)return{valid:false,error:drift.targetError||'target ไม่ valid',recommended:[],skip:[],total:monthlyDca};
+
+  const main=policy.mainBucket,sat=policy.satelliteBucket,thai=policy.thaiBucket;
+  const curPct=bk=>{const r=rows.find(x=>x.bucket===bk);return r?r.currentPct:0;};
+  if(!(monthlyDca>0))return{valid:true,zero:true,recommended:[],skip:['PVD/Retirement'],total:monthlyDca||0};
+
+  // 1) fixed split
+  const alloc={};Object.keys(policy.split).forEach(bk=>{alloc[bk]=Math.round(monthlyDca*policy.split[bk]);});
+
+  // 2) satellite (US Individual) bucket guardrails
+  const satPct=curPct(sat);
+  const usIndividualReview=satPct>policy.reviewSatelliteAtPct;
+  let usIndividualPaused=false;
+  if(satPct>=policy.pauseSatelliteAtPct){usIndividualPaused=true;alloc[main]+=alloc[sat]||0;alloc[sat]=0;}
+
+  // 3) rotation: pick ONE name this month (schedule + basket targets + drawdown guard)
+  let subAllocations=[],pausedStocks=[],reviewStocks=[],warnStocks=[],usPick=null,usIndividualRedirected=false;
+  if(alloc[sat]>0){
+    const pick=pickUsIndividual(alloc[sat],holdings,review.rebalanceBase||0,policy,monthIndex);
+    pausedStocks=pick.pausedStocks;reviewStocks=pick.reviewStocks;warnStocks=pick.warnStocks;
+    if(pick.redirect){ // no eligible name → redirect whole amount to broad index
+      alloc[main]+=alloc[sat];alloc[sat]=0;usIndividualRedirected=true;
+    }else{ subAllocations=pick.subAllocations;usPick=pick.picked; }
+  }
+
+  // 4) recommended (amount>0) + skip (everything else we see, incl PVD)
+  const recommended=[main,sat].filter(bk=>alloc[bk]>0).map(bk=>({
+    bucket:bk,amount:alloc[bk],role:bk===main?'main':'satellite',
+    ...(bk===sat?{subAllocations,pausedStocks}:{})
   }));
-  return{valid:true,recommended,skip,unallocated,total:monthlyDca};
+  const recSet=new Set(recommended.map(r=>r.bucket));
+  const skip=[...new Set(rows.map(r=>r.bucket).filter(b=>!recSet.has(b)))];
+  skip.push('PVD/Retirement');
+
+  return{valid:true,recommended,skip,unallocated:0,total:monthlyDca,
+    usIndividualPaused,usIndividualReview,usIndividualRedirected,usPick,
+    pausedStocks,reviewStocks,warnStocks,thaiResumeEligible:curPct(thai)<policy.thaiResumeBelowPct};
 }
 
 const __DcaEngine={ DCA_POLICY, projectFutureValue, nperYears, activeMonthsFor, dcaStatus, buildDcaPlan };
@@ -1237,48 +1411,62 @@ if (typeof window !== 'undefined') window.EstateTaxEngine = __EstateTaxEngine;  
 // type ∈ fund | stock | us | cash | pvd | other. Names are chosen so the
 // bucket/sector classifiers resolve to varied buckets; bucket/trackingMode/
 // isUSSitus are pre-set so migrateHoldings() is a no-op on them.
+// Tuned to the 70/15/15 policy: Global/US Index ≈70%, US Individual ≈15%,
+// Thai Dividend ≈15% of the rebalance base (cash/PVD are fixed reserves, excluded).
 const HOLDINGS = [
+  // ---- Global/US Index (~70% of rebalance base) ----
   { id: 1, name: 'SCBS&P500', type: 'fund', theme: 'US Large Cap', ticker: '', units: 0,
-    invested: 500000, value: 555000, date: '2024-01-15',
+    invested: 640000, value: 700000, date: '2024-01-15',
     thesis: 'Core US index, lowest-cost broad exposure', dd: '',
     bucket: 'Global/US Index', trackingMode: 'simple', isUSSitus: false },
   { id: 2, name: 'SCBWORLD', type: 'fund', theme: 'Global Developed', ticker: '', units: 0,
-    invested: 280000, value: 301000, date: '2024-02-10',
+    invested: 300000, value: 330000, date: '2024-02-10',
     thesis: 'Global diversification outside single-country risk', dd: '',
     bucket: 'Global/US Index', trackingMode: 'simple', isUSSitus: false },
-  { id: 3, name: 'SET50', type: 'fund', theme: 'Thai Large Cap', ticker: '', units: 0,
-    invested: 160000, value: 149000, date: '2024-03-05',
-    thesis: 'Thai equity index core holding', dd: '',
-    bucket: 'Thai Equity Index', trackingMode: 'simple', isUSSitus: false },
-  { id: 4, name: 'KKP', type: 'stock', theme: 'Thai Financials', ticker: 'KKP', units: 8000,
-    invested: 150000, value: 182000, date: '2023-11-20',
-    thesis: 'High-dividend Thai bank, stable payout', dd: '',
-    bucket: 'Thai Dividend/Thai Stocks', trackingMode: 'unit', isUSSitus: false },
-  { id: 5, name: 'KGI', type: 'stock', theme: 'Thai Financials', ticker: 'KGI', units: 12000,
-    invested: 100000, value: 91000, date: '2024-04-12',
-    thesis: 'Thai brokerage dividend play', dd: '',
-    bucket: 'Thai Dividend/Thai Stocks', trackingMode: 'unit', isUSSitus: false },
-  { id: 6, name: 'SCBEM', type: 'fund', theme: 'Emerging Markets', ticker: '', units: 0,
-    invested: 120000, value: 110000, date: '2024-05-01',
-    thesis: 'EM satellite for long-run growth', dd: '',
-    bucket: 'Emerging/Other', trackingMode: 'simple', isUSSitus: false },
-  { id: 7, name: 'VOO', type: 'us', theme: 'US Large Cap', ticker: 'VOO', units: 25,
-    invested: 380000, value: 421000, date: '2023-09-18',
+  { id: 3, name: 'VOO', type: 'us', theme: 'US Large Cap', ticker: 'VOO', units: 27,
+    invested: 400000, value: 450000, date: '2023-09-18',
     thesis: 'Direct S&P 500 ETF, USD-denominated core', dd: '',
     bucket: 'Global/US Index', trackingMode: 'unit', isUSSitus: true },
-  { id: 8, name: 'TSM', type: 'us', theme: 'Semiconductors', ticker: 'TSM', units: 40,
-    invested: 200000, value: 262000, date: '2023-10-22',
+  { id: 4, name: 'SCBNDQ', type: 'fund', theme: 'US Tech / Nasdaq', ticker: '', units: 0,
+    invested: 180000, value: 200000, date: '2024-03-05',
+    thesis: 'Nasdaq-100 growth/tech tilt within the index sleeve', dd: '',
+    bucket: 'Global/US Index', trackingMode: 'simple', isUSSitus: false },
+  // ---- US Individual Stocks (~15%) ----
+  { id: 5, name: 'TSM', type: 'us', theme: 'Semiconductor / Foundry / AI', ticker: 'TSM', units: 14,
+    invested: 75000, value: 90000, date: '2023-10-22',
     thesis: 'Dominant foundry, AI/compute secular tailwind', dd: '',
     bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true },
-  { id: 9, name: 'LLY', type: 'us', theme: 'US Healthcare', ticker: 'LLY', units: 12,
-    invested: 220000, value: 191000, date: '2024-06-08',
+  { id: 6, name: 'LLY', type: 'us', theme: 'Healthcare / Pharma / GLP-1', ticker: 'LLY', units: 5,
+    invested: 85000, value: 80000, date: '2024-06-08',
     thesis: 'Pharma leader, GLP-1 franchise', dd: '',
     bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true },
-  { id: 10, name: 'Cash Reserve', type: 'cash', theme: 'Emergency Fund', ticker: '', units: 0,
+  { id: 7, name: 'GOOGL', type: 'us', theme: 'Communication Services / AI / Cloud', ticker: 'GOOGL', units: 18,
+    invested: 70000, value: 80000, date: '2024-02-19',
+    thesis: 'Search/Cloud/AI franchise, strong free cash flow', dd: '',
+    bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true },
+  { id: 8, name: 'META', type: 'us', theme: 'Communication Services / AI Ads / Social', ticker: 'META', units: 8,
+    invested: 55000, value: 60000, date: '2024-04-30',
+    thesis: 'Ads platform with AI-driven efficiency', dd: '',
+    bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true },
+  { id: 9, name: 'LIN', type: 'us', theme: 'Industrials / Industrial Gas / Defensive', ticker: 'LIN', units: 4,
+    invested: 48000, value: 50000, date: '2024-05-21',
+    thesis: 'Industrial gas, quality defensive compounder', dd: '',
+    bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true },
+  // ---- Thai Dividend / Thai Stocks (~15%) ----
+  { id: 10, name: 'KKP', type: 'stock', theme: 'Thai Financials', ticker: 'KKP', units: 8000,
+    invested: 230000, value: 220000, date: '2023-11-20',
+    thesis: 'High-dividend Thai bank, stable payout (trimmed toward target)', dd: '',
+    bucket: 'Thai Dividend/Thai Stocks', trackingMode: 'unit', isUSSitus: false },
+  { id: 11, name: 'KGI', type: 'stock', theme: 'Thai Financials', ticker: 'KGI', units: 12000,
+    invested: 150000, value: 140000, date: '2024-04-12',
+    thesis: 'Thai brokerage dividend play', dd: '',
+    bucket: 'Thai Dividend/Thai Stocks', trackingMode: 'unit', isUSSitus: false },
+  // ---- reserves (not rebalanced) ----
+  { id: 12, name: 'Cash Reserve', type: 'cash', theme: 'Emergency Fund', ticker: '', units: 0,
     invested: 250000, value: 250000, date: '',
     thesis: 'Emergency reserve, kept liquid', dd: '',
     bucket: 'Cash/Emergency', trackingMode: 'simple', isUSSitus: false },
-  { id: 11, name: 'Provident Fund', type: 'pvd', theme: 'Retirement', ticker: '', units: 0,
+  { id: 13, name: 'Provident Fund', type: 'pvd', theme: 'Retirement', ticker: '', units: 0,
     invested: 300000, value: 322000, date: '',
     thesis: 'Employer PVD, locked until retirement', dd: '',
     bucket: 'PVD/Retirement', trackingMode: 'simple', isUSSitus: false }
@@ -1302,15 +1490,16 @@ const GOALS = [
 ];
 
 // ---- targets (w_bucketTargets) ----------------------------------------
-// 5 rebalance buckets summing to 100 (Cash/PVD are fixed reserves, not rebalanced)
+// policy 70/15/15 — three active rebalance buckets summing to 100
+// (Thai Equity Index / Emerging set to 0; Cash/PVD are fixed reserves, not rebalanced)
 const TARGETS = {
-  'Global/US Index': 55, 'Thai Dividend/Thai Stocks': 28, 'Thai Equity Index': 5,
-  'US Individual Stocks': 8, 'Emerging/Other': 4
+  'Global/US Index': 70, 'Thai Dividend/Thai Stocks': 15, 'Thai Equity Index': 0,
+  'US Individual Stocks': 15, 'Emerging/Other': 0
 };
 
 // ---- settings (w_settings) --------------------------------------------
-// shape: { name, income, dca }
-const SETTINGS = { name: 'Demo User', income: 120000, dca: 30000 };
+// shape: { name, income, dca }   dca = ฿20,000/mo (15k Index / 5k US Individual / 0 Thai)
+const SETTINGS = { name: 'Demo User', income: 120000, dca: 20000 };
 
 // ---- journal (w_journal) ----------------------------------------------
 // shape: { id, date, action, asset, amount, reason, emotion, planned, review, risk }
@@ -1321,6 +1510,21 @@ const JOURNAL = [
     reason: 'Add on dip, thesis intact', emotion: 'confident', planned: 'yes', review: '', risk: 'medium' }
 ];
 
+// ---- major decisions (w_majorDecisions) -------------------------------
+// strategy/policy decisions (NOT transactions). Schema per majorDecisionsEngine.
+// NOTE: the live app does not auto-load demo data, and DB.def seeds every user,
+// so this sample decision is part of the demo dataset only — real users log
+// their own via the Major Decisions UI.
+const MAJOR_DECISIONS = [
+  { id: 401, schema: 1, date: '2026-06-13', title: 'ปรับพอร์ตเป็น 70/15/15 และลด KKP concentration',
+    type: 'Allocation Change',
+    summary: 'เปลี่ยน target allocation เป็น Global/US Index 70 / US Individual 15 / Thai Dividend 15; DCA fixed split 75/25 (Index/US Individual), Thai 0; ลด KKP เข้าใกล้เป้า',
+    optionsConsidered: 'คงสัดส่วนเดิม 55/28/5/8/4 vs ปรับเป็น 70/15/15',
+    decisionReason: 'ลดการกระจุกหุ้นไทยรายตัว (KKP) เพิ่มน้ำหนัก core index และจัด US individual เป็น satellite ที่มีกรอบชัดเจน',
+    conviction: 4, status: 'Active', reviewDate: '2026-12-13', outcome: '', lesson: '',
+    createdAt: '2026-06-13', updatedAt: '2026-06-13' }
+];
+
 // full demo dataset keyed by provider section name
 const DEMO = {
   holdings: HOLDINGS,
@@ -1328,7 +1532,8 @@ const DEMO = {
   goals: GOALS,
   targets: TARGETS,
   settings: SETTINGS,
-  journal: JOURNAL
+  journal: JOURNAL,
+  majorDecisions: MAJOR_DECISIONS
 };
 
 // deep copy (sections are JSON-safe: arrays of flat objects / plain objects)
@@ -1478,20 +1683,23 @@ const __rpAlloc    = __rpResolve('Allocation',     '../allocation/allocationEngi
 
 // text version of the DCA recommendation for the report.
 // `src` is the resolved monthly-DCA descriptor { amount, source, ... } (was resolveMonthlyDca()).
-function __rpGetDcaRecommendation(review, src) {
+function __rpGetDcaRecommendation(review, src, holdings, monthIndex) {
   const fmt = n => '฿' + Math.round(n).toLocaleString('th-TH');
-  const plan = __rpDca.buildDcaPlan(review, src.amount);
+  const plan = __rpDca.buildDcaPlan(review, src.amount, undefined, holdings, monthIndex || 0);
   if (!plan.valid) return ['⚠ target ไม่ valid (รวม≠100%) — แก้ Bucket Target ใน Settings ก่อนใช้ DCA plan', `Source: ${src.source}`];
   if (plan.zero) return [`DCA เดือนนี้: ฿0 — No DCA recommendation this month`, `Source: ${src.source}`];
-  if (plan.allOnTarget) return [`DCA ${fmt(src.amount)} — ทุก bucket อยู่ในกรอบเป้าหมาย`, `Source: ${src.source}`];
-  const rec = [`แนะนำแบ่ง DCA ${fmt(src.amount)} (Source: ${src.source}) เข้า bucket ที่ "ต่ำกว่าเป้า" (UNDER):`];
-  plan.recommended.forEach(x => { rec.push(`- ${fmt(x.amount)} → ${x.bucket} (ต่ำกว่าเป้า ${x.driftPct.toFixed(1)}%)${x.role ? ' [' + x.role + ']' : ''}`); });
-  if (plan.unallocated > 0) rec.push(`- ${fmt(plan.unallocated)} → ยังไม่จัดสรร (ไม่มี main bucket underweight)`);
-  const over = (review.drift.rows || []).filter(r => r.action.startsWith('OVER'));
-  if (over.length) {
-    rec.push(`หยุดเติม — OVER เป้า: ${over.map(r => r.bucket).join(', ')}`);
-    if (over.some(r => r.bucket === 'Thai Dividend/Thai Stocks')) rec.push('- ฿0 → KKP/KGI ระหว่างที่ Thai Dividend ยัง OVER');
-  }
+  const rec = [`Fixed-split DCA ${fmt(src.amount)} (Source: ${src.source}) — Index 75% / US Individual 25% / Thai 0:`];
+  plan.recommended.forEach(x => {
+    rec.push(`- ${fmt(x.amount)} → ${x.bucket}${x.role ? ' [' + x.role + ']' : ''}`);
+    (x.subAllocations || []).forEach(sa => rec.push(`    · ${fmt(sa.amount)} → ${sa.name} (ซื้อเดือนนี้ — rotation)`));
+  });
+  if (plan.usIndividualPaused) rec.push('US Individual ≥17% — พัก DCA หุ้นเดี่ยว โยกเข้า Index');
+  if (plan.usIndividualRedirected) rec.push('US Individual โยกเข้า Index — ทุกตัวติด review/paused/drawdown/≥7%');
+  if ((plan.warnStocks || []).length) rec.push(`เตือน (ราคาลง 15–20%): ${plan.warnStocks.map(s => `${s.name} ${s.ret}%`).join(', ')}`);
+  if ((plan.reviewStocks || []).length) rec.push(`รอ review (ไม่ auto-buy): ${plan.reviewStocks.map(s => `${s.name} [${s.reason}${s.ret != null ? ' ' + s.ret + '%' : ''}]`).join(', ')}`);
+  if ((plan.pausedStocks || []).length) rec.push(`พักหุ้น ≥7% ของพอร์ตลงทุน: ${plan.pausedStocks.join(', ')}`);
+  if (plan.usIndividualReview) rec.push('US Individual >20% — trigger portfolio review');
+  rec.push('- ฿0 → Thai Dividend/KKP (policy 0; resume เฉพาะเมื่อ <13% และหลัง review)');
   rec.push('- ฿0 → PVD/Retirement (locked, ไม่ rebalance)');
   return rec;
 }
@@ -1671,8 +1879,11 @@ function __rpGenerateReport(opts) {
     r += `${x.name}: ${pct}% — ${f2(cur)} / ${f2(x.target)}  (${yr} yrs left, target ${x.year})${note}\n`;
   });
 
-  r += '\n--- NEXT DCA PLAN (from rebalance drift · DCA from DCA/FIRE sheet) ---\n';
-  __rpGetDcaRecommendation(review, monthlyDca).forEach(line => { r += line + '\n'; });
+  r += '\n--- NEXT DCA PLAN (fixed split 75/25 + guardrails · DCA from DCA/FIRE sheet) ---\n';
+  __rpGetDcaRecommendation(review, monthlyDca, h, _now.getFullYear() * 12 + _now.getMonth()).forEach(line => { r += line + '\n'; });
+
+  r += '\n--- LOOK-THROUGH EXPOSURE ---\n';
+  r += 'Not enabled yet — Phase 2.\n';
 
   r += `\n--- JOURNAL (last ${j.length} entries) ---\n`;
   j.forEach(x => {
@@ -2164,9 +2375,9 @@ DB.def('fireSettings',{
   monthlyExpense:30000
 });
 DB.def('bucketTargets',{
-  "Global/US Index":55,"Thai Dividend/Thai Stocks":28,"Thai Equity Index":5,
-  "US Individual Stocks":8,"Emerging/Other":4
-}); // 5 rebalance buckets รวม 100 (Cash=fixed emergency reserve แยกต่างหาก, ไม่อยู่ใน rebalance)
+  "Global/US Index":70,"Thai Dividend/Thai Stocks":15,"Thai Equity Index":0,
+  "US Individual Stocks":15,"Emerging/Other":0
+}); // policy 70/15/15 (Global·Index / US Individual / Thai Dividend). Cash=fixed emergency reserve แยกต่างหาก
 
 // Portfolio source abstraction lives in src/data/portfolioProvider.js (window.PortfolioProvider).
 // Phase 3D is read-path-only: the provider reads localStorage directly and falls back to the
@@ -2226,18 +2437,36 @@ function inferSector(h){
   if(n.includes('SCBS&P500')||n.includes('SCBNDQ'))return 'US Equity Index';
   if(n.includes('SCBWORLD'))return 'Global Equity Index';
   if(n.includes('SCBEM')||n.includes('EMEQ'))return 'EM Equity Index';
+  if(['GOOGL','META'].includes(n))return 'Communication Services';
   if(n==='LLY')return 'US Healthcare';
-  if(n==='LIN')return 'US Materials';
+  if(n==='LIN')return 'US Industrials';
   if(n==='TSM')return 'Semiconductors';
   return h.theme||h.bucket||Allocation.inferBucket(h)||'Other';
 }
+// classify a fund/ETF for concentration tiers: broad-market index vs thematic/
+// concentrated index vs generic fund. Returns null for non-funds (single stocks).
+function classifyFund(h){
+  const n=(h.name||'').toUpperCase(),ticker=(h.ticker||'').toUpperCase();
+  const bucket=h.bucket||Allocation.inferBucket(h);
+  if(Allocation.SINGLE_NAME_BUCKETS.includes(bucket))return null; // individual stock, not a fund
+  const hit=s=>n.includes(s)||ticker===s;
+  // thematic / concentrated index (sector or single-theme tilt)
+  if(hit('SCBNDQ')||hit('QQQM')||hit('NDQ')||n.includes('NASDAQ'))return 'thematic';
+  // broad-market index (S&P500 / total world / total market)
+  if(hit('SCBS&P500')||hit('VOO')||hit('IVV')||hit('SPY')||hit('VTI')||hit('VXUS')
+     ||n.includes('SCBWORLD')||n.includes('WORLD')||n.includes('S&P500'))return 'broad';
+  return 'fund'; // other index funds (SET50, SCBEM, …)
+}
 function toV4Holding(h){
   const type=h.type||'';
+  const bucket=h.bucket||Allocation.inferBucket(h);
   return {
     name:h.name,currentValue:+h.value||0,investedCost:+h.invested||0,
-    bucket:h.bucket||Allocation.inferBucket(h),sector:inferSector(h),
+    bucket,sector:inferSector(h),
     rebalance_include:!['pvd','cash'].includes(type), // cash = emergency reserve, ไม่ rebalance
     concentration_include:!['cash','pvd'].includes(type),
+    isSingleName:Allocation.SINGLE_NAME_BUCKETS.includes(bucket)&&!['cash','pvd'].includes(type),
+    fundClass:['cash','pvd'].includes(type)?null:classifyFund(h),
     liquidity_type:type==='pvd'?'locked':'liquid',
     isEmergencyFund:type==='cash',
     isCash:type==='cash',
@@ -2398,15 +2627,23 @@ function renderDash(){
   document.getElementById('dalerts').style.display=alertsHidden?'none':'';
   document.getElementById('dalert-toggle').textContent=alertsHidden?'แสดง':'ซ่อน';
   // DCA This Month card — amount from DCA/FIRE sheet (not hardcoded)
-  const dcaSrc=resolveMonthlyDca(),plan=DcaEngine.buildDcaPlan(review,dcaSrc.amount);
-  let dcaHtml=`<div style="font-size:13px;margin-bottom:2px">DCA: <b>${fmt(dcaSrc.amount)}</b></div>`;
+  const __now=new Date(),__mi=__now.getFullYear()*12+__now.getMonth(); // monthly rotation pointer
+  const dcaSrc=resolveMonthlyDca(),plan=DcaEngine.buildDcaPlan(review,dcaSrc.amount,undefined,h,__mi);
+  let dcaHtml=`<div style="font-size:13px;margin-bottom:2px">DCA: <b>${fmt(dcaSrc.amount)}</b> <span style="color:var(--t3);font-size:10px">· fixed split 75/25</span></div>`;
   dcaHtml+=`<div style="font-size:10px;color:${dcaSrc.fallback?'var(--amber)':'var(--t3)'};margin-bottom:10px">Source: ${dcaSrc.source}</div>`;
   if(!plan.valid)dcaHtml+=`<div class="co co-a" style="font-size:11px">${plan.error} — แก้ Bucket Target ใน Settings</div>`;
   else if(plan.zero)dcaHtml+=`<div class="co co-b" style="font-size:11px">No DCA recommendation this month (฿0)</div>`;
-  else if(plan.allOnTarget)dcaHtml+=`<div class="co co-g" style="font-size:11px">ทุก bucket อยู่ในกรอบ — DCA ตามเป้าปกติ</div>`;
   else{
-    plan.recommended.forEach(x=>{dcaHtml+=`<div class="cfrow"><span class="cfl">→ ${x.bucket}${x.role?` <span style="color:var(--t3)">[${x.role}]</span>`:''}</span><span class="cfv" style="color:var(--green)">${fmt(x.amount)}</span></div>`;});
-    if(plan.unallocated>0)dcaHtml+=`<div class="cfrow"><span class="cfl" style="color:var(--amber)">→ ยังไม่จัดสรร</span><span class="cfv" style="color:var(--amber)">${fmt(plan.unallocated)}</span></div>`;
+    plan.recommended.forEach(x=>{
+      dcaHtml+=`<div class="cfrow"><span class="cfl">→ ${x.bucket}${x.role?` <span style="color:var(--t3)">[${x.role}]</span>`:''}</span><span class="cfv" style="color:var(--green)">${fmt(x.amount)}</span></div>`;
+      (x.subAllocations||[]).forEach(s=>{dcaHtml+=`<div class="cfrow" style="padding-left:14px"><span class="cfl" style="color:var(--t3);font-size:11px">· ${s.name} <span style="font-size:9px">ซื้อเดือนนี้ (rotation)</span></span><span class="cfv" style="color:var(--t3);font-size:11px">${fmt(s.amount)}</span></div>`;});
+    });
+    if(plan.usIndividualPaused)dcaHtml+=`<div class="co co-a" style="font-size:11px;margin-top:6px">US Individual ≥17% — พัก DCA หุ้นเดี่ยว โยกเข้า Index</div>`;
+    if(plan.usIndividualRedirected)dcaHtml+=`<div class="co co-a" style="font-size:11px;margin-top:6px">US Individual โยกเข้า Index — ทุกตัวติด review/paused/drawdown/≥7%</div>`;
+    if((plan.warnStocks||[]).length)dcaHtml+=`<div style="font-size:10px;color:var(--amber);margin-top:4px">เตือน (ราคาลง 15–20%): ${plan.warnStocks.map(s=>s.name+' '+s.ret+'%').join(', ')}</div>`;
+    if((plan.reviewStocks||[]).length)dcaHtml+=`<div style="font-size:10px;color:var(--red,#f06060);margin-top:4px">รอ review (ไม่ auto-buy): ${plan.reviewStocks.map(s=>s.name+' ['+s.reason+(s.ret!=null?' '+s.ret+'%':'')+']').join(', ')}</div>`;
+    if((plan.pausedStocks||[]).length)dcaHtml+=`<div style="font-size:10px;color:var(--amber);margin-top:4px">พักหุ้น ≥7% ของพอร์ต: ${plan.pausedStocks.join(', ')}</div>`;
+    if(plan.usIndividualReview)dcaHtml+=`<div class="co co-a" style="font-size:11px;margin-top:4px">US Individual &gt;20% — trigger review</div>`;
     dcaHtml+=`<div style="font-size:10px;color:var(--t3);margin-top:8px">Skip: ${plan.skip.join(', ')}</div>`;
   }
   document.getElementById('ddca').innerHTML=dcaHtml;
@@ -2418,6 +2655,25 @@ function renderDash(){
     <div class="cfrow"><span class="cfl">Gain/Loss (เงินลงทุน)</span><span class="cfv ${invGain>=0?'up':'dn'}">${invGain>=0?'+':''}${fmt(invGain)} (${fmtP(invGp)})</span></div>
     <div class="cfrow"><span class="cfl">PVD / Retirement</span><span class="cfv">${fmt(pvdVal)} <span style="color:var(--t3);font-size:10px">(${V>0?PvdEngine.pvdPercent(pvdVal,V).toFixed(1):0}%)</span></span></div>
     <div class="cfrow"><span class="cfl">Emergency <span style="color:var(--t3);font-size:10px">${emg.months} เดือน = ${fmt(emg.target)}</span></span><span class="cfv ${emg.ok?'up':'dn'}">${fmt(emg.cash)} · ${emg.coverage.toFixed(1)} ด. ${emg.ok?'✓':'⚠'}</span></div>`;
+  // Policy & status card (70/15/15 + US Individual / KKP DCA status)
+  const dpol=document.getElementById('dpolicy');
+  if(dpol){
+    const tgt=DB.get('bucketTargets')||{};
+    const rowOf=bk=>review.drift.rows.find(r=>r.bucket===bk)||{currentPct:0,targetPct:tgt[bk]||0};
+    const kkpH=h.find(x=>(x.name||'').toUpperCase()==='KKP');
+    const kkpPct=(review.rebalanceBase>0&&kkpH)?(kkpH.value/review.rebalanceBase*100):0;
+    const usRow=rowOf('US Individual Stocks');
+    const usAllowed=usRow.currentPct<17;
+    const polRow=(bk,label)=>{const r=rowOf(bk);return `<div class="cfrow"><span class="cfl">${label}</span><span class="cfv">${r.currentPct.toFixed(1)}% <span style="color:var(--t3);font-size:10px">/ ${(tgt[bk]||0)}%</span></span></div>`;};
+    let polHtml=`<div style="font-size:10px;color:var(--t3);margin-bottom:6px">current / target</div>`;
+    polHtml+=polRow('Global/US Index','Global/US Index');
+    polHtml+=polRow('US Individual Stocks','US Individual Stocks');
+    polHtml+=polRow('Thai Dividend/Thai Stocks','Thai Dividend (KKP/KGI)');
+    polHtml+=`<div style="border-top:1px solid rgba(255,255,255,.08);margin:8px 0"></div>`;
+    polHtml+=`<div class="cfrow"><span class="cfl">US Individual <span style="color:var(--t3);font-size:10px">DCA ${usAllowed?'allowed':'paused'}${usRow.currentPct>20?' · review':''}</span></span><span class="cfv ${usAllowed?'up':'dn'}">${usRow.currentPct.toFixed(1)}% / 15%</span></div>`;
+    polHtml+=`<div class="cfrow"><span class="cfl">KKP <span style="color:var(--t3);font-size:10px">DCA paused (policy 0)${kkpPct>20?' · review':''}</span></span><span class="cfv">${kkpPct.toFixed(1)}% / 15%</span></div>`;
+    dpol.innerHTML=polHtml;
+  }
   // US-situs card
   const us=getUSSitusExposure();
   const usStat={CAP:{t:'CAP — เกิน USD 60k',c:'co-a'},WARN:{t:'WARN — ใกล้ USD 60k',c:'co-a'},OK:{t:'OK',c:'co-g'}}[EstateTaxEngine.estateTaxStatus(us.usd)];
@@ -2647,6 +2903,7 @@ function newHolding(){
   document.getElementById('htype').value='fund';
   document.getElementById('hbucket').value='Global/US Index';
   document.getElementById('hmode').value='simple';
+  document.getElementById('hdcastatus').value='active';
   document.getElementById('hussitus').checked=false;
   const el=document.getElementById('ticker-result');if(el)el.textContent='';
   openM('mh');
@@ -2660,6 +2917,7 @@ function editH(id){
   document.getElementById('hunits').value=x.units||'';
   document.getElementById('hbucket').value=x.bucket||Allocation.inferBucket(x);
   document.getElementById('hmode').value=x.trackingMode||inferTrackingMode(x);
+  document.getElementById('hdcastatus').value=x.dcaStatus||'active';
   document.getElementById('hussitus').checked=(x.isUSSitus==null)?EstateTaxEngine.inferUSSitus(x):x.isUSSitus;
   document.getElementById('hdate').value=x.date||'';
   document.getElementById('heid').value=id;
@@ -2670,7 +2928,7 @@ function saveHolding(){
   const name=document.getElementById('hn').value.trim();if(!name){alert('กรุณากรอกชื่อ');return;}
   const eid=parseFloat(document.getElementById('heid').value)||0;
   const inv=parseFloat(document.getElementById('hinv').value)||0;
-  const obj={id:eid||uid(),name,type:document.getElementById('htype').value,theme:document.getElementById('htheme').value,ticker:document.getElementById('hticker').value,units:parseFloat(document.getElementById('hunits').value)||0,invested:inv,value:parseFloat(document.getElementById('hval').value)||inv,date:document.getElementById('hdate').value,thesis:document.getElementById('hthesis').value,dd:document.getElementById('hdd').value,bucket:document.getElementById('hbucket').value,trackingMode:document.getElementById('hmode').value,isUSSitus:document.getElementById('hussitus').checked};
+  const obj={id:eid||uid(),name,type:document.getElementById('htype').value,theme:document.getElementById('htheme').value,ticker:document.getElementById('hticker').value,units:parseFloat(document.getElementById('hunits').value)||0,invested:inv,value:parseFloat(document.getElementById('hval').value)||inv,date:document.getElementById('hdate').value,thesis:document.getElementById('hthesis').value,dd:document.getElementById('hdd').value,bucket:document.getElementById('hbucket').value,trackingMode:document.getElementById('hmode').value,dcaStatus:document.getElementById('hdcastatus').value,isUSSitus:document.getElementById('hussitus').checked};
   let hs=DB.get('holdings');hs=(eid&&hs.some(h=>h.id===eid))?hs.map(h=>h.id===eid?obj:h):[...hs,obj];DB.set('holdings',hs);
   document.getElementById('heid').value='';closeM('mh');renderHoldings();renderDash();
 }
