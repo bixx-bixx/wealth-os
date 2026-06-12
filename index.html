@@ -235,6 +235,10 @@ textarea{resize:vertical;min-height:72px}
     <button class="btn" style="padding:3px 12px;font-size:11px" id="dalert-toggle" onclick="toggleAlerts()">ซ่อน</button>
   </div>
   <div id="dalerts"></div>
+  <div class="card">
+    <div class="ct">Net Worth Trend <span id="nw-sub" style="color:var(--t3);text-transform:none"></span></div>
+    <div id="nw-trend"></div>
+  </div>
   <div class="g2">
     <div class="card">
       <div class="ct">DCA เดือนนี้ <span style="color:var(--t3);text-transform:none">· ควรซื้ออะไร (จาก drift)</span></div>
@@ -1972,6 +1976,83 @@ const __BackupEngine = {
 if (typeof module !== 'undefined' && module.exports) module.exports = __BackupEngine; // node tests
 if (typeof window !== 'undefined') window.BackupEngine = __BackupEngine;              // browser global
 
+// ============================================================
+// BFOS — Net-Worth History engine (Phase 8B)
+// ============================================================
+// Pure logic only: no DOM, no localStorage. Decides how a daily
+// net-worth snapshot is upserted into the history array, whether a
+// write is even needed (so callers don't churn sync on every render),
+// and how to summarize the trend. Storage/chart live in app.monolith.js.
+//
+// History entry shape: { date:'YYYY-MM-DD', net:Number, invested:Number }
+// One entry per calendar day; same-day re-record overwrites that day.
+// ============================================================
+
+function _isFiniteNum(n) { return typeof n === 'number' && Number.isFinite(n); }
+
+// Normalize one snapshot to the stored shape (numbers default to 0).
+function _normSnap(snap) {
+  const s = snap || {};
+  return {
+    date: String(s.date || ''),
+    net: _isFiniteNum(s.net) ? s.net : 0,
+    invested: _isFiniteNum(s.invested) ? s.invested : 0,
+  };
+}
+
+// Return a NEW history array sorted ascending by date (does not mutate input).
+function sortByDate(history) {
+  return (Array.isArray(history) ? history.slice() : [])
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+}
+
+// Upsert today's snapshot: replace the entry with the same date, else append.
+// Always returns a new sorted array; never mutates the input.
+function recordSnapshot(history, snap) {
+  const next = _normSnap(snap);
+  const base = Array.isArray(history) ? history : [];
+  const rest = base.filter(e => e && e.date !== next.date);
+  rest.push(next);
+  return sortByDate(rest);
+}
+
+// True only if recording would actually change the history:
+// no entry for this date yet, or stored net/invested differ from snap.
+// Lets callers skip DB writes (and sync) when nothing moved.
+function needsUpdate(history, snap) {
+  const s = _normSnap(snap);
+  const base = Array.isArray(history) ? history : [];
+  const existing = base.find(e => e && e.date === s.date);
+  if (!existing) return true;
+  return existing.net !== s.net || existing.invested !== s.invested;
+}
+
+// Trend summary across the whole history. Safe on empty / single entry.
+function summarize(history) {
+  const h = sortByDate(history);
+  const count = h.length;
+  if (count === 0) {
+    return { first: null, last: null, changeAbs: 0, changePct: 0, periodDays: 0, count: 0 };
+  }
+  const first = h[0], last = h[count - 1];
+  const changeAbs = last.net - first.net;
+  const changePct = first.net !== 0 ? (changeAbs / first.net) * 100 : 0;
+  const periodDays = Math.round(
+    (Date.parse(last.date) - Date.parse(first.date)) / 86400000
+  ) || 0;
+  return { first, last, changeAbs, changePct, periodDays, count };
+}
+
+const __NWHistoryEngine = {
+  sortByDate,
+  recordSnapshot,
+  needsUpdate,
+  summarize,
+};
+
+if (typeof module !== 'undefined' && module.exports) module.exports = __NWHistoryEngine; // node tests
+if (typeof window !== 'undefined') window.NWHistoryEngine = __NWHistoryEngine;            // browser global
+
 
 // ===== Cloud sync (Supabase) =====
 const SB_URL='https://nplhhyhtstyzqxiymwrq.supabase.co';
@@ -2066,6 +2147,7 @@ DB.def('cashflows',[]);
 DB.def('journal',[]);
 DB.def('majorDecisions',[]); // Phase 5B — strategy/thesis/policy decisions (NOT transactions). Raw seed via def = no markDirty (sync-safe).
 DB.def('goals',[]);
+DB.def('nwHistory',[]); // Phase 8B — daily net-worth snapshots {date,net,invested}. Raw seed via def = no markDirty (sync-safe).
 DB.def('dcaLog',[]); // imported from Google Sheet (Monthly_Input)
 DB.def('fireSettings',{
   csvUrl:'',
@@ -2345,7 +2427,32 @@ function renderDash(){
   const lb=[],da=[],co=['#4f9cf9','#a78bfa','#f5a623','#3ecf8e','#f97b5a','#f06060'];
   h.forEach(x=>{if(x.value>0){lb.push(x.name);da.push(x.value);}});
   chartA=new Chart(document.getElementById('cAlloc'),{type:'doughnut',data:{labels:lb,datasets:[{data:da,backgroundColor:co.slice(0,da.length),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9896a8',boxWidth:10,font:{size:11}}}},cutout:'65%'}});
+  renderNWTrend(V,I);    // Phase 8B — record daily snapshot + draw trend
   renderDashDecisions(); // Phase 5B additive section (active/due/latest)
+}
+
+// Phase 8B — net-worth daily snapshot + trend (logic in window.NWHistoryEngine; this is DB/chart glue)
+let chartNW=null;
+function renderNWTrend(net,invested){
+  const E=window.NWHistoryEngine;
+  const el=document.getElementById('nw-trend'); if(!el||!E)return;
+  const today=new Date().toISOString().slice(0,10);
+  const snap={date:today,net:net,invested:invested};
+  let hist=DB.get('nwHistory')||[];
+  // write at most once/day and only when value actually moved -> no sync churn on idle re-renders
+  if(E.needsUpdate(hist,snap)){hist=E.recordSnapshot(hist,snap);DB.set('nwHistory',hist);}
+  const sub=document.getElementById('nw-sub');
+  if(hist.length<2){
+    if(chartNW){chartNW.destroy();chartNW=null;}
+    el.innerHTML='<div class="empty">กำลังเก็บข้อมูล net worth — กลับมาดูแนวโน้มพรุ่งนี้ (เก็บวันละ 1 จุด)</div>';
+    if(sub)sub.textContent='';
+    return;
+  }
+  const s=E.summarize(hist),up=s.changeAbs>=0;
+  if(sub)sub.innerHTML='· <span style="color:'+(up?'var(--green)':'var(--red)')+'">'+(up?'↑':'↓')+' '+fmt(Math.abs(s.changeAbs))+' ('+fmtP(s.changePct)+')</span> ใน '+s.periodDays+' วัน · '+s.count+' จุด';
+  el.innerHTML='<div style="position:relative;height:200px"><canvas id="cNW" role="img" aria-label="Net worth trend line chart"></canvas></div>';
+  if(chartNW){chartNW.destroy();chartNW=null;}
+  chartNW=new Chart(document.getElementById('cNW'),{type:'line',data:{labels:hist.map(e=>e.date),datasets:[{label:'Net Worth',data:hist.map(e=>e.net),borderColor:'#3ecf8e',backgroundColor:'rgba(62,207,142,.12)',borderWidth:2,fill:true,tension:.25,pointRadius:2,pointHoverRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9896a8',font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:7},grid:{display:false}},y:{ticks:{color:'#9896a8',font:{size:10},crossAlign:'far',callback:v=>v>=1e6?'฿'+(v/1e6).toFixed(1)+'M':'฿'+(v/1e3).toFixed(0)+'K'},grid:{color:'rgba(255,255,255,.05)'}}}}});
 }
 
 // HOLDINGS
