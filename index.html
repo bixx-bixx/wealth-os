@@ -473,7 +473,7 @@ textarea{resize:vertical;min-height:72px}
     <div class="ff"><label>เงินลงทุน (บาท) *</label><input type="number" id="hinv" placeholder="50000"></div>
     <div class="ff"><label>มูลค่าปัจจุบัน (บาท)</label><input type="number" id="hval" placeholder="ถ้าว่างใช้ราคาทุน"></div>
     <div class="ff"><label>Strategic Bucket</label>
-      <select id="hbucket"><option>Global/US Index</option><option>Thai Dividend/Thai Stocks</option><option>Thai Equity Index</option><option>Cash/Emergency</option><option>US Individual Stocks</option><option>Emerging/Other</option><option>PVD/Retirement</option><option>Other</option></select>
+      <select id="hbucket"><option>US Broad Index</option><option>US Growth / Nasdaq</option><option>Thai Dividend/Thai Stocks</option><option>Thai Equity Index</option><option>Cash/Emergency</option><option>US Individual Stocks</option><option>Emerging/Other</option><option>PVD/Retirement</option><option>Other</option></select>
     </div>
     <div class="ff"><label>Tracking Mode</label>
       <select id="hmode"><option value="simple">Simple — กรอกมูลค่าเอง</option><option value="unit">Unit — units × ราคา</option></select>
@@ -655,11 +655,12 @@ textarea{resize:vertical;min-height:72px}
   <div class="ct" style="margin-bottom:4px">Bucket Target Allocation (%) <span style="color:var(--t3);text-transform:none">· rebalance buckets เท่านั้น</span></div>
   <div style="font-size:10px;color:var(--t3);margin-bottom:10px">Cash/Emergency = ก้อนคงที่ 6 เดือนของรายจ่าย (ไม่อยู่ใน rebalance) · PVD = locked แยกต่างหาก</div>
   <div class="fgrid">
-    <div class="ff"><label>Global/US Index</label><input type="number" id="bt0" step="0.5"></div>
-    <div class="ff"><label>Thai Dividend/Thai Stocks</label><input type="number" id="bt1" step="0.5"></div>
-    <div class="ff"><label>Thai Equity Index</label><input type="number" id="bt2" step="0.5"></div>
-    <div class="ff"><label>US Individual Stocks</label><input type="number" id="bt3" step="0.5"></div>
-    <div class="ff"><label>Emerging/Other</label><input type="number" id="bt4" step="0.5"></div>
+    <div class="ff"><label>US Broad Index</label><input type="number" id="bt0" step="0.5"></div>
+    <div class="ff"><label>US Growth / Nasdaq</label><input type="number" id="bt1" step="0.5"></div>
+    <div class="ff"><label>Thai Dividend/Thai Stocks</label><input type="number" id="bt2" step="0.5"></div>
+    <div class="ff"><label>Thai Equity Index</label><input type="number" id="bt3" step="0.5"></div>
+    <div class="ff"><label>US Individual Stocks</label><input type="number" id="bt4" step="0.5"></div>
+    <div class="ff"><label>Emerging/Other</label><input type="number" id="bt5" step="0.5"></div>
   </div>
   <div style="font-size:10px;color:var(--amber);margin-top:6px" id="bt-sum">ต้องรวมให้ได้ 100%</div>
   <div class="brow">
@@ -1021,7 +1022,7 @@ if (typeof window !== 'undefined') window.RiskV4 = __RiskV4;
 
 // buckets that participate in rebalance allocation
 // (excludes Cash/Emergency = fixed reserve, PVD = locked, Other)
-const REBALANCE_BUCKETS = ["Global/US Index", "Thai Dividend/Thai Stocks", "Thai Equity Index", "US Individual Stocks", "Emerging/Other"];
+const REBALANCE_BUCKETS = ["US Broad Index", "US Growth / Nasdaq", "Thai Dividend/Thai Stocks", "Thai Equity Index", "US Individual Stocks", "Emerging/Other"];
 
 // buckets that hold individual single names (stocks) — concentration uses the
 // single-name rule (7%/10%) for these; everything else investable is a fund/ETF.
@@ -1034,11 +1035,12 @@ function inferBucket(h) {
   if (type === 'pvd') return 'PVD/Retirement';
   if (['KKP', 'KGI'].includes(name)) return 'Thai Dividend/Thai Stocks';
   if (name.includes('SET50')) return 'Thai Equity Index';
-  if (name.includes('SCBS&P500') || name.includes('SCBNDQ') || name.includes('SCBWORLD') || name === 'VOO' || name === 'QQQM') return 'Global/US Index';
+  if (name.includes('SCBNDQ') || name.includes('QQQ') || name.includes('NDQ') || name.includes('NASDAQ')) return 'US Growth / Nasdaq';
+  if (name.includes('SCBS&P500') || name.includes('SCBWORLD') || name.includes('S&P500') || ['VOO', 'IVV', 'SPY', 'VTI'].includes(name)) return 'US Broad Index';
   if (name.includes('SCBEM') || name.includes('EMEQ')) return 'Emerging/Other';
   if (['TSM', 'LLY', 'LIN', 'GOOGL', 'META'].includes(name)) return 'US Individual Stocks';
   if (type === 'us') return 'US Individual Stocks';
-  if (type === 'fund') return 'Global/US Index';
+  if (type === 'fund') return 'US Broad Index';
   return 'Other';
 }
 
@@ -1079,8 +1081,10 @@ if (typeof window !== 'undefined') window.Allocation = __Allocation;            
 // then fall back to the most-underweight eligible name; if none eligible, redirect
 // the whole amount to the broad index (mainBucket).
 const DCA_POLICY={
-  split:{ 'Global/US Index':0.75, 'US Individual Stocks':0.25 },
-  mainBucket:'Global/US Index',
+  satelliteSplit:0.25,           // US Individual fixed share (rest = index pool 0.75)
+  broadBucket:'US Broad Index',   broadTarget:50,
+  growthBucket:'US Growth / Nasdaq', growthTarget:20, // DCA only while < target (Nasdaq cap)
+  mainBucket:'US Broad Index',    // index default + satellite redirect/pause target
   satelliteBucket:'US Individual Stocks',
   pauseSatelliteAtPct:17,
   reviewSatelliteAtPct:20,
@@ -1192,11 +1196,18 @@ function buildDcaPlan(review,monthlyDca,policy,holdings,monthIndex){
   if(!drift.targetValid)return{valid:false,error:drift.targetError||'target ไม่ valid',recommended:[],skip:[],total:monthlyDca};
 
   const main=policy.mainBucket,sat=policy.satelliteBucket,thai=policy.thaiBucket;
+  const broad=policy.broadBucket,growth=policy.growthBucket;
   const curPct=bk=>{const r=rows.find(x=>x.bucket===bk);return r?r.currentPct:0;};
   if(!(monthlyDca>0))return{valid:true,zero:true,recommended:[],skip:['PVD/Retirement'],total:monthlyDca||0};
 
-  // 1) fixed split
-  const alloc={};Object.keys(policy.split).forEach(bk=>{alloc[bk]=Math.round(monthlyDca*policy.split[bk]);});
+  // 1) split: US Individual = satelliteSplit; index pool (rest) → Broad while Broad<target,
+  //    else Growth while Growth<target (Nasdaq cap), else Broad.
+  const alloc={};
+  alloc[sat]=Math.round(monthlyDca*policy.satelliteSplit);
+  const indexPool=monthlyDca-alloc[sat];
+  if(curPct(broad)<policy.broadTarget)alloc[broad]=indexPool;
+  else if(curPct(growth)<policy.growthTarget)alloc[growth]=indexPool;
+  else alloc[broad]=indexPool;
 
   // 2) satellite (US Individual) bucket guardrails
   const satPct=curPct(sat);
@@ -1205,18 +1216,18 @@ function buildDcaPlan(review,monthlyDca,policy,holdings,monthIndex){
   if(satPct>=policy.pauseSatelliteAtPct){usIndividualPaused=true;alloc[main]+=alloc[sat]||0;alloc[sat]=0;}
 
   // 3) rotation: pick ONE name this month (schedule + basket targets + drawdown guard)
-  let subAllocations=[],pausedStocks=[],reviewStocks=[],warnStocks=[],usPick=null,usIndividualRedirected=false;
+  let subAllocations=[],pausedStocks=[],reviewStocks=[],warnStocks=[],usIndividualRedirected=false;
   if(alloc[sat]>0){
     const pick=pickUsIndividual(alloc[sat],holdings,review.rebalanceBase||0,policy,monthIndex);
     pausedStocks=pick.pausedStocks;reviewStocks=pick.reviewStocks;warnStocks=pick.warnStocks;
     if(pick.redirect){ // no eligible name → redirect whole amount to broad index
       alloc[main]+=alloc[sat];alloc[sat]=0;usIndividualRedirected=true;
-    }else{ subAllocations=pick.subAllocations;usPick=pick.picked; }
+    }else{ subAllocations=pick.subAllocations; }
   }
 
   // 4) recommended (amount>0) + skip (everything else we see, incl PVD)
-  const recommended=[main,sat].filter(bk=>alloc[bk]>0).map(bk=>({
-    bucket:bk,amount:alloc[bk],role:bk===main?'main':'satellite',
+  const recommended=[broad,growth,sat].filter(bk=>alloc[bk]>0).map(bk=>({
+    bucket:bk,amount:alloc[bk],role:bk===sat?'satellite':bk===broad?'main':'growth',
     ...(bk===sat?{subAllocations,pausedStocks}:{})
   }));
   const recSet=new Set(recommended.map(r=>r.bucket));
@@ -1224,7 +1235,7 @@ function buildDcaPlan(review,monthlyDca,policy,holdings,monthIndex){
   skip.push('PVD/Retirement');
 
   return{valid:true,recommended,skip,unallocated:0,total:monthlyDca,
-    usIndividualPaused,usIndividualReview,usIndividualRedirected,usPick,
+    usIndividualPaused,usIndividualReview,usIndividualRedirected,
     pausedStocks,reviewStocks,warnStocks,thaiResumeEligible:curPct(thai)<policy.thaiResumeBelowPct};
 }
 
@@ -1411,26 +1422,27 @@ if (typeof window !== 'undefined') window.EstateTaxEngine = __EstateTaxEngine;  
 // type ∈ fund | stock | us | cash | pvd | other. Names are chosen so the
 // bucket/sector classifiers resolve to varied buckets; bucket/trackingMode/
 // isUSSitus are pre-set so migrateHoldings() is a no-op on them.
-// Tuned to the 70/15/15 policy: Global/US Index ≈70%, US Individual ≈15%,
-// Thai Dividend ≈15% of the rebalance base (cash/PVD are fixed reserves, excluded).
+// Tuned to the 50/20/15/15 policy: US Broad Index ≈50%, US Growth/Nasdaq ≈20%,
+// US Individual ≈15%, Thai Dividend ≈15% of the rebalance base (cash/PVD excluded).
 const HOLDINGS = [
-  // ---- Global/US Index (~70% of rebalance base) ----
+  // ---- US Broad Index (~50% of rebalance base) ----
   { id: 1, name: 'SCBS&P500', type: 'fund', theme: 'US Large Cap', ticker: '', units: 0,
-    invested: 640000, value: 700000, date: '2024-01-15',
+    invested: 560000, value: 600000, date: '2024-01-15',
     thesis: 'Core US index, lowest-cost broad exposure', dd: '',
-    bucket: 'Global/US Index', trackingMode: 'simple', isUSSitus: false },
+    bucket: 'US Broad Index', trackingMode: 'simple', isUSSitus: false },
   { id: 2, name: 'SCBWORLD', type: 'fund', theme: 'Global Developed', ticker: '', units: 0,
-    invested: 300000, value: 330000, date: '2024-02-10',
+    invested: 185000, value: 200000, date: '2024-02-10',
     thesis: 'Global diversification outside single-country risk', dd: '',
-    bucket: 'Global/US Index', trackingMode: 'simple', isUSSitus: false },
-  { id: 3, name: 'VOO', type: 'us', theme: 'US Large Cap', ticker: 'VOO', units: 27,
-    invested: 400000, value: 450000, date: '2023-09-18',
+    bucket: 'US Broad Index', trackingMode: 'simple', isUSSitus: false },
+  { id: 3, name: 'VOO', type: 'us', theme: 'US Large Cap', ticker: 'VOO', units: 24,
+    invested: 360000, value: 400000, date: '2023-09-18',
     thesis: 'Direct S&P 500 ETF, USD-denominated core', dd: '',
-    bucket: 'Global/US Index', trackingMode: 'unit', isUSSitus: true },
+    bucket: 'US Broad Index', trackingMode: 'unit', isUSSitus: true },
+  // ---- US Growth / Nasdaq (~20%) ----
   { id: 4, name: 'SCBNDQ', type: 'fund', theme: 'US Tech / Nasdaq', ticker: '', units: 0,
-    invested: 180000, value: 200000, date: '2024-03-05',
-    thesis: 'Nasdaq-100 growth/tech tilt within the index sleeve', dd: '',
-    bucket: 'Global/US Index', trackingMode: 'simple', isUSSitus: false },
+    invested: 430000, value: 480000, date: '2024-03-05',
+    thesis: 'Nasdaq-100 growth/tech tilt', dd: '',
+    bucket: 'US Growth / Nasdaq', trackingMode: 'simple', isUSSitus: false },
   // ---- US Individual Stocks (~15%) ----
   { id: 5, name: 'TSM', type: 'us', theme: 'Semiconductor / Foundry / AI', ticker: 'TSM', units: 14,
     invested: 75000, value: 90000, date: '2023-10-22',
@@ -1493,8 +1505,8 @@ const GOALS = [
 // policy 70/15/15 — three active rebalance buckets summing to 100
 // (Thai Equity Index / Emerging set to 0; Cash/PVD are fixed reserves, not rebalanced)
 const TARGETS = {
-  'Global/US Index': 70, 'Thai Dividend/Thai Stocks': 15, 'Thai Equity Index': 0,
-  'US Individual Stocks': 15, 'Emerging/Other': 0
+  'US Broad Index': 50, 'US Growth / Nasdaq': 20, 'Thai Dividend/Thai Stocks': 15,
+  'Thai Equity Index': 0, 'US Individual Stocks': 15, 'Emerging/Other': 0
 };
 
 // ---- settings (w_settings) --------------------------------------------
@@ -1510,21 +1522,6 @@ const JOURNAL = [
     reason: 'Add on dip, thesis intact', emotion: 'confident', planned: 'yes', review: '', risk: 'medium' }
 ];
 
-// ---- major decisions (w_majorDecisions) -------------------------------
-// strategy/policy decisions (NOT transactions). Schema per majorDecisionsEngine.
-// NOTE: the live app does not auto-load demo data, and DB.def seeds every user,
-// so this sample decision is part of the demo dataset only — real users log
-// their own via the Major Decisions UI.
-const MAJOR_DECISIONS = [
-  { id: 401, schema: 1, date: '2026-06-13', title: 'ปรับพอร์ตเป็น 70/15/15 และลด KKP concentration',
-    type: 'Allocation Change',
-    summary: 'เปลี่ยน target allocation เป็น Global/US Index 70 / US Individual 15 / Thai Dividend 15; DCA fixed split 75/25 (Index/US Individual), Thai 0; ลด KKP เข้าใกล้เป้า',
-    optionsConsidered: 'คงสัดส่วนเดิม 55/28/5/8/4 vs ปรับเป็น 70/15/15',
-    decisionReason: 'ลดการกระจุกหุ้นไทยรายตัว (KKP) เพิ่มน้ำหนัก core index และจัด US individual เป็น satellite ที่มีกรอบชัดเจน',
-    conviction: 4, status: 'Active', reviewDate: '2026-12-13', outcome: '', lesson: '',
-    createdAt: '2026-06-13', updatedAt: '2026-06-13' }
-];
-
 // full demo dataset keyed by provider section name
 const DEMO = {
   holdings: HOLDINGS,
@@ -1532,8 +1529,7 @@ const DEMO = {
   goals: GOALS,
   targets: TARGETS,
   settings: SETTINGS,
-  journal: JOURNAL,
-  majorDecisions: MAJOR_DECISIONS
+  journal: JOURNAL
 };
 
 // deep copy (sections are JSON-safe: arrays of flat objects / plain objects)
@@ -2375,9 +2371,9 @@ DB.def('fireSettings',{
   monthlyExpense:30000
 });
 DB.def('bucketTargets',{
-  "Global/US Index":70,"Thai Dividend/Thai Stocks":15,"Thai Equity Index":0,
-  "US Individual Stocks":15,"Emerging/Other":0
-}); // policy 70/15/15 (Global·Index / US Individual / Thai Dividend). Cash=fixed emergency reserve แยกต่างหาก
+  "US Broad Index":50,"US Growth / Nasdaq":20,"Thai Dividend/Thai Stocks":15,
+  "Thai Equity Index":0,"US Individual Stocks":15,"Emerging/Other":0
+}); // policy 50/20/15/15 (US Broad / US Growth·Nasdaq / US Individual / Thai Dividend). Cash=fixed reserve แยกต่างหาก
 
 // Portfolio source abstraction lives in src/data/portfolioProvider.js (window.PortfolioProvider).
 // Phase 3D is read-path-only: the provider reads localStorage directly and falls back to the
@@ -2393,7 +2389,7 @@ const tv=()=>DB.get('holdings').reduce((s,h)=>s+h.value,0);
 const ti=()=>DB.get('holdings').reduce((s,h)=>s+h.invested,0);
 
 // ----- Strategic buckets + migration -----
-const BUCKETS=["Global/US Index","Thai Dividend/Thai Stocks","Thai Equity Index","Cash/Emergency","US Individual Stocks","Emerging/Other","PVD/Retirement","Other"];
+const BUCKETS=["US Broad Index","US Growth / Nasdaq","Thai Dividend/Thai Stocks","Thai Equity Index","Cash/Emergency","US Individual Stocks","Emerging/Other","PVD/Retirement","Other"];
 // ===== Allocation Engine — rebalance bucket list + bucket classification extracted to
 //        src/features/allocation/allocationEngine.js (loaded above; exposes window.Allocation) =====
 // US-situs classification + exposure + estate-tax status extracted to
@@ -2599,7 +2595,13 @@ function renderDash(){
   // Bucket allocation = v4 rebalance drift (ฐาน rebalanceBase, ไม่รวม PVD) — ไม่คิดเอง
   const review=getV4Review();
   let ab='';
-  review.drift.rows.forEach((row,i)=>{
+  // display order = policy order (US Broad, US Growth, …) not drift order
+  const __bo=Allocation.REBALANCE_BUCKETS;
+  const __drows=review.drift.rows.slice().sort((a,b)=>{
+    const ia=__bo.indexOf(a.bucket),ib=__bo.indexOf(b.bucket);
+    return (ia<0?99:ia)-(ib<0?99:ib);
+  });
+  __drows.forEach((row,i)=>{
     const driftTxt=fmtP(row.driftPct);
     const dcol=Math.abs(row.driftPct)<=RiskV4.RISK_CONFIG.DRIFT_TOLERANCE?'var(--t3)':row.driftPct>0?'var(--amber)':'var(--blue)';
     const tgtVal=Math.round(row.targetPct/100*review.rebalanceBase);
@@ -2666,7 +2668,8 @@ function renderDash(){
     const usAllowed=usRow.currentPct<17;
     const polRow=(bk,label)=>{const r=rowOf(bk);return `<div class="cfrow"><span class="cfl">${label}</span><span class="cfv">${r.currentPct.toFixed(1)}% <span style="color:var(--t3);font-size:10px">/ ${(tgt[bk]||0)}%</span></span></div>`;};
     let polHtml=`<div style="font-size:10px;color:var(--t3);margin-bottom:6px">current / target</div>`;
-    polHtml+=polRow('Global/US Index','Global/US Index');
+    polHtml+=polRow('US Broad Index','US Broad Index');
+    polHtml+=polRow('US Growth / Nasdaq','US Growth / Nasdaq');
     polHtml+=polRow('US Individual Stocks','US Individual Stocks');
     polHtml+=polRow('Thai Dividend/Thai Stocks','Thai Dividend (KKP/KGI)');
     polHtml+=`<div style="border-top:1px solid rgba(255,255,255,.08);margin:8px 0"></div>`;
@@ -2901,7 +2904,7 @@ function newHolding(){
   // reset form so a stale heid from a previous edit can't overwrite an existing asset
   ['hn','htheme','hticker','hunits','hinv','hval','hdate','hthesis','hdd','heid'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('htype').value='fund';
-  document.getElementById('hbucket').value='Global/US Index';
+  document.getElementById('hbucket').value='US Broad Index';
   document.getElementById('hmode').value='simple';
   document.getElementById('hdcastatus').value='active';
   document.getElementById('hussitus').checked=false;
