@@ -3124,12 +3124,14 @@ function renderHoldings(){
     const tl={fund:'Fund',stock:'หุ้นไทย',pvd:'PVD',cash:'Cash',us:'US'}[x.type]||x.type;
     // kill-conditions reference (display-only): traffic-light from brief recheck, else 📋
     const _kc=(window.KillConditions&&KillConditions.get(x.ticker||x.name))||null;
-    let killBadge='';
+    let killBadge='',killPanel='';
     if(_kc){
-      let tip=_kc.killText||'';
-      if(_kc.recheckText)tip+='\n\n— Recheck'+(_kc.recheckAsOf?' (ณ '+_kc.recheckAsOf+')':'')+' —\n'+_kc.recheckText;
       const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-      killBadge=` <span style="font-size:11px;cursor:help" title="${esc(tip)}">${_kc.indicator||'📋'}</span>`;
+      // tap-to-expand (replaces the old hover title which clipped long text & failed on mobile)
+      killBadge=` <span id="kcc-${x.id}" onclick="event.stopPropagation();toggleKill(${x.id})" style="cursor:pointer;font-size:11px;user-select:none" title="ดู kill-condition">${_kc.indicator||'📋'} ▾</span>`;
+      let body=`<div style="font-weight:600;color:var(--t1);margin-bottom:4px">⚠ Kill condition</div>${esc(_kc.killText||'-')}`;
+      if(_kc.recheckText)body+=`<div style="font-weight:600;color:var(--t1);margin:8px 0 4px">Recheck${_kc.recheckAsOf?' (ณ '+esc(_kc.recheckAsOf)+')':''}</div>${esc(_kc.recheckText)}`;
+      killPanel=`<div id="kc-${x.id}" style="display:none;margin-top:6px;width:300px;max-width:78vw;background:var(--s2);border:1px solid var(--s3);border-radius:8px;padding:10px;font-size:11px;line-height:1.55;font-weight:400;white-space:pre-wrap;color:var(--t2)">${body}</div>`;
     }
     if(gpAlert<-15)alerts+=`<div class="co co-a" style="margin-bottom:8px">${x.name} ลงมา ${fmtP(gpAlert)} — ควร review thesis ก่อน DCA เดือนหน้า</div>`;
     const usd0=v=>'$'+Math.round(v).toLocaleString('en-US');
@@ -3162,7 +3164,7 @@ function renderHoldings(){
     const bucket=x.bucket||Allocation.inferBucket(x);
     rows+=`<tr draggable="true" data-id="${x.id}" ondragstart="holdDragStart(event,${x.id})" ondragover="holdDragOver(event)" ondrop="holdDrop(event,${x.id})" ondragend="holdDragEnd(event)" ondragleave="holdDragLeave(event)">
       <td style="cursor:grab;color:var(--t3);text-align:center;font-size:14px;user-select:none" title="ลากเพื่อจัดลำดับ">≡</td>
-      <td style="font-weight:500">${x.name}${killBadge}${x.isUSSitus?' <span style="font-size:9px;color:var(--coral)" title="US-situs asset">◆US</span>':''}</td>
+      <td style="font-weight:500">${x.name}${killBadge}${x.isUSSitus?' <span style="font-size:9px;color:var(--coral)" title="US-situs asset">◆US</span>':''}${killPanel}</td>
       <td><span class="tag ${tc}">${tl}</span></td>
       <td style="color:var(--t2)">${x.theme||'-'}</td>
       <td>${fmt(x.invested)}${usdSubInv}</td>${priceCell}<td>${fmt(valTHB)}${usdSubVal}</td>
@@ -3186,6 +3188,13 @@ function toggleGainDetail(id){
   const open=!el.style.display||el.style.display==='none';
   el.style.display=open?'block':'none';
   const c=document.getElementById('gc-'+id);if(c)c.textContent=open?'▴':'▾';
+}
+// tap-to-expand the kill-condition panel (replaces hover tooltip that clipped long text)
+function toggleKill(id){
+  const el=document.getElementById('kc-'+id);if(!el)return;
+  const open=!el.style.display||el.style.display==='none';
+  el.style.display=open?'block':'none';
+  const b=document.getElementById('kcc-'+id);if(b)b.textContent=b.textContent.replace(open?'▾':'▴',open?'▴':'▾');
 }
 // ----- Holdings ordering: group-by-type button + drag-to-reorder (persisted in holdings array) -----
 function sortHoldingsByType(){
