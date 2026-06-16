@@ -472,6 +472,9 @@ textarea{resize:vertical;min-height:72px}
     <div class="ff"><label>จำนวนหน่วย/หุ้น</label><input type="number" id="hunits" placeholder="เช่น 1000 (สำหรับ auto price)"></div>
     <div class="ff"><label>เงินลงทุน (บาท) *</label><input type="number" id="hinv" placeholder="50000"></div>
     <div class="ff"><label>มูลค่าปัจจุบัน (บาท)</label><input type="number" id="hval" placeholder="ถ้าว่างใช้ราคาทุน"></div>
+    <div class="ff"><label>เรตซื้อเฉลี่ย USD→THB <span style="color:var(--t3);font-size:10px">(เฉพาะหุ้น US — จำได้เท่าไหร่ใส่เลย)</span></label>
+      <input type="number" id="hbuyfx" step="0.01" placeholder="เช่น 32.50" oninput="hbuyfxHint()">
+      <div id="hbuyfx-hint" style="font-size:10px;color:var(--t3);margin-top:3px"></div></div>
     <div class="ff"><label>Strategic Bucket</label>
       <select id="hbucket"><option>US Broad Index</option><option>US Growth / Nasdaq</option><option>Thai Dividend/Thai Stocks</option><option>Thai Equity Index</option><option>Cash/Emergency</option><option>US Individual Stocks</option><option>Emerging/Other</option><option>PVD/Retirement</option><option>Other</option></select>
     </div>
@@ -3320,14 +3323,22 @@ function saveBuy(){
 }
 function newHolding(){
   // reset form so a stale heid from a previous edit can't overwrite an existing asset
-  ['hn','htheme','hticker','hunits','hinv','hval','hdate','hthesis','hdd','heid'].forEach(id=>document.getElementById(id).value='');
+  ['hn','htheme','hticker','hunits','hinv','hval','hbuyfx','hdate','hthesis','hdd','heid'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('htype').value='fund';
   document.getElementById('hbucket').value='US Broad Index';
   document.getElementById('hmode').value='simple';
   document.getElementById('hdcastatus').value='active';
   document.getElementById('hussitus').checked=false;
   const el=document.getElementById('ticker-result');if(el)el.textContent='';
+  hbuyfxHint();
   openM('mh');
+}
+// live readout under the avg-buy-fx field: THB invested ÷ rate = USD cost basis
+function hbuyfxHint(){
+  const el=document.getElementById('hbuyfx-hint');if(!el)return;
+  const inv=parseFloat(document.getElementById('hinv').value)||0;
+  const fx=parseFloat(document.getElementById('hbuyfx').value)||0;
+  el.textContent=(inv>0&&fx>0)?`→ ต้นทุน ≈ $${Math.round(inv/fx).toLocaleString('en-US')} (เงินลงทุนบาท ÷ เรต)`:'';
 }
 function editH(id){
   const x=DB.get('holdings').find(h=>h.id===id);if(!x)return;
@@ -3341,6 +3352,9 @@ function editH(id){
   document.getElementById('hdcastatus').value=x.dcaStatus||'active';
   document.getElementById('hussitus').checked=(x.isUSSitus==null)?EstateTaxEngine.inferUSSitus(x):x.isUSSitus;
   document.getElementById('hdate').value=x.date||'';
+  // US: prefill the avg buy rate from the stored cost basis (THB invested ÷ costUSD)
+  document.getElementById('hbuyfx').value=(x.type==='us'&&x.costUSD>0)?(x.invested/x.costUSD).toFixed(2):'';
+  hbuyfxHint();
   document.getElementById('heid').value=id;
   openM('mh');
 }
@@ -3350,6 +3364,15 @@ function saveHolding(){
   const eid=parseFloat(document.getElementById('heid').value)||0;
   const inv=parseFloat(document.getElementById('hinv').value)||0;
   const obj={id:eid||uid(),name,type:document.getElementById('htype').value,theme:document.getElementById('htheme').value,ticker:document.getElementById('hticker').value,units:parseFloat(document.getElementById('hunits').value)||0,invested:inv,value:parseFloat(document.getElementById('hval').value)||inv,date:document.getElementById('hdate').value,thesis:document.getElementById('hthesis').value,dd:document.getElementById('hdd').value,bucket:document.getElementById('hbucket').value,trackingMode:document.getElementById('hmode').value,dcaStatus:document.getElementById('hdcastatus').value,isUSSitus:document.getElementById('hussitus').checked};
+  // US: carry the USD cost basis (don't let a rebuild wipe it). A remembered avg buy
+  // rate sets costUSD = invested ÷ rate; backfill fills any still-missing USD field.
+  if(obj.type==='us'){
+    const prev=(DB.get('holdings')||[]).find(h=>h.id===eid)||{};
+    obj.costUSD=prev.costUSD;obj.priceUSD=prev.priceUSD;
+    const buyfx=parseFloat(document.getElementById('hbuyfx').value)||0;
+    if(buyfx>0)obj.costUSD=Math.round((inv/buyfx)*100)/100;
+    Object.assign(obj,UsFxEngine.backfill(obj,fxRate()));
+  }
   let hs=DB.get('holdings');hs=(eid&&hs.some(h=>h.id===eid))?hs.map(h=>h.id===eid?obj:h):[...hs,obj];DB.set('holdings',hs);
   document.getElementById('heid').value='';closeM('mh');renderHoldings();renderDash();
 }
