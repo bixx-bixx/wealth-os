@@ -1549,6 +1549,259 @@ if (typeof module !== 'undefined' && module.exports) module.exports = __DemoPort
 if (typeof window !== 'undefined') window.DemoPortfolio = __DemoPortfolio;             // browser global
 
 // ============================================================
+// GENERATED FILE — DO NOT EDIT
+//
+// Source : D:\my-first-project\briefs (stock briefs)
+// By     : tools/sync-killconditions.js   (run: node tools/sync-killconditions.js)
+//
+// Display-only reference: raw "Kill conditions" + "Kill-condition recheck"
+// text blocks per ticker, keyed UPPERCASE. `indicator` is an emoji scan of
+// recheckText (🔴 > 🟡 > 🟢). NOT used in any DCA/alert/drift logic.
+// ============================================================
+
+;(function () {
+  const KILL_CONDITIONS = {
+    "AAPL": {
+      "asOf": "2026-05-27",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **iPhone revenue หด YoY ติด 2 quarter ขึ้นไป โดยที่ไม่ใช่ FX/supply issue** — เพราะ iPhone ~50% ของ total revenue ถ้าฐานนี้ไม่แค่ทรงตัวแต่ลดจริง Services growth อย่างเดียวอุ้มไม่ไหว\n- **Services growth ลดต่ำกว่า 10% YoY ติด 2 quarter** — Services เป็น growth engine ปัจจุบัน ถ้าโตช้าลงเรื่อย ๆ (จาก 14-16% ลงต่ำกว่า double digit) แปลว่า App Store monetization หรือ ad pipeline เริ่มหมด room — ดู Apple Maps ads US/Canada หน้าร้อน 2026 เป็นการทดสอบจริง\n- **Greater China revenue ลดติดต่อกัน 2 ไตรมาส หลัง bounce H1 FY26** — ถ้า China H2 หลุดกลับไปติดลบ แปลว่า bounce ใน H1 เป็นชั่วคราว ไม่ใช่ structural recovery — geo นี้สำคัญเพราะเคยหดจาก $72.6B (FY23) เหลือ $64.4B (FY25) ก่อน bounce\n- **DOJ หรือ India CCI ตัดสินเสีย แล้วบังคับเปลี่ยน App Store commission structure ในตลาดใหญ่** — Services margin 75% พึ่ง take rate; ถ้า take rate ถูก cap จะกระทบ GM mix ทั้งระบบ\n\n---",
+      "recheckText": null
+    },
+    "AMD": {
+      "asOf": "2026-05-27",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **Data Center revenue หด YoY ติด 2 quarter** — Data Center คือ 48% ของ revenue + ตัวขับการขยาย margin; ถ้าหดแปลว่า EPYC share gain หยุดหรือ MI ramp ฝืด — เลิกถือก่อน narrative AI พัง\n- **MI450 production ramp slip ออกจาก H2 2026** — guidance Q3 ramp + Q4 significant; ถ้า slip ไป 2027 = OpenAI/Meta deal payoff เลื่อน + Nvidia ยึดพื้นที่ AI accelerator ต่อ\n- **GM trend สวนทาง guide (56%) ลดต่ำกว่า 50% ติด 2 quarter** — บริษัท narrative อยู่ที่ margin expansion จาก data center mix; ถ้า MI450 dilute มากเกินคาด หรือ memory cost กินทุกอย่าง — thesis เสีย\n- **OpenAI deal milestone delay หรือ warrant trigger ก่อน revenue mature** — ถ้า warrant vest แต่ revenue ยังไม่ flow เข้า = dilution มาก่อน upside\n\n---",
+      "recheckText": null
+    },
+    "AMZN": {
+      "asOf": "2026-05-28",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **AWS revenue growth หลุดต่ำกว่า 20% 2 ไตรมาสติด** — thesis bull case อยู่ที่ AWS reacceleration (Q1'26 = 28%) ถ้าโตหลุด 20% ตอน capex $170B+/ปี วิ่งเข้า ROI ของ AI infra spend ก็เริ่มถูกตั้งคำถาม + backlog $364B จะ convert ช้าลง (เทียบ FY25 = 20%, Q1'26 = 28%)\n- **FCF เป็นลบ 2 ไตรมาสติด** — Q1 26 FCF $10.1B แต่ capex $43.2B + ภาระ LEO build-out + Anthropic/OpenAI commitments — ถ้า capex compound เกิน OCF growth จน FCF ติดลบ แปลว่า capacity ของ balance sheet เริ่มถูก stretch + ต้องระวังการ raise debt เพิ่มเติม (LT debt $65.6B วันนี้ยัง healthy แต่ถ้าโตเร็วเกินไปคนละเรื่อง)\n- **FTC trial Feb 2027 ตัดสินบังคับ structural remedy** — ถ้าศาลบังคับให้แยก marketplace กับ fulfillment หรือแยก AWS — เปลี่ยน business model ทันที + cost synergy ที่ทำให้ Prime works หายไป (FY2025 cutoff: trial date confirmed 9 ก.พ. 2027 per MLex)",
+      "recheckText": null
+    },
+    "ANET": {
+      "asOf": "2026-06-03",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **ลูกค้า top-2 (26%/16%) รายใดถอย หรือ hyperscaler ตัด/ชะลอ capex** — เพราะรวมกัน 42% ของรายได้ ถ้ารายใหญ่หายหรือลดออร์เดอร์ต่อเนื่อง = thesis สั่นทันที (เฝ้าดู customer concentration ใน 10-K ปีถัดไป + commentary เรื่อง cloud titan capex)\n- **Gross margin หลุดต่ำกว่ากรอบ 60% ติดกันหลายไตรมาส** — ตอนนี้ 64% นิ่ง ถ้าหดแรง (จากการแข่งราคากับ white-box/Nvidia หรือ mix เปลี่ยน) = อำนาจตั้งราคา/ความได้เปรียบ software เริ่มหาย (ต้องดู 10-Q/transcript — ตอนนี้ section 3 ว่าง)\n- **Ethernet แพ้ InfiniBand/ทางเลือกอื่นใน AI backend** — ถ้า hyperscaler หันไป fabric อื่นสำหรับ AI cluster หรือ in-house networking มากขึ้น = ตลาดโตที่เป็นแกน bull case หดตัว",
+      "recheckText": null
+    },
+    "ARM": {
+      "asOf": "2026-06-03",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **Royalty rate หรือ royalty revenue เริ่มหดทั้งที่หน่วยชิปยังโต** — ตอนนี้ thesis อยู่ที่ Armv9/CSS ดัน royalty per chip ขึ้น ถ้าตัวเลขนี้แผ่วติดกันหลายไตรมาส = pricing power หาย (ต้องดู 6-K รายไตรมาส — ตอนนี้ section 3 ว่าง)\n- **เหตุการณ์ที่ตัด/บล็อกรายได้จากจีน** — ถ้า export control เข้มขึ้นจน Arm ขาย IP ให้ลูกค้าจีนไม่ได้ หรือความสัมพันธ์กับ Arm China แตก = รายได้ ~16-18% หายเป็นโครงสร้าง (เฝ้าดู BIS rules + Arm China relationship ใน filing ปีถัดไป)\n- **FTC สั่งเปลี่ยนวิธี licensing หรือลูกค้าใหญ่ถอย** — ถ้าผล FTC บังคับให้เปลี่ยนเงื่อนไข license หรือลูกค้า top-3 (16%/14%/12% ของรายได้) รายใดถอยเพราะมองว่า Arm เป็นคู่แข่ง = กระทบ thesis โดยตรง",
+      "recheckText": null
+    },
+    "ASML": {
+      "asOf": "2026-06-05",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **bookings/order intake ตกแรงต่อเนื่อง หรือลูกค้าใหญ่ (TSMC/Samsung/Intel/Micron) เลื่อน/ลด capex AI** — ASML เป็น cyclical ที่ leading indicator คือ order; ถ้า order หดขณะราคาหุ้นใส่ peak premium = thesis สะดุด (bookings ไม่อยู่ใน 20-F ต้องดู Q earnings release)\n- **gross margin หลุดจากกรอบ 51-53% ต่อเนื่องจาก High-NA dilution หรือ mix แย่** — ตอนนี้ margin 53% คือจุดแข็ง ถ้า EXE ฉุดนานกว่าคาดหรือ pricing power หาย = ความสามารถทำกำไรเสื่อม\n- **export control เข้มขึ้นจนตัดรายได้จีนก้อนใหญ่ หรือ AI capex cycle turn (memory/logic เลิก sold-out)** — จีน 29% + AI demand คือ 2 เสาของการโตรอบนี้ ถ้าเสาใดพังพร้อมราคาหุ้น peak = downside แรง",
+      "recheckText": null
+    },
+    "AVGO": {
+      "asOf": "2026-06-05",
+      "recheckAsOf": "2026-06-05",
+      "indicator": "🟡",
+      "killText": "- **AI semiconductor revenue โตชะลอแรงผิดคาด หรือมีลูกค้า XPU รายใหญ่ประกาศเลื่อน/ยกเลิกโปรแกรม** — thesis ทั้งหมดอิงตัวเลข AI chip >$100B ปี 2027 ถ้า growth rate ตกจากระดับ +100%+ มาเหลือเลขหลักสิบต้นๆ เร็วเกินคาด หรือ Google/Meta/Anthropic/OpenAI รายใดถอนตัว = thesis แตก\n\n- **Gross margin ลดต่อเนื่องจาก mix การขาย AI/rack (ไม่ใช่แค่ไตรมาสเดียว)** — ผู้บริหารยืนยันว่า margin จะไม่โดนกดเชิงโครงสร้าง แต่ถ้าเห็น consolidated gross margin (non-GAAP) หลุดจาก ~77% ลงต่อเนื่อง 2-3 ไตรมาสจริง (ไม่ใช่แค่ guide) = คำยืนยันผู้บริหารผิด ต้องทบทวน\n\n- **VMware ARR หรือ software revenue เริ่มหดจากลูกค้า churn** — การขึ้นราคา/เปลี่ยนเป็น subscription หลังดีลทำให้ลูกค้าบางส่วนไม่พอใจ ถ้า ARR (ตอนนี้ +17%) พลิกเป็นติดลบ หรือ software revenue หด = ขากำไรนิ่งที่ใช้คานเริ่มพัง + เพิ่มความเสี่ยง goodwill impairment",
+      "recheckText": "🟢 **AI semi โตชะลอ/ลูกค้าถอน** — Q2 AI semi $10.8B **+143% YoY** (เร่งขึ้น ไม่ใช่ชะลอ), Q3 guide ~$16B **+200%+**, bookings >$30B vs ส่ง $10.8B, ลูกค้า 6 รายครบ + commitment เพิ่ม → ห่างเงื่อนไขชัดเจน *(งบ Q2 ใหม่ยืนยันแล้ว)*\n\n🟡 **Gross margin ลดต่อเนื่องจาก mix** — Q2 non-GAAP GM **77.1%** (ที่เส้นพอดี, −32bps YoY), Q3 **guide ลงมา ~74%** แต่ยังเป็น guide ไม่ใช่ actual + CFO บอกเป็น mix shift ไม่ใช่ structural → เข้าเงื่อนไขบางส่วน ยังไม่ครบ streak 2-3 ไตรมาส **เปิด archive (Q1) + รองบ Q3 จริงนับต่อ**\n\n🟢 **VMware ARR/software หดจาก churn** — ARR **+17%** (ชะลอจาก +19% Q1 แต่ยังบวกแรง), software revenue $7.2B **+9%** (โตต่อ ไม่หด), Q3 guide +31% → ห่างเงื่อนไข \"หด/ติดลบ\" **แต่จับตา ARR decel 19%→17%** (ตลาดอ่านเป็น software miss ส่วนหนึ่งของหุ้นร่วงวันรายงาน)\n\n⚠️ อย่าเชื่อ tag อย่างเดียว — เปิด section 3 + 5 + archive (briefs/archive/AVGO-2026-05-28.md) ยืนยันด้วยตา"
+    },
+    "BRK.B": {
+      "asOf": "2026-06-05",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **PacifiCorp wildfire (หรือคดีไฟป่าใหม่) ตัดสินเป็นเงินก้อนใหญ่เกินสำรองมาก** — claim ~$50B ถ้าแพ้ใหญ่ + คูณตามกฎหมาย = กระทบ book value จริง (จับตา appeal + คำพิพากษาใหม่)\n- **operating earnings (ตัดกำไรหุ้น) หดต่อเนื่องหลายไตรมาสจากหลาย segment พร้อมกัน** — ถ้าทั้งประกัน + BNSF + BHE + manufacturing แผ่วพร้อมกัน = เศรษฐกิจจริงที่ Berkshire พึ่งกำลังอ่อน ไม่ใช่แค่รอบ\n- **Abel deploy เงินสดก้อนใหญ่แล้วผลตอบแทนแย่ (ซื้อแพง/ดีลพัง)** — เงินสด $391B เป็นทั้งโอกาสและกับดัก ถ้า capital allocation หลัง Buffett เริ่มพลาด = เหตุผลหลักของการถือ (ความเก่งจัดสรรทุน) หายไป",
+      "recheckText": null
+    },
+    "CEG": {
+      "asOf": "2026-06-05",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **Winter Storm Uri / Oklahoma AG ตัดสินเป็นเงินก้อนใหญ่ที่ material** — บริษัทยังไม่ตั้งสำรอง ถ้าแพ้ใหญ่ = ทั้งค่าเสียหาย + ความเชื่อมั่น (trial Oklahoma คาด 2027, Texas Supreme Court รอคำตัดสิน)\n- **data-center PPA pipeline สะดุด — hyperscaler ยกเลิก/เลื่อนดีลใหญ่ หรือ FERC co-location ruling ออกมาบล็อกโมเดล** thesis ทั้งก้อนคือ \"ขายไฟนิวเคลียร์ให้ data center\" ถ้าตัวนี้พัง growth premium หาย\n- **Calpine accretion ต่ำกว่าแผน หรือ leverage หลังดีลกดเครดิตหลุด investment grade** — ถ้า ~$2/share accretion ไม่มาตามที่ guide หรือหนี้ $22B เริ่มเป็นภาระ = ดีลที่ควรเร่งโตกลับถ่วง\n- **nuclear PTC / policy support ถูกตัด** — กำไรส่วนหนึ่งพึ่งเครดิตภาษี ถ้าถูกยกเลิกจะกระทบ economics ของฝูงนิวเคลียร์โดยตรง",
+      "recheckText": null
+    },
+    "COST": {
+      "asOf": "2026-06-05",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **renewal rate หลุดลงต่อเนื่อง (จาก 92%) หรือ membership fee income หยุดโต** — ค่าสมาชิกคือกำไรจริง ถ้า renewal ลง = value proposition เริ่มเสื่อม/การแข่งขันกดดัน = thesis หลักสั่น\n- **comparable sales (ex-gas/FX) ชะลอเป็นเลขหลักเดียวต่ำๆ หรือติดลบต่อเนื่อง** — comps คือตัววัดว่าลูกค้ายังมาบ่อย/ใช้จ่ายเพิ่มไหม ถ้าแผ่วโดยไม่ใช่เหตุชั่วคราว = traffic engine เริ่มหมดแรง\n- **gross margin หดแรงต่อเนื่อง (จากการแข่งราคา/ต้นทุน) จน operating income โตช้ากว่ายอดขายหลายไตรมาส** — โมเดลพึ่ง margin บางแต่ปริมาณมหาศาล ถ้า margin ถูกบีบจน operating leverage หาย = เครื่องยนต์เริ่มฝืด",
+      "recheckText": null
+    },
+    "GOOGL": {
+      "asOf": "2026-05-28",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **Cloud segment margin หล่นกลับต่ำกว่า 20% 2 ไตรมาสติด** — ตัว thesis ใหญ่สุดของ bull case อยู่ที่ Cloud margin expansion จริง ถ้า Wiz drag + new TPU build-out กดให้กลับไปต่ำกว่า 20% (เทียบ FY25 = 24%, Q1 26 = 33%) แปลว่า leverage ไม่อยู่ พอที่จะ rethink thesis\n- **DOJ Search/Ad Tech structural remedy บังคับ divest หรือ break-up** — ถ้าศาลสุดท้ายบังคับ structural remedy (ไม่ใช่แค่ behavioral remedy แบบ data sharing) เช่น spin off Chrome, ad exchange, หรือบังคับ unbundling ระดับธุรกิจหลัก — เปลี่ยน business model + economics ของ Search/Ad ทันที (FY2025 cutoff: DOJ Search appeal pending, DOJ AdTech รอ final judgment)\n- **Capex ขึ้นเกิน $200B FY27 พร้อม Cloud growth ลดต่ำกว่า 30%** — ตอนนี้ guidance FY27 แค่ \"significantly higher\" จาก $180-190B ถ้าไปแตะ $200B+ ขณะที่ Cloud โตหลุดต่ำกว่า 30% (FY25 = 36%, Q1 26 = 63%) แปลว่า ROI ของ AI infra spend หาย และ FCF จะถูกบีบหนักขึ้น",
+      "recheckText": null
+    },
+    "ISRG": {
+      "asOf": "2026-06-05",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **procedure growth ชะลอแรงต่อเนื่อง (หลุดต่ำกว่า ~10%) โดยไม่ใช่เหตุชั่วคราว** — procedures คือหัวใจของรายได้ซ้ำ ถ้าการผ่าตัดต่อเครื่องแผ่ว = razor-and-blade engine เริ่มหมดแรง (จับตา US + utilization)\n- **คู่แข่ง (Medtronic/J&J/หุ่นยนต์จีน) แย่ง share ของ installed base หรือ recurring revenue อย่างมีนัย** — switching cost สูงคือ moat ถ้าเริ่มเสียเครื่องใหม่ให้คู่แข่ง = thesis ผูกขาด soft robotic surgery สั่น\n- **Larkin antitrust แพ้ บังคับเปิด aftermarket EndoWrist ให้ third-party ซ่อม/ผลิต** — ถ้าศาลบังคับให้คนอื่นทำ \"ใบมีด\"/ซ่อมได้ = กระทบ recurring revenue margin ที่เป็นหัวใจกำไร\n- **gross margin หดต่อเนื่องจาก tariff/mix/ราคา จน operating leverage หาย** — ตอนนี้ margin ขยาย ถ้ากลับทาง = คุณภาพกำไรเสื่อม",
+      "recheckText": null
+    },
+    "JPM": {
+      "asOf": "2026-05-28",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **วัฏจักรเครดิตพลิก — card NCO เกิน ~3.4% มาก, NPAs เพิ่มต่อเนื่อง, reserve build หลายไตรมาสติด** ตอนนี้ guide card NCO 3.4% ถ้าทะลุชัดเจน + provision เร่งขึ้น = วัฏจักรเครดิตกำลังเปลี่ยน กำไรจะถูกกดแรง (เป็นจุดที่ Dimon เตือนเอง)\n\n- **NII-ex-Markets หดต่อเนื่องจากดอกเบี้ยลด + การแข่งเงินฝาก โดย NIR ไม่ชดเชย** NII คือหัวใจกำไร ถ้าหดโดยไม่มี fee มาชดเชย = thesis รายได้นิ่งพัง\n\n- **ROTCE ลงต่ำกว่า ~15% ต่อเนื่อง (จาก 20%+)** = ผลตอบแทนของแฟรนไชส์ normalize เข้าหา cost of capital — ความได้เปรียบที่ทำให้เทรด premium หายไป justify valuation ไม่ได้",
+      "recheckText": null
+    },
+    "LIN": {
+      "asOf": "2026-06-06",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **Pricing power หาย — margin หยุดขยาย/หดต่อเนื่องหลายไตรมาส ขณะ volume ยัง flat** — thesis หลักคือ \"ขึ้นราคาได้ตลอด\" ถ้าทำไม่ได้ (เงินเฟ้อเย็น + ลูกค้าต้านราคา) แล้ว volume ก็ไม่มา = engine การเติบโตดับ\n\n- **Electronics/backlog สะดุด — project ก๊าซ fab AI ถูกเลื่อน/ยกเลิก หรือ backlog หดแทนที่จะโตแตะ $8B** — นี่คือ growth driver จริงตัวเดียวที่ชัด ถ้าหายไป เหลือแต่ราคา + bolt-on ที่โตช้า\n\n- **Volume หดต่อเนื่องทุกภูมิภาค (ไม่ใช่แค่ EMEA)** — ถ้า base volume ติดลบทั้ง Americas + APAC ด้วย = demand อุตสาหกรรมโลกอ่อนจริง ไม่ใช่แค่ rotation — กระทบทั้งราคาและ utilization",
+      "recheckText": null
+    },
+    "LLY": {
+      "asOf": "2026-05-28",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **tirzepatide (Mounjaro+Zepbound) volume growth ชะลอแรง หรือเสียส่วนแบ่งให้ oral GLP-1/คู่แข่งอย่างมีนัย** — เป็น 56% ของบริษัท ถ้าเครื่องยนต์นี้สะดุด (รวมถึง orforglipron ของตัวเองกินกันเอง) thesis แตก\n\n- **ผลคดี product liability ของ Mounjaro/Zepbound ออกมาลบอย่างมีนัย** — คดี GI/NAION บนยาที่เป็น 56% ของรายได้ ถ้าแพ้ใหญ่ = ทั้งค่าเสียหาย + ความเชื่อมั่นต่อ franchise\n\n- **ราคาขายจริงลดเร็วกว่า volume ชดเชย (net revenue ต่อสคริปต์หด) เกินกรอบ low-mid-teens ที่ guide** — ตอนนี้ volume ชดเชยราคาที่ลดได้ แต่ถ้าวันใด price headwind แรงขึ้น + volume เริ่มอิ่ม = รายได้พลิก",
+      "recheckText": null
+    },
+    "LMT": {
+      "asOf": "2026-06-06",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **เกิด reach-forward loss ก้อนใหญ่ใหม่ซ้ำๆ (โครงการลับ/fixed-price ใหม่ charge)** — ถ้า margin ยังแกว่งจาก charge ต่อเนื่อง (เหมือน $950M Q2'25) = ความเสี่ยงเชิงโครงสร้างของ fixed-price contract ยังไม่จบ thesis quality สั่น\n\n- **F-35 ถูกตัด/เลื่อนใหญ่ หรืองบกลาโหมสหรัฐหันทิศออกจาก franchise ของ LMT** — 72% รัฐ + 27% F-35 ถ้า Pentagon เปลี่ยน priority ไป autonomy/drone หรือตัดจำนวน F-35 แรงๆ = รายได้หายเป็นก้อน (จับตา FY2027+ budget)\n\n- **Backlog หดต่อเนื่อง / book-to-bill <1 หลายไตรมาส** — backlog 2.6x sales คือเครื่อง visibility ถ้า order ใหม่ < ส่งมอบ แปลว่า demand super-cycle เริ่มหมด\n\n- **คดี securities class action ตัดสินเป็นเงินก้อนใหญ่ material** (ยังไม่ accrue — จับตา)",
+      "recheckText": null
+    },
+    "MA": {
+      "asOf": "2026-06-05",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **คดี interchange (U.S. MDL / U.K.-Europe) ตัดสินบังคับลด interchange หรือเปลี่ยนโครงสร้างราคาในตลาดใหญ่** — ไม่ใช่แค่ค่าปรับครั้งเดียว แต่กระทบ take rate ที่เป็นหัวใจ (ดู trial เม.ย./ก.ย. 2026)\n- **GDV / switched transactions / cross-border growth หลุดเป็นเลขหลักเดียวต่ำ 2 ไตรมาสติด โดยไม่ใช่เหตุชั่วคราว** — secular volume growth คือ thesis ถ้าปริมาณหยุดโต = story สั่น\n- **VAS growth (ตอนนี้ +18%, ~40% ของรายได้) ชะลอลงต่ำกว่า ~10% ต่อเนื่อง** — VAS คือตัว diversify + ตัวขับโตเหนือ volume ปกติ ถ้าแผ่ว = เหลือแค่ธุรกิจบัตรที่โตช้ากว่า",
+      "recheckText": null
+    },
+    "META": {
+      "asOf": "2026-05-28",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **รายได้โฆษณาโตชะลอแรง (เหลือเลขหลักเดียว/สิบต้นๆ) ขณะ capex ยังสูง** — thesis คือ \"AI capex → โฆษณาแม่นขึ้น → รายได้โต\" ถ้ารายได้ชะลอแต่ capex ยังพุ่ง = เงินที่เทไปไม่แปลงเป็นรายได้ เดิมพันเริ่มพัง\n\n- **คำตัดสิน youth litigation เสียหายระดับหลายหมื่นล้าน หรือ FTC ชนะอุทธรณ์บังคับขาย Instagram/WhatsApp** — 2 อันนี้ filing ระบุเองว่าอาจ material; ตัวแรกเป็นเงินก้อนโต ตัวหลังคือการตัดเครื่องจักรกำไรออกจากบริษัท = เปลี่ยน thesis ทั้งหมด\n\n- **FoA operating margin หลุดลงต่ำกว่า ~45-50% ต่อเนื่องจาก depreciation/ต้นทุน AI โดยไม่มีรายได้มาชดเชย** — ตอนนี้ FoA margin 52% คือหัวใจกำไร ถ้าค่าเสื่อม data center กดลงมากโดยรายได้ไม่โตตาม = ROI ของ capex ไม่จริง",
+      "recheckText": null
+    },
+    "MSFT": {
+      "asOf": "2026-05-27",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **Azure growth (cc) ลดต่ำกว่า 25% ติด 2 quarter** — guidance Q4 ที่ 39-40% Azure cc → ถ้า trend slow ลงเร็วกว่าที่ stage ตอนนี้ แปลว่า AI demand peak หรือ price competition เริ่มแรง — Azure เป็น growth engine หลักของ Intelligent Cloud\n- **FCF ลด YoY ติด 2 ปี + capex ยังโต** — ถ้า FY26 FCF ต่ำกว่า $71.6B ของ FY25 อีกครั้ง ขณะที่ capex ยังโต = สัญญาณว่า ROI ของ AI infra ไม่ทันการลงทุน — ต้องเลิกถือก่อนตลาดสะท้อน\n- **M365 Copilot paid seat growth ทรง หรือ ARPU ลด** — ถ้า 20M seats หยุดโต หรือต้องลดราคา per seat เพื่อ retain = AI productivity narrative กำลังพัง — ดู FY27 number ของ seats + revenue per seat\n- **FTC หรือ EU บังคับ unbundle Copilot จาก M365** — ถ้าต้องขาย Copilot แยกเป็น standalone product จะกระทบ pricing power + attach rate\n\n---",
+      "recheckText": null
+    },
+    "MU": {
+      "asOf": "2026-05-27",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **DRAM ASP ลด QoQ ติด 2 ไตรมาส** — ราคา DRAM = early signal ของ cycle turn; ถ้าราคาเริ่มลง = supply เริ่มแซง demand → margin จะ erode เร็วกว่า revenue\n- **HBM market share เสียให้ SK Hynix หรือ Samsung** — ตอนนี้ Micron มี Vera Rubin + sold-out; ถ้าคู่แข่ง qualify ใน gen ใหม่และได้ allocation NVIDIA = thesis สำคัญที่สุดพัง\n- **Capex overspend without revenue catch-up** — ถ้า FY27 capex >$35B แต่ revenue หรือ FCF ไม่ตามทัน + ROIC ลดต่ำกว่า cost of capital → bear case classic memory cycle\n- **CHIPS Act funding ถูก clawback หรือ tariff/policy เปลี่ยน** — funding $6.4B + 35% ITC พึ่งโครงสร้างนโยบาย; ถ้าเปลี่ยน = cash position หาย + fab construction delay\n\n---",
+      "recheckText": null
+    },
+    "NOW": {
+      "asOf": "2026-06-08",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **cRPO growth (cc) ชะลอลงต่ำกว่า ~15% 2 ไตรมาสติด** — ตอนนี้ +21% cc cRPO คือ leading indicator ที่ดีที่สุดของ subscription momentum ถ้ามันแผ่วเร็ว = ดีมานด์อ่อนก่อนที่รายได้จะสะท้อน\n- **Renewal rate หลุดต่ำกว่า ~95%** — ตอนนี้ 98% สามปีติด นี่คือหัวใจของ thesis \"รายได้ทนทาน\" ถ้าลูกค้าเริ่มไม่ต่อสัญญา = product stickiness พัง valuation ที่แพงจะยืนไม่อยู่\n- **DOJ investigation จบแบบ debarment / ห้ามรับงานรัฐ** — ถ้าผลสอบสวนทำให้โดนตัดสิทธิ์รับสัญญาภาครัฐสหรัฐฯ (ภาครัฐเป็นสัดส่วนสำคัญและโตเร็ว) = กระทบ growth engine โดยตรง (qualitative — ต้องเช็คเอง)",
+      "recheckText": null
+    },
+    "NVDA": {
+      "asOf": "2026-05-27",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **Data Center Hyperscale sub-segment ลด QoQ 2 ไตรมาสติด หรือ Data Center revenue หยุดโต QoQ (เลิก streak 14 ไตรมาส)** ตอนนี้ Data Center = ~91% ของบริษัท ถ้า Hyperscale ($38B) ติดลบ QoQ แปลว่า hyperscaler ชะลอจริง หรือ in-house chip shift จริง — thesis \"AI buildout 3-5 ปี\" แตก\n\n- **Gross margin ลด >2 pp/quarter ต่อเนื่อง 2-3 ไตรมาส (ไม่ใช่ single-quarter charge อย่าง H20)** ตอนนี้ GM 75% stable Q1 FY27 ถ้า trend ลงตอน Rubin ramp ก็ยอมรับได้ (เคย precedent ตอน Blackwell ramp) แต่ถ้าลงเกินกว่า 70% และไม่ recover ใน 2 quarter = pricing power หาย / competitor catch up\n\n- **Frontier model customer (Anthropic/OpenAI/xAI/Meta) ประกาศ migrate workload ส่วนสำคัญไป TPU/Trainium/MTIA** บริษัทพวกนี้คือ \"consumer evangelist\" ของ NVDA ที่ทำให้ developer ทั้งโลกอยากใช้ CUDA — ถ้า frontier model ทิ้ง NVDA ecosystem effect จะ erode เร็ว\n\n- **Vera Rubin Q3 FY27 production delay > 1 quarter** annual cadence (Blackwell → Rubin → Rubin Ultra → Feynman) คือ promise ที่ราคาหุ้นใส่ premium ไว้แล้ว — ถ้า delay จะ break thesis \"technology lead 1-2 generation\"\n\n- **Supply commitment + prepayment \"right-sized\" หรือ ลดลงใน disclosure 10-Q/10-K ถัดไป** ตอนนี้ $145B Q1 FY27 ถ้าไตรมาสหน้าเป็น $130B หรือ $120B = บริษัทเริ่มไม่มั่นใจ demand outlook ของตัวเอง",
+      "recheckText": null
+    },
+    "NVO": {
+      "asOf": "2026-06-05",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **Wegovy (ตัวโตหลักที่เหลือ) เริ่มเสียแชร์/หดตัว หรือ Lilly เปิดช่องว่าง efficacy/ราคามากขึ้น** — ตอนนี้ Wegovy +12% คือเสาที่อุ้มบริษัท ถ้าเสานี้ล้มขณะ Ozempic/Rybelsus หดอยู่แล้ว = thesis turnaround พัง\n- **adjusted revenue หดต่อเนื่องเกินกรอบ guidance (−4% ถึง −12%) หรือ margin ลงต่ำกว่า ~40% ต่อเนื่อง** — บริษัทเองคาดหด ถ้าหดแรงกว่าที่ guide = ราคา/แชร์เลวร้ายกว่าคาด\n- **pipeline รุ่นถัดไป (CagriSema, amycretin) พลาดซ้ำ ขณะ Lilly's next-gen เดินหน้า** — semaglutide จะโดน generic + ราคา ถ้าไม่มีตัวต่อยอดที่ชนะ = franchise เสื่อมโดยไม่มีของมาแทน\n- **generic semaglutide แพร่เร็วกว่าคาด (สิทธิบัตรหมด) ในตลาดใหญ่** — เริ่มที่อินเดีย/แคนาดาแล้ว ถ้าลามเข้าสหรัฐ/ยุโรปเร็ว = รายได้หลักถูกกัดกร่อนเชิงโครงสร้าง",
+      "recheckText": null
+    },
+    "ORCL": {
+      "asOf": "2026-06-12",
+      "recheckAsOf": "2026-06-12",
+      "indicator": "🟡",
+      "killText": "- **RPO หยุดโต หรือสัญญา AI รายใหญ่ถูกยกเลิก/เจรจาใหม่** — backlog $638B คือ thesis ทั้งก้อน ถ้าตัวเลขนี้หดในไตรมาสถัดไป หรือมีข่าวลูกค้า AI หลักถอนตัว = เดิมพันแตก\n\n- **FCF ติดลบลึกต่อเนื่องหลายปี + หนี้เพิ่ม โดย AI revenue ไม่ ramp มาคุ้ม** — ถ้าเผาเงิน + กู้/ออกหุ้นเพิ่มโดยกระแสเงินสดดำเนินงานไม่โตทัน = cash-burn trap; credit rating ถูกลดต่ำกว่า investment grade = ต้นทุนหนี้พุ่ง\n\n- **AI infra gross margin หลุดต่ำกว่า ~30% ต่อเนื่อง หรือ cloud apps (ฐาน margin สูง) เริ่มชะลอ** — ถ้าเศรษฐศาสตร์ของ AI infra ไม่ดีขึ้นตาม scale แปลว่าโตเยอะแต่ไม่ทำเงิน; หรือถ้าขาแอปที่ margin สูงเริ่มหมดแรงโต = สูญเสียส่วนที่นิ่ง",
+      "recheckText": "🟢 **RPO หยุดโต / สัญญา AI ยกเลิก** — RPO ยัง**โตแรง** $553B (Q3) → **$638B สิ้น FY2026 (+363% YoY)** ไม่หยุดโต; ไม่มีข่าวลูกค้า AI รายใหญ่ยกเลิกในกรอบ 7 วัน → ห่างเงื่อนไขฝั่งตัวเลข *(ส่วน \"สัญญายกเลิก\" เป็น qualitative ไม่มีข่าว = เช็คเอง)*\n\n🟡 **FCF ติดลบลึกต่อเนื่อง + หนี้เพิ่ม โดย AI revenue ไม่ ramp มาคุ้ม** — FCF ลึกขึ้น**มาก**: FY2025 −$0.4B → **FY2026 −$23.7B** (ติดลบ 2 ปีติด, ดิ่งเกือบ 60 เท่า), capex $55.7B จะขึ้น net ~$70B + แผนระดม ~$40B (รวม dilute ATM $20B); **แต่** AI revenue ramp อยู่จริง (OCI +93%, RPO +363%) → เงื่อนไข \"ไม่ ramp มาคุ้ม\" ยังไม่ครบเต็ม — ตลาดตอบลบ (−12% หลังงบ) ตรงจุดนี้พอดี ⚠️ credit rating downgrade = qualitative ยังไม่มีข่าว เช็คเอง\n\n🟡 **AI infra GM หลุด <30% ต่อเนื่อง / cloud apps ชะลอ** — gross margin ทั้งปี FY2026 ลด **~5 จุด** (CFO ยอมรับ จาก infra ramp = ทิศทางเข้าเงื่อนไข); cloud apps (SaaS) +10% ชะลอเล็กน้อยจาก ~+11% (Q3) — **แต่** ตัวเลข AI infra GM เฉพาะ Q4 **ไม่เปิดเผยใน source** (Q3 = 32%) → ยืนยัน \"<30%\" ไม่ได้ ต้องดู press release/ตัวเลขเต็มเอง\n\n⚠️ อย่าเชื่อ tag อย่างเดียว — เปิด section 3 + 5 + archive (ORCL-2026-05-28.md) ยืนยันด้วยตา"
+    },
+    "PG": {
+      "asOf": "2026-06-06",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **Organic sales / volume พลิกติดลบต่อเนื่อง (pricing power หมด)** — PG โตด้วยราคาบน volume flat อยู่แล้ว ถ้า volume ติดลบขณะขึ้นราคาไม่ได้ = แบรนด์เริ่มเสีย pricing power = thesis หลักพัง (จับตา organic + volume ราย Q)\n\n- **gross/operating margin ถูกบีบต่อเนื่องหลายปีโดย productivity ครอบไม่ได้** — margin 51% คือคุณภาพหลัก ถ้าต้นทุน (energy/commodity/tariff) กดจน margin ลงเรื่อยๆ และ productivity ตามไม่ทัน = เครื่องจักรกำไรเสื่อม\n\n- **ปันผลขึ้นช้าลงผิดปกติ / streak 70 ปีถูกคุกคาม** — สำหรับ Dividend King การที่ dividend growth ชะลอแรงหรือหยุด = สัญญาณ distress จริง (โอกาสต่ำมาก แต่เป็น ultimate kill ของ thesis นี้)",
+      "recheckText": null
+    },
+    "PLTR": {
+      "asOf": "2026-06-08",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **US commercial revenue โตชะลอลงต่ำกว่า ~40% YoY 2 ไตรมาสติด** — นี่คือ thesis หลักของฝั่ง bull (AIP/เอกชนสหรัฐฯ เป็นเครื่องยนต์ใหม่) ถ้าตัวเลขนี้แผ่ว แปลว่า AIP อาจเป็นแค่ hype cycle ไม่ใช่ platform จริง (ตอนนี้ +133% YoY — มี buffer เยอะ)\n- **Net dollar retention หลุดต่ำกว่า ~120%** — ตอนนี้ 150% ถ้าลูกค้าเดิมหยุดขยายการใช้งาน (NDR ลงเร็ว) = สัญญาณว่า product stickiness เริ่มอ่อน คุ้มค่าน้อยลงกว่าที่เคลม\n- **Operating margin หดต่อเนื่อง 2-3 ไตรมาส พร้อม SBC ที่ยังสูง** — ถ้า margin เริ่มถอยขณะที่หุ้นยัง dilute เรื่อยๆ = operating leverage ที่เป็นจุดขายกำลังพัง",
+      "recheckText": null
+    },
+    "SPGI": {
+      "asOf": "2026-06-05",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **issuance/transaction revenue หดแรงต่อเนื่อง (ตลาดเครดิตแข็งตัว/ดอกเบี้ยพุ่ง) โดย subscription ไม่ชดเชย** — Ratings transactional คือก้อน margin สูงที่ผันผวน ถ้าหายนานๆ = กำไรกระทบ\n- **Market Intelligence ถูก AI disrupt — subscription churn เพิ่ม / รายได้ MI หด** — ถ้าลูกค้าเลิกจ่าย MI เพราะใช้ LLM แทน = thesis \"data toll-road\" ของก้อนนี้พัง (จับตา MI organic growth + retention)\n- **Ratings เสีย market share หรือถูก regulator แทรกแซงโครงสร้างค่าธรรมเนียม** — duopoly กับ Moody's คือหัวใจ ถ้าโดนกฎเปลี่ยน/คู่แข่งใหม่ = pricing power หาย",
+      "recheckText": null
+    },
+    "TSLA": {
+      "asOf": "2026-05-28",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **ยอดส่งมอบรถ + รายได้ auto ลดต่อ ขณะที่รายได้ robotaxi/FSD ยัง immaterial อีก 2-3 ไตรมาส** — thesis ทั้งก้อนคือ \"AI มาแทนรถที่หด\" ถ้ารถหดต่อแต่ AI ยังไม่เป็นรายได้ที่ขยับเข็ม = เดิมพันไม่คุ้มเวลา\n\n- **เกิดอุบัติเหตุ Robotaxi ร้ายแรง หรือถูก regulator สั่งหยุด** — คดี Benavides แสดงว่า liability จาก autonomy แพงและจริง ถ้า Robotaxi (ที่กำลังสเกล) เจอเคสใหญ่ หรือ NHTSA สั่งหยุด = ขาโตหลักของ thesis สะดุดทันที\n\n- **operating margin ยังต่ำ <5% ขณะ capex >$20B ทำให้ FCF ติดลบหลายไตรมาสโดยไม่มีรายได้ AI ramp มารับ** — ป้อมปราการเงินสดทนได้ แต่ถ้าเผาเงินโดยไม่มีผลลัพธ์ AI ที่จับต้องได้ คือสัญญาณว่าเดิมพันไม่ work",
+      "recheckText": null
+    },
+    "TSM": {
+      "asOf": "2026-06-03",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **ลูกค้า top-2 รายใดรายหนึ่งหายไปหรือสัดส่วนหดเร็ว** — ถ้าลูกค้ารายใหญ่สุด (19%) หรืออันดับสอง (17%) ตัด order, ย้าย foundry, หรือดีมานด์ AI ของรายนั้นแผ่วจนสัดส่วนรายได้รวมร่วงต่อเนื่อง = thesis เรื่อง pricing power สั่นทันที (เฝ้าดู customer concentration ใน 20-F ปีถัดไป)\n- **Gross margin หดติดกัน 2-3 ไตรมาส** — ตอนนี้ margin ขยายเพราะ pricing power + node ใหม่ ถ้ามันเริ่มหดทั้งที่ยอดยังโต = สัญญาณว่าอำนาจตั้งราคาหายหรือ capex นอกไต้หวัน (ต้นทุนสูงกว่า) เริ่มกดกำไร (ต้องใช้ transcript รายไตรมาส — ตอนนี้ section 3 ยังว่าง)\n- **เหตุภูมิรัฐศาสตร์ที่กระทบการผลิต** — ถ้าไต้หวันออกกฎห้ามผลิต node ล้ำสุดนอกประเทศจริง หรือมีการคุมส่งออก/เหตุการณ์ที่กระทบฐานผลิตหลัก = ความเสี่ยงเชิงโครงสร้างที่เปลี่ยน thesis (เฝ้าดู ratification ของ US-Taiwan trade deal + กฎ export ของไต้หวัน)",
+      "recheckText": null
+    },
+    "UNH": {
+      "asOf": "2026-06-06",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **MCR ไม่ลงต่อ หรือเด้งกลับเหนือ ~89% อีกหลายไตรมาส** — Q1'26 ลงมา 83.9% เป็นสัญญาณฟื้น ถ้าครึ่งหลังปี 2026 เด้งกลับแรงเกิน guide (ที่บอกครึ่งหลัง >200bps เหนือ midpoint อยู่แล้ว) = turnaround ไม่จริง thesis แตก\n\n- **Optum Health ไม่ฟื้นกลับเข้าทาง margin 6-8% ภายใน 4-6 ไตรมาส** — Q1'26 ยังต่ำกว่า run-rate $1.575B; ถ้าค้างต่ำหรือขาดทุนต่อ = engine หลักพัง + เพิ่มเสี่ยง goodwill impairment\n\n- **DOJ probe จบเป็นค่าปรับ/settlement ก้อนใหญ่ material หรือบังคับแยก Optum ออกจากประกัน** — ไม่ใช่แค่จ่ายครั้งเดียว ถ้าบังคับเปลี่ยนโครงสร้าง vertical integration = ทำลาย moat หลัก\n\n- **CMS ตัด Medicare Advantage benchmark แรง หรือนโยบายเปลี่ยนกด profitability เชิงโครงสร้าง** — รายได้ 44% มาจากรัฐ ถ้า policy พลิก กำไรโดนถาวร ไม่ใช่รอบ",
+      "recheckText": null
+    },
+    "V": {
+      "asOf": "2026-06-05",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **payments volume / processed transactions growth หลุดเป็นเลขหลักเดียวต่ำๆ หรือติดลบ 2 ไตรมาสติด โดยไม่ใช่เหตุชั่วคราว** — thesis ทั้งก้อนคือ \"ปริมาณการใช้จ่ายโตต่อเนื่อง\" ถ้าปริมาณหยุดโต = secular growth story สั่น\n- **คดี interchange MDL / DOJ debit ตัดสินบังคับเปลี่ยนโครงสร้างราคา interchange หรือเปิดเครือข่ายให้คู่แข่ง** — ไม่ใช่แค่จ่ายค่าปรับครั้งเดียว แต่กระทบ take rate ที่เป็นหัวใจรายได้ (ดู trial เม.ย./ก.ย. 2026)\n- **VAS + cross-border growth ชะลอพร้อมกันต่อเนื่อง** — ถ้าทั้งเสาใหม่ (VAS) และส่วน margin สูง (cross-border) แผ่วพร้อมกัน แปลว่า engine การเติบโตที่เหนือ volume ปกติเริ่มหมด",
+      "recheckText": null
+    },
+    "WMT": {
+      "asOf": "2026-06-06",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **High-margin flywheel ชะลอแรง — advertising/membership/marketplace growth ตกจากเลขสองหลักสูงเป็นหลักเดียวต่อเนื่อง** — นี่คือเครื่องยนต์ที่ดัน margin + เป็นเหตุผลของ valuation premium ถ้าดับ thesis \"โตกำไรเร็วกว่ายอดขาย\" พัง\n\n- **comp sales / traffic Walmart U.S. ติดลบต่อเนื่อง (ไม่ใช่เหตุชั่วคราวอย่าง tariff/legislation)** — traffic คือหัวใจ ถ้าคนมาร้านน้อยลงจริง = retail engine อ่อน\n\n- **operating margin หดต่อเนื่องหลายไตรมาส (tariff/fuel/price investment โดยไม่มี flywheel ชดเชย)** — ถ้า OI โตช้ากว่า sales = \"grow OI faster than sales\" แตก เหลือแต่ retailer margin บาง\n\n- **opioid retrial / DOJ / Asda ตัดสินเป็นเงินก้อนใหญ่ material ที่ไม่ได้ตั้งสำรอง** — จับตา trial ส.ค. 2026 (opioid) + พ.ย. 2026 (Asda)",
+      "recheckText": null
+    }
+  };
+
+  // Ticker aliases: holding ticker -> brief ticker (e.g. GOOG holding, GOOGL brief).
+  const ALIAS = { GOOG: 'GOOGL' };
+
+  function get(ticker) {
+    if (!ticker) return null;
+    const u = String(ticker).toUpperCase();
+    return KILL_CONDITIONS[ALIAS[u] || u] || null;
+  }
+
+  const api = { data: KILL_CONDITIONS, get };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; // node tests
+  if (typeof window !== 'undefined') window.KillConditions = api;            // browser global
+})();
+
+// ============================================================
 // BFOS — Portfolio Provider  (Phase 3D: read-path abstraction only)
 // ============================================================
 // The single seam for asking "what is the portfolio data?". Today the app
@@ -1676,6 +1929,7 @@ const __rpRisk     = __rpResolve('RiskV4',         '../risk/riskEngine.js');
 const __rpGoals    = __rpResolve('GoalsEngine',    '../goals/goalsEngine.js');
 const __rpDca      = __rpResolve('DcaEngine',      '../dca/dcaEngine.js');
 const __rpAlloc    = __rpResolve('Allocation',     '../allocation/allocationEngine.js');
+const __rpKill     = __rpResolve('KillConditions', '../../data/killConditions.js');
 
 // text version of the DCA recommendation for the report.
 // `src` is the resolved monthly-DCA descriptor { amount, source, ... } (was resolveMonthlyDca()).
@@ -1835,6 +2089,12 @@ function __rpGenerateReport(opts) {
   else r += 'None.\n';
 
   r += '\n--- HOLDINGS (alloc = % of net worth) ---\n';
+  // Kill conditions are display-only reference pulled from the briefs project
+  // (src/data/killConditions.js). Fail loud if the module never loaded so a
+  // missing bundle/sync can't masquerade as "no holding has a brief".
+  const __killReady = !!(__rpKill && __rpKill.data && Object.keys(__rpKill.data).length);
+  if (!__killReady) r += '⚠ KillConditions not loaded — run tools/sync-killconditions.js\n';
+  const __indent = t => t.split('\n').map(l => '    ' + l).join('\n');
   h.forEach(x => {
     const g2 = x.value - x.invested, gp2 = x.invested > 0 ? (g2 / x.invested * 100) : 0;
     const al = V > 0 ? (x.value / V * 100) : 0;
@@ -1849,6 +2109,15 @@ function __rpGenerateReport(opts) {
     r += `  Risk Flags      : ${flags}\n`;
     if (x.thesis) r += `  Thesis          : ${x.thesis}\n`;
     if (x.dd) r += `  If -20-30%      : ${x.dd}\n`;
+    if (__killReady) {
+      const kc = __rpKill.get(x.ticker || x.name);
+      if (kc) {
+        r += `  Kill conditions (brief ${kc.asOf || '?'}):\n${__indent(kc.killText)}\n`;
+        if (kc.recheckText) r += `  Recheck (ณ ${kc.recheckAsOf || '?'}):\n${__indent(kc.recheckText)}\n`;
+      } else if ((x.bucket || __rpAlloc.inferBucket(x)) === 'US Individual Stocks') {
+        r += `  ⚠ no kill-conditions brief matched for ${x.name} (ticker ${x.ticker || '-'}) — check ticker/alias/sync\n`;
+      }
+    }
   });
 
   r += `\n--- CASHFLOW (${cf.month || 'No data'}) ---\n`;
@@ -2736,6 +3005,15 @@ function renderHoldings(){
     const al=V>0?(x.value/V*100):0;
     const tc={fund:'tf',stock:'ts',pvd:'tp',cash:'tc',us:'tf'}[x.type]||'tc';
     const tl={fund:'Fund',stock:'หุ้นไทย',pvd:'PVD',cash:'Cash',us:'US'}[x.type]||x.type;
+    // kill-conditions reference (display-only): traffic-light from brief recheck, else 📋
+    const _kc=(window.KillConditions&&KillConditions.get(x.ticker||x.name))||null;
+    let killBadge='';
+    if(_kc){
+      let tip=_kc.killText||'';
+      if(_kc.recheckText)tip+='\n\n— Recheck'+(_kc.recheckAsOf?' (ณ '+_kc.recheckAsOf+')':'')+' —\n'+_kc.recheckText;
+      const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      killBadge=` <span style="font-size:11px;cursor:help" title="${esc(tip)}">${_kc.indicator||'📋'}</span>`;
+    }
     if(gp<-15)alerts+=`<div class="co co-a" style="margin-bottom:8px">${x.name} ลงมา ${fmtP(gp)} — ควร review thesis ก่อน DCA เดือนหน้า</div>`;
     const isUS=x.type==='us',fx=fxRate();
     const usdSub=v=>isUS?`<div style="font-size:9px;color:var(--t3);margin-top:2px">($${(v/fx).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})})</div>`:'';
@@ -2751,7 +3029,7 @@ function renderHoldings(){
     const bucket=x.bucket||Allocation.inferBucket(x);
     rows+=`<tr draggable="true" data-id="${x.id}" ondragstart="holdDragStart(event,${x.id})" ondragover="holdDragOver(event)" ondrop="holdDrop(event,${x.id})" ondragend="holdDragEnd(event)" ondragleave="holdDragLeave(event)">
       <td style="cursor:grab;color:var(--t3);text-align:center;font-size:14px;user-select:none" title="ลากเพื่อจัดลำดับ">≡</td>
-      <td style="font-weight:500">${x.name}${x.isUSSitus?' <span style="font-size:9px;color:var(--coral)" title="US-situs asset">◆US</span>':''}</td>
+      <td style="font-weight:500">${x.name}${killBadge}${x.isUSSitus?' <span style="font-size:9px;color:var(--coral)" title="US-situs asset">◆US</span>':''}</td>
       <td><span class="tag ${tc}">${tl}</span></td>
       <td style="color:var(--t2)">${x.theme||'-'}</td>
       <td>${fmt(x.invested)}${usdSub(x.invested)}</td>${priceCell}<td>${fmt(x.value)}${usdSub(x.value)}</td>
