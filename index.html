@@ -486,6 +486,7 @@ textarea{resize:vertical;min-height:72px}
     </div>
     <div class="ff"><label>วันที่ซื้อ</label><input type="date" id="hdate"></div>
     <div class="ff full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="hussitus" style="width:auto;margin:0"> US-situs asset? <span style="color:var(--t3);font-size:10px">(VOO/QQQM/TSM/LLY/LIN = ใช่ · Thai feeder = ไม่ · สำหรับ estate tax)</span></label></div>
+    <div class="ff full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="hackconc" style="width:auto;margin:0"> ตั้งใจถือกระจุก (ตาม target) <span style="color:var(--t3);font-size:10px">(เช่น KKP ถือเดี่ยวตาม target 15% · ลด alert single-name เป็น INFO "รับทราบแล้ว")</span></label></div>
     <div class="ff full"><label>Thesis — เหตุผลที่ถือ</label><textarea id="hthesis" placeholder="เหตุผล, ระยะเวลา, สัญญาณขาย..."></textarea></div>
     <div class="ff full"><label>ถ้าลง 20-30% จะทำยังไง?</label><input id="hdd" placeholder="เช่น DCA ต่อถ้า thesis ยังไม่เปลี่ยน"></div>
   </div>
@@ -849,22 +850,32 @@ function concentrationAlerts(holdings, cfg = RISK_CONFIG) {
 
   for (const h of pool) {
     const pct = h.currentValue / base * 100;
+    const tier = cfg.FUND_TIERS[h.fundClass] || cfg.FUND_TIERS.fund;
+    const tag = h.sector || h.fundClass || 'fund';
+    const hi  = h.isSingleName ? cfg.STOCK_HIGH_PCT : tier.high;
+    const med = h.isSingleName ? cfg.STOCK_WARN_PCT : tier.med;
+    const kind = h.isSingleName ? 'single-name' : 'fund/theme concentration';
+    const level = pct > hi ? 'HIGH' : pct > med ? 'MEDIUM' : null;
+    if (!level) continue;
+    // Intentional concentration the user has acknowledged (e.g. KKP held at a
+    // deliberate single-name target ABOVE the generic 10% guardrail). Keep it
+    // visible but as INFO so it stops masquerading as an unaddressed HIGH forever
+    // — otherwise an on-policy target permanently shadows the real HIGH alerts.
+    if (h.acknowledgedConcentration === true) {
+      alerts.push({ level: 'INFO', kind,
+        msg: `${h.name} = ${pct.toFixed(1)}% ของพอร์ตลงทุน — กระจุก${h.isSingleName ? 'หุ้นเดี่ยว' : `ในกอง (${tag})`} (ตั้งใจถือตาม target — รับทราบแล้ว)` });
+      continue;
+    }
     if (h.isSingleName) {
-      if (pct > cfg.STOCK_HIGH_PCT)
-        alerts.push({ level: 'HIGH', kind: 'single-name',
-          msg: `${h.name} = ${pct.toFixed(1)}% ของพอร์ตลงทุน — กระจุกหุ้นเดี่ยวสูง` });
-      else if (pct > cfg.STOCK_WARN_PCT)
-        alerts.push({ level: 'MEDIUM', kind: 'single-name',
-          msg: `${h.name} = ${pct.toFixed(1)}% ของพอร์ตลงทุน — เริ่มกระจุกหุ้นเดี่ยว` });
+      alerts.push({ level, kind,
+        msg: level === 'HIGH'
+          ? `${h.name} = ${pct.toFixed(1)}% ของพอร์ตลงทุน — กระจุกหุ้นเดี่ยวสูง`
+          : `${h.name} = ${pct.toFixed(1)}% ของพอร์ตลงทุน — เริ่มกระจุกหุ้นเดี่ยว` });
     } else {
-      const tier = cfg.FUND_TIERS[h.fundClass] || cfg.FUND_TIERS.fund;
-      const tag = h.sector || h.fundClass || 'fund';
-      if (pct > tier.high)
-        alerts.push({ level: 'HIGH', kind: 'fund/theme concentration',
-          msg: `${h.name} = ${pct.toFixed(1)}% ของพอร์ตลงทุน — กระจุกในกองเดียว (${tag}) สูงมาก` });
-      else if (pct > tier.med)
-        alerts.push({ level: 'MEDIUM', kind: 'fund/theme concentration',
-          msg: `${h.name} = ${pct.toFixed(1)}% ของพอร์ตลงทุน — ${tag} tilt ชัด; ถ้าตั้งใจไม่ต้องทำอะไร แต่ดู overlap กับหุ้นเดี่ยว` });
+      alerts.push({ level, kind,
+        msg: level === 'HIGH'
+          ? `${h.name} = ${pct.toFixed(1)}% ของพอร์ตลงทุน — กระจุกในกองเดียว (${tag}) สูงมาก`
+          : `${h.name} = ${pct.toFixed(1)}% ของพอร์ตลงทุน — ${tag} tilt ชัด; ถ้าตั้งใจไม่ต้องทำอะไร แต่ดู overlap กับหุ้นเดี่ยว` });
     }
   }
 
@@ -2857,6 +2868,7 @@ function toV4Holding(h){
     rebalance_include:!['pvd','cash'].includes(type), // cash = emergency reserve, ไม่ rebalance
     concentration_include:!['cash','pvd'].includes(type),
     isSingleName:Allocation.SINGLE_NAME_BUCKETS.includes(bucket)&&!['cash','pvd'].includes(type),
+    acknowledgedConcentration:!!h.ackConcentration, // ตั้งใจถือกระจุกตาม target → ลด alert เป็น INFO
     fundClass:['cash','pvd'].includes(type)?null:classifyFund(h),
     liquidity_type:type==='pvd'?'locked':'liquid',
     isEmergencyFund:type==='cash',
@@ -3376,6 +3388,7 @@ function newHolding(){
   document.getElementById('hmode').value='simple';
   document.getElementById('hdcastatus').value='active';
   document.getElementById('hussitus').checked=false;
+  document.getElementById('hackconc').checked=false;
   const el=document.getElementById('ticker-result');if(el)el.textContent='';
   hbuyfxHint();
   openM('mh');
@@ -3398,6 +3411,7 @@ function editH(id){
   document.getElementById('hmode').value=x.trackingMode||inferTrackingMode(x);
   document.getElementById('hdcastatus').value=x.dcaStatus||'active';
   document.getElementById('hussitus').checked=(x.isUSSitus==null)?EstateTaxEngine.inferUSSitus(x):x.isUSSitus;
+  document.getElementById('hackconc').checked=!!x.ackConcentration;
   document.getElementById('hdate').value=x.date||'';
   // US: prefill the avg buy rate from the stored cost basis (THB invested ÷ costUSD)
   document.getElementById('hbuyfx').value=(x.type==='us'&&x.costUSD>0)?(x.invested/x.costUSD).toFixed(2):'';
@@ -3410,7 +3424,7 @@ function saveHolding(){
   const name=document.getElementById('hn').value.trim();if(!name){alert('กรุณากรอกชื่อ');return;}
   const eid=parseFloat(document.getElementById('heid').value)||0;
   const inv=parseFloat(document.getElementById('hinv').value)||0;
-  const obj={id:eid||uid(),name,type:document.getElementById('htype').value,theme:document.getElementById('htheme').value,ticker:document.getElementById('hticker').value,units:parseFloat(document.getElementById('hunits').value)||0,invested:inv,value:parseFloat(document.getElementById('hval').value)||inv,date:document.getElementById('hdate').value,thesis:document.getElementById('hthesis').value,dd:document.getElementById('hdd').value,bucket:document.getElementById('hbucket').value,trackingMode:document.getElementById('hmode').value,dcaStatus:document.getElementById('hdcastatus').value,isUSSitus:document.getElementById('hussitus').checked};
+  const obj={id:eid||uid(),name,type:document.getElementById('htype').value,theme:document.getElementById('htheme').value,ticker:document.getElementById('hticker').value,units:parseFloat(document.getElementById('hunits').value)||0,invested:inv,value:parseFloat(document.getElementById('hval').value)||inv,date:document.getElementById('hdate').value,thesis:document.getElementById('hthesis').value,dd:document.getElementById('hdd').value,bucket:document.getElementById('hbucket').value,trackingMode:document.getElementById('hmode').value,dcaStatus:document.getElementById('hdcastatus').value,isUSSitus:document.getElementById('hussitus').checked,ackConcentration:document.getElementById('hackconc').checked};
   // US: carry the USD cost basis (don't let a rebuild wipe it). A remembered avg buy
   // rate sets costUSD = invested ÷ rate; backfill fills any still-missing USD field.
   if(obj.type==='us'){
