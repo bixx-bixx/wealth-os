@@ -1419,6 +1419,8 @@ if (typeof window !== 'undefined') window.EstateTaxEngine = __EstateTaxEngine;  
 // ---- holdings ----------------------------------------------------------
 // shape: { id, name, type, theme, ticker, units, invested, value, date,
 //          thesis, dd, bucket, trackingMode, isUSSitus }
+// us-type holdings also carry costUSD (cost basis in USD, locked) + priceUSD
+// (latest price/share) so stock P&L and FX P&L split cleanly — see usFxEngine.
 // type ∈ fund | stock | us | cash | pvd | other. Names are chosen so the
 // bucket/sector classifiers resolve to varied buckets; bucket/trackingMode/
 // isUSSitus are pre-set so migrateHoldings() is a no-op on them.
@@ -1435,7 +1437,7 @@ const HOLDINGS = [
     thesis: 'Global diversification outside single-country risk', dd: '',
     bucket: 'US Broad Index', trackingMode: 'simple', isUSSitus: false },
   { id: 3, name: 'VOO', type: 'us', theme: 'US Large Cap', ticker: 'VOO', units: 24,
-    invested: 360000, value: 400000, date: '2023-09-18',
+    invested: 360000, value: 400000, costUSD: 10588, priceUSD: 456.62, date: '2023-09-18',
     thesis: 'Direct S&P 500 ETF, USD-denominated core', dd: '',
     bucket: 'US Broad Index', trackingMode: 'unit', isUSSitus: true },
   // ---- US Growth / Nasdaq (~20%) ----
@@ -1445,23 +1447,23 @@ const HOLDINGS = [
     bucket: 'US Growth / Nasdaq', trackingMode: 'simple', isUSSitus: false },
   // ---- US Individual Stocks (~15%) ----
   { id: 5, name: 'TSM', type: 'us', theme: 'Semiconductor / Foundry / AI', ticker: 'TSM', units: 14,
-    invested: 75000, value: 90000, date: '2023-10-22',
+    invested: 75000, value: 90000, costUSD: 2206, priceUSD: 176.06, date: '2023-10-22',
     thesis: 'Dominant foundry, AI/compute secular tailwind', dd: '',
     bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true },
   { id: 6, name: 'LLY', type: 'us', theme: 'Healthcare / Pharma / GLP-1', ticker: 'LLY', units: 5,
-    invested: 85000, value: 80000, date: '2024-06-08',
+    invested: 85000, value: 80000, costUSD: 2500, priceUSD: 438.36, date: '2024-06-08',
     thesis: 'Pharma leader, GLP-1 franchise', dd: '',
     bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true },
   { id: 7, name: 'GOOGL', type: 'us', theme: 'Communication Services / AI / Cloud', ticker: 'GOOGL', units: 18,
-    invested: 70000, value: 80000, date: '2024-02-19',
+    invested: 70000, value: 80000, costUSD: 2059, priceUSD: 121.77, date: '2024-02-19',
     thesis: 'Search/Cloud/AI franchise, strong free cash flow', dd: '',
     bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true },
   { id: 8, name: 'META', type: 'us', theme: 'Communication Services / AI Ads / Social', ticker: 'META', units: 8,
-    invested: 55000, value: 60000, date: '2024-04-30',
+    invested: 55000, value: 60000, costUSD: 1618, priceUSD: 205.48, date: '2024-04-30',
     thesis: 'Ads platform with AI-driven efficiency', dd: '',
     bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true },
   { id: 9, name: 'LIN', type: 'us', theme: 'Industrials / Industrial Gas / Defensive', ticker: 'LIN', units: 4,
-    invested: 48000, value: 50000, date: '2024-05-21',
+    invested: 48000, value: 50000, costUSD: 1412, priceUSD: 342.47, date: '2024-05-21',
     thesis: 'Industrial gas, quality defensive compounder', dd: '',
     bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true },
   // ---- Thai Dividend / Thai Stocks (~15%) ----
@@ -2536,6 +2538,107 @@ const __NWHistoryEngine = {
 if (typeof module !== 'undefined' && module.exports) module.exports = __NWHistoryEngine; // node tests
 if (typeof window !== 'undefined') window.NWHistoryEngine = __NWHistoryEngine;            // browser global
 
+// ============================================================
+// BFOS — US holding FX / cost-basis engine
+// ============================================================
+// Pure logic only: no DOM, no localStorage. Keeps the cost basis of a
+// US ('us'-type) holding in USD so the investment P&L is never muddied by
+// the THB exchange rate. Splits a holding's gain into two clean parts:
+//
+//   stock P&L  (USD)  = units*priceUSD - costUSD     -> did the stock do well?
+//   FX P&L     (THB)  = (fx - avgBuyFx) * costUSD    -> did the baht help/hurt?
+//
+// THB value (for net-worth aggregation) is always DERIVED at the current
+// fx, never stored baked-in — so it can't drift out of sync with the rate.
+//
+// US holding shape (fields this engine reads/writes):
+//   units      shares held
+//   priceUSD   latest price per share, in USD          (source of truth)
+//   costUSD    total cost basis in USD (sum of shares*buyPrice)  (locked)
+//   invested   total cost basis in THB actually paid    (locked; existing field)
+// avgBuyFx (THB per USD we actually paid) is derived = invested / costUSD,
+// so no separate rate-at-purchase field is needed.
+// ============================================================
+
+function _num(n) { return (typeof n === 'number' && Number.isFinite(n)) ? n : 0; }
+
+// Resolve priceUSD for a holding, falling back to the legacy THB value when
+// the explicit field is absent (value = units*priceUSD*fx  =>  price = value/units/fx).
+function priceUSDof(h, fx) {
+  const explicit = _num(h && h.priceUSD);
+  if (explicit > 0) return explicit;
+  const units = _num(h && h.units), value = _num(h && h.value), f = _num(fx);
+  return (units > 0 && f > 0) ? value / units / f : 0;
+}
+
+// Resolve costUSD, falling back to the THB cost converted at the given fx
+// (this makes avgBuyFx == fx, i.e. FX P&L starts at 0 for un-migrated data).
+function costUSDof(h, fx) {
+  const explicit = _num(h && h.costUSD);
+  if (explicit > 0) return explicit;
+  const invested = _num(h && h.invested), f = _num(fx);
+  return f > 0 ? invested / f : 0;
+}
+
+// Full P&L breakdown for one US holding at the current fx. Pure / safe on
+// missing fields. Non-US callers should not use this.
+function pnl(h, fx) {
+  const f = _num(fx);
+  const units = _num(h && h.units);
+  const priceUSD = priceUSDof(h, f);
+  const costUSD = costUSDof(h, f);
+  const investedTHB = _num(h && h.invested);
+  const valueUSD = units * priceUSD;
+  const stockGainUSD = valueUSD - costUSD;
+  const stockGainPct = costUSD > 0 ? (stockGainUSD / costUSD) * 100 : 0;
+  const avgBuyFx = costUSD > 0 ? investedTHB / costUSD : f;
+  const valueTHB = valueUSD * f;
+  const fxGainTHB = (f - avgBuyFx) * costUSD;
+  const totalGainTHB = valueTHB - investedTHB;
+  return {
+    units, priceUSD, costUSD, valueUSD,
+    stockGainUSD, stockGainPct,
+    avgBuyFx, fxGainTHB,
+    valueTHB, totalGainTHB,
+  };
+}
+
+// Back-fill the USD source-of-truth fields for a legacy US holding that
+// predates this engine. Returns ONLY the fields to merge; avgBuyFx is set to
+// the current fx (FX P&L = 0) since the real purchase rate was never recorded.
+function backfill(h, fx) {
+  return { costUSD: costUSDof(h, fx), priceUSD: priceUSDof(h, fx) };
+}
+
+// Apply a buy to a US holding. Cost basis grows in USD by shares*price (fees
+// stay in the THB `invested` only). Returns the fields to merge onto the holding.
+function buyUS(h, opts) {
+  const f = _num(opts.fx);
+  const price = _num(opts.priceUSD);
+  const amtTHB = _num(opts.amtTHB);
+  const feeTHB = _num(opts.feeTHB);
+  const denom = price * f;
+  const addedUnits = denom > 0 ? (amtTHB - feeTHB) / denom : 0;
+  const units = _num(h && h.units) + addedUnits;
+  const costUSD = costUSDof(h, f) + addedUnits * price;
+  const invested = _num(h && h.invested) + amtTHB;
+  return { addedUnits, units, costUSD, invested, priceUSD: price, value: Math.round(units * price * f) };
+}
+
+// Apply a manual reprice/units-correction to a US holding (NOT a buy):
+// priceUSD + units change, cost basis (costUSD/invested) is untouched.
+function repriceUS(h, opts) {
+  const f = _num(opts.fx);
+  const price = _num(opts.priceUSD);
+  const units = _num(opts.units);
+  return { units, priceUSD: price, value: Math.round(units * price * f) };
+}
+
+const __UsFxEngine = { priceUSDof, costUSDof, pnl, backfill, buyUS, repriceUS };
+
+if (typeof module !== 'undefined' && module.exports) module.exports = __UsFxEngine; // node tests
+if (typeof window !== 'undefined') window.UsFxEngine = __UsFxEngine;                 // browser global
+
 
 // ===== Cloud sync (Supabase) =====
 const SB_URL='https://nplhhyhtstyzqxiymwrq.supabase.co';
@@ -2670,13 +2773,20 @@ function inferTrackingMode(h){
   return 'simple'; // fund, cash, pvd, other
 }
 function migrateHoldings(){
-  const hs=DB.get('holdings')||[];
-  DB.set('holdings',hs.map(h=>({
-    ...h,
-    bucket:h.bucket||Allocation.inferBucket(h),
-    isUSSitus:(h.isUSSitus==null)?EstateTaxEngine.inferUSSitus(h):h.isUSSitus,
-    trackingMode:h.trackingMode||inferTrackingMode(h)
-  })));
+  const hs=DB.get('holdings')||[],fx=fxRate();
+  DB.set('holdings',hs.map(h=>{
+    const m={
+      ...h,
+      bucket:h.bucket||Allocation.inferBucket(h),
+      isUSSitus:(h.isUSSitus==null)?EstateTaxEngine.inferUSSitus(h):h.isUSSitus,
+      trackingMode:h.trackingMode||inferTrackingMode(h)
+    };
+    // US holdings: back-fill USD cost basis once so stock vs FX P&L can split.
+    // avgBuyFx defaults to today's fx (FX P&L starts at 0) since the real
+    // purchase rate of legacy buys was never recorded. See usFxEngine.
+    if(m.type==='us'&&(m.costUSD==null||m.priceUSD==null)){Object.assign(m,UsFxEngine.backfill(m,fx));}
+    return m;
+  }));
 }
 function migrateGoals(){
   DB.set('goals',(DB.get('goals')||[]).map(GoalsEngine.withGoalDefaults));
@@ -3001,8 +3111,12 @@ function renderHoldings(){
   let rows='',alerts='';
   // risk alerts ย้ายไปอยู่ Dashboard อย่างเดียว (กันซ้ำ) — holdings โชว์แค่เตือนรายตัว gp<-15
   h.forEach(x=>{
-    const gain=x.value-x.invested,gp=x.invested>0?(gain/x.invested)*100:0;
-    const al=V>0?(x.value/V*100):0;
+    const isUS=x.type==='us',fx=fxRate();
+    const p=isUS?UsFxEngine.pnl(x,fx):null;       // US: split stock vs FX P&L (cost basis kept in USD)
+    const valTHB=isUS?Math.round(p.valueTHB):x.value; // live THB value at current fx
+    const gain=valTHB-x.invested,gp=x.invested>0?(gain/x.invested)*100:0;
+    const gpAlert=isUS?p.stockGainPct:gp;          // review-thesis alert tracks the STOCK move, not FX noise
+    const al=V>0?(valTHB/V*100):0;
     const tc={fund:'tf',stock:'ts',pvd:'tp',cash:'tc',us:'tf'}[x.type]||'tc';
     const tl={fund:'Fund',stock:'หุ้นไทย',pvd:'PVD',cash:'Cash',us:'US'}[x.type]||x.type;
     // kill-conditions reference (display-only): traffic-light from brief recheck, else 📋
@@ -3014,17 +3128,31 @@ function renderHoldings(){
       const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
       killBadge=` <span style="font-size:11px;cursor:help" title="${esc(tip)}">${_kc.indicator||'📋'}</span>`;
     }
-    if(gp<-15)alerts+=`<div class="co co-a" style="margin-bottom:8px">${x.name} ลงมา ${fmtP(gp)} — ควร review thesis ก่อน DCA เดือนหน้า</div>`;
-    const isUS=x.type==='us',fx=fxRate();
-    const usdSub=v=>isUS?`<div style="font-size:9px;color:var(--t3);margin-top:2px">($${(v/fx).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})})</div>`:'';
+    if(gpAlert<-15)alerts+=`<div class="co co-a" style="margin-bottom:8px">${x.name} ลงมา ${fmtP(gpAlert)} — ควร review thesis ก่อน DCA เดือนหน้า</div>`;
+    const usd0=v=>'$'+Math.round(v).toLocaleString('en-US');
+    const usd2=v=>'$'+(+v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    // US sub-lines show the USD source-of-truth: cost basis ($) and live value ($)
+    const usdSubInv=isUS?`<div style="font-size:9px;color:var(--t3);margin-top:2px">(${usd2(p.costUSD)})</div>`:'';
+    const usdSubVal=isUS?`<div style="font-size:9px;color:var(--t3);margin-top:2px">(${usd2(p.valueUSD)})</div>`:'';
     const mode=x.trackingMode||inferTrackingMode(x);
     let priceCell;
     if(mode==='unit'&&x.units>0){
-      const dispPrice=isUS?(x.value/x.units/fx):(x.value/x.units);
+      const dispPrice=isUS?p.priceUSD:(x.value/x.units);
       priceCell=`<td><div style="font-size:12px">${isUS?'$':'฿'}${dispPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
         <div style="font-size:9px;color:var(--t3);margin-top:2px">×${x.units.toLocaleString()} หน่วย${isUS?` · เรท ${fx}`:''}</div></td>`;
     }else{
       priceCell=`<td><span style="font-size:11px;color:var(--t3)">${mode==='unit'?'ยังไม่ตั้ง units':'manual'}</span></td>`;
+    }
+    // gain column: US splits into stock(USD) + FX(THB); everything else is one THB line
+    let gainCell;
+    if(isUS){
+      const sUp=p.stockGainUSD>=0,fUp=p.fxGainTHB>=0;
+      gainCell=`<td style="font-size:11px;line-height:1.55;white-space:nowrap">
+        <div class="${sUp?'gain':'loss'}">หุ้น ${fmtP(p.stockGainPct)} <span style="color:var(--t3)">(${sUp?'+':'-'}${usd0(Math.abs(p.stockGainUSD))})</span></div>
+        <div class="${fUp?'gain':'loss'}">ค่าเงิน ${fUp?'+':'-'}${fmt(Math.abs(p.fxGainTHB))} <span style="color:var(--t3)">(${p.avgBuyFx.toFixed(1)}→${fx})</span></div>
+      </td>`;
+    }else{
+      gainCell=`<td class="${gain>=0?'gain':'loss'}">${gain>=0?'+':''}${fmt(gain)} (${fmtP(gp)})</td>`;
     }
     const bucket=x.bucket||Allocation.inferBucket(x);
     rows+=`<tr draggable="true" data-id="${x.id}" ondragstart="holdDragStart(event,${x.id})" ondragover="holdDragOver(event)" ondrop="holdDrop(event,${x.id})" ondragend="holdDragEnd(event)" ondragleave="holdDragLeave(event)">
@@ -3032,10 +3160,10 @@ function renderHoldings(){
       <td style="font-weight:500">${x.name}${killBadge}${x.isUSSitus?' <span style="font-size:9px;color:var(--coral)" title="US-situs asset">◆US</span>':''}</td>
       <td><span class="tag ${tc}">${tl}</span></td>
       <td style="color:var(--t2)">${x.theme||'-'}</td>
-      <td>${fmt(x.invested)}${usdSub(x.invested)}</td>${priceCell}<td>${fmt(x.value)}${usdSub(x.value)}</td>
-      <td class="${gain>=0?'gain':'loss'}">${gain>=0?'+':''}${fmt(gain)} (${fmtP(gp)})</td>
+      <td>${fmt(x.invested)}${usdSubInv}</td>${priceCell}<td>${fmt(valTHB)}${usdSubVal}</td>
+      ${gainCell}
       <td>${al.toFixed(1)}%</td><td style="color:var(--t2);font-size:10px">${bucket}</td>
-      <td style="color:var(--t2);font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${gp<-10?'⚠ ':''}${x.thesis||'-'}</td>
+      <td style="color:var(--t2);font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${gpAlert<-10?'⚠ ':''}${x.thesis||'-'}</td>
       <td style="white-space:nowrap">
         <button class="btn" style="padding:3px 7px;font-size:10px" onclick="openUpdate(${x.id})">Update</button>
         <button class="btn" style="padding:3px 7px;font-size:10px;margin-left:3px" onclick="openBuy(${x.id})">Buy</button>
@@ -3113,7 +3241,13 @@ function saveUpdate(){
     const units=parseFloat(document.getElementById('u_units').value)||0;
     const price=parseFloat(document.getElementById('u_price').value)||0;
     const fxEl=document.getElementById('u_fx'),fx=fxEl?(parseFloat(fxEl.value)||1):1;
-    obj.units=units;obj.value=Math.round(units*price*(isUS?fx:1));
+    if(isUS){
+      // Reprice/units-correction only — cost basis (costUSD) is NOT touched here.
+      const r=UsFxEngine.repriceUS(x,{units,priceUSD:price,fx});
+      obj.units=r.units;obj.priceUSD=r.priceUSD;obj.value=r.value;
+    }else{
+      obj.units=units;obj.value=Math.round(units*price);
+    }
     const inv=document.getElementById('u_inv').value;if(inv!=='')obj.invested=parseFloat(inv)||0;
   }else{
     obj.value=parseFloat(document.getElementById('u_val').value)||0;
@@ -3169,9 +3303,15 @@ function saveBuy(){
     const price=parseFloat(document.getElementById('b_price').value)||0;
     const fxEl=document.getElementById('b_fx'),fx=fxEl?(parseFloat(fxEl.value)||1):1;
     const fee=parseFloat(document.getElementById('b_fee').value)||0;
-    const denom=price*(isUS?fx:1),added=denom>0?(amt-fee)/denom:0;
-    obj.units=(x.units||0)+added;obj.invested=(x.invested||0)+amt;
-    obj.value=Math.round(obj.units*price*(isUS?fx:1));
+    if(isUS){
+      // US: cost basis grows in USD (fee stays in THB invested only) via UsFxEngine.
+      const r=UsFxEngine.buyUS(x,{amtTHB:amt,priceUSD:price,fx,feeTHB:fee});
+      obj.units=r.units;obj.invested=r.invested;obj.costUSD=r.costUSD;obj.priceUSD=r.priceUSD;obj.value=r.value;
+    }else{
+      const added=price>0?(amt-fee)/price:0;
+      obj.units=(x.units||0)+added;obj.invested=(x.invested||0)+amt;
+      obj.value=Math.round(obj.units*price);
+    }
   }else{
     obj.invested=(x.invested||0)+amt;obj.value=(x.value||0)+amt;
   }
