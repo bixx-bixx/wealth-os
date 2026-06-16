@@ -2792,9 +2792,9 @@ DB.def('bucketTargets',{
 const fmt=n=>'฿'+Math.round(n).toLocaleString('th-TH');
 const fmtP=n=>(n>=0?'+':'')+n.toFixed(1)+'%';
 const fxRate=()=>parseFloat(localStorage.getItem('w_fxrate'))||36.5; // cached USD→THB
-// Price API base: local Flask server (price_server.py) when opened as file:// on the
-// PC, else the cloud Edge Function so the HTTPS live site / mobile can refresh too.
-const PRICE_API=(location.protocol==='file:')?'http://localhost:5000':'https://nplhhyhtstyzqxiymwrq.supabase.co/functions/v1/price';
+// Price API base: always the cloud Edge Function so every device (PC, live site,
+// mobile) refreshes prices without needing the local price_server.py running.
+const PRICE_API='https://nplhhyhtstyzqxiymwrq.supabase.co/functions/v1/price';
 const uid=()=>Date.now()+Math.random();
 // Holdings with US `value` derived LIVE (units*priceUSD*fx) so any read never trusts
 // a stale cached value. priceUSD is the source of truth. Use this anywhere a VALUE is
