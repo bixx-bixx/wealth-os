@@ -3046,10 +3046,19 @@ function renderDash(){
   document.getElementById('ddca').innerHTML=dcaHtml;
   // Net Worth Snapshot card
   const pvdVal=PvdEngine.pvdHoldingsValue(h);
+  // total US currency P&L across all US holdings — split out of the blended investment gain
+  const __fx=fxRate();
+  let usFxTHB=0;
+  invH.forEach(x=>{if(x.type==='us'&&window.UsFxEngine)usFxTHB+=UsFxEngine.pnl(x,__fx).fxGainTHB;});
+  const exFxGain=invGain-usFxTHB; // investment gain without the FX component (stock/fund only)
   document.getElementById('dsnap').innerHTML=`
     <div class="cfrow"><span class="cfl">Net Worth</span><span class="cfv">${fmt(V)}</span></div>
     <div class="cfrow"><span class="cfl">เงินลงทุน <span style="color:var(--t3);font-size:10px">ex-cash, ex-PVD</span></span><span class="cfv">${fmt(review.rebalanceBase)}</span></div>
-    <div class="cfrow"><span class="cfl">Gain/Loss (เงินลงทุน)</span><span class="cfv ${invGain>=0?'up':'dn'}">${invGain>=0?'+':''}${fmt(invGain)} (${fmtP(invGp)})</span></div>
+    <div class="cfrow"><span class="cfl">Gain/Loss (เงินลงทุน) <span id="invfx-c" onclick="toggleInvFx()" style="cursor:pointer;color:var(--t3);font-size:10px;user-select:none" title="แยกค่าเงินหุ้น US">▾</span></span><span class="cfv ${invGain>=0?'up':'dn'}">${invGain>=0?'+':''}${fmt(invGain)} (${fmtP(invGp)})</span></div>
+    <div id="invfx-d" style="display:none">
+      <div class="cfrow" style="padding-left:14px"><span class="cfl" style="color:var(--t3);font-size:11px">↳ ไม่รวมค่าเงิน <span style="font-size:9px">หุ้น/กองทุน</span></span><span class="cfv ${exFxGain>=0?'up':'dn'}" style="font-size:11px">${exFxGain>=0?'+':''}${fmt(exFxGain)}</span></div>
+      <div class="cfrow" style="padding-left:14px"><span class="cfl" style="color:var(--t3);font-size:11px">↳ ค่าเงิน <span style="font-size:9px">หุ้น US รวม</span></span><span class="cfv ${usFxTHB>=0?'up':'dn'}" style="font-size:11px">${usFxTHB>=0?'+':''}${fmt(usFxTHB)}</span></div>
+    </div>
     <div class="cfrow"><span class="cfl">PVD / Retirement</span><span class="cfv">${fmt(pvdVal)} <span style="color:var(--t3);font-size:10px">(${V>0?PvdEngine.pvdPercent(pvdVal,V).toFixed(1):0}%)</span></span></div>
     <div class="cfrow"><span class="cfl">Emergency <span style="color:var(--t3);font-size:10px">${emg.months} เดือน = ${fmt(emg.target)}</span></span><span class="cfv ${emg.ok?'up':'dn'}">${fmt(emg.cash)} · ${emg.coverage.toFixed(1)} ด. ${emg.ok?'✓':'⚠'}</span></div>`;
   // Policy & status card (70/15/15 + US Individual / KKP DCA status)
@@ -3117,7 +3126,7 @@ function renderNWTrend(net,invested){
   if(sub)sub.innerHTML='· <span style="color:'+(up?'var(--green)':'var(--red)')+'">'+(up?'↑':'↓')+' '+fmt(Math.abs(s.changeAbs))+' ('+fmtP(s.changePct)+')</span> ใน '+s.periodDays+' วัน · '+s.count+' จุด';
   el.innerHTML='<div style="position:relative;height:200px"><canvas id="cNW" role="img" aria-label="Net worth trend line chart"></canvas></div>';
   if(chartNW){chartNW.destroy();chartNW=null;}
-  chartNW=new Chart(document.getElementById('cNW'),{type:'line',data:{labels:hist.map(e=>e.date),datasets:[{label:'Net Worth',data:hist.map(e=>e.net),borderColor:'#3ecf8e',backgroundColor:'rgba(62,207,142,.12)',borderWidth:2,fill:true,tension:.25,pointRadius:2,pointHoverRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9896a8',font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:7},grid:{display:false}},y:{ticks:{color:'#9896a8',font:{size:10},crossAlign:'far',callback:v=>v>=1e6?'฿'+(v/1e6).toFixed(1)+'M':'฿'+(v/1e3).toFixed(0)+'K'},grid:{color:'rgba(255,255,255,.05)'}}}}});
+  chartNW=new Chart(document.getElementById('cNW'),{type:'line',data:{labels:hist.map(e=>e.date),datasets:[{label:'Net Worth',data:hist.map(e=>e.net),borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,.14)',borderWidth:2.5,fill:true,tension:.25,pointRadius:2,pointHoverRadius:4,pointBackgroundColor:'#38bdf8'}]},plugins:[{id:'nwGlow',beforeDatasetDraw(c){const x=c.ctx;x.save();x.shadowColor='rgba(56,189,248,.85)';x.shadowBlur=14;},afterDatasetDraw(c){c.ctx.restore();}}],options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9896a8',font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:7},grid:{display:false}},y:{ticks:{color:'#9896a8',font:{size:10},crossAlign:'far',callback:v=>v>=1e6?'฿'+(v/1e6).toFixed(1)+'M':'฿'+(v/1e3).toFixed(0)+'K'},grid:{color:'rgba(255,255,255,.05)'}}}}});
 }
 
 // HOLDINGS
@@ -3201,6 +3210,13 @@ function toggleGainDetail(id){
   const open=!el.style.display||el.style.display==='none';
   el.style.display=open?'block':'none';
   const c=document.getElementById('gc-'+id);if(c)c.textContent=open?'▴':'▾';
+}
+// tap-to-expand the US currency (FX) breakdown under the dashboard's investment Gain/Loss
+function toggleInvFx(){
+  const el=document.getElementById('invfx-d');if(!el)return;
+  const open=!el.style.display||el.style.display==='none';
+  el.style.display=open?'block':'none';
+  const c=document.getElementById('invfx-c');if(c)c.textContent=open?'▴':'▾';
 }
 // tap-to-expand the kill-condition panel (replaces hover tooltip that clipped long text)
 function toggleKill(id){
