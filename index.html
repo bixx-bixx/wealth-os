@@ -3150,7 +3150,7 @@ let chartNW=null;
 function renderNWTrend(net,invested){
   const E=window.NWHistoryEngine;
   const el=document.getElementById('nw-trend'); if(!el||!E)return;
-  const today=new Date().toISOString().slice(0,10);
+  const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'}); // Thai calendar day (UTC+7), not UTC — so the day rolls at เที่ยงคืนไทย, not 07:00
   const snap={date:today,net:net,invested:invested};
   let hist=DB.get('nwHistory')||[];
   // write at most once/day and only when value actually moved -> no sync churn on idle re-renders
