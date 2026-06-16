@@ -1906,6 +1906,109 @@ if (typeof module !== 'undefined' && module.exports) module.exports = PortfolioP
 if (typeof window !== 'undefined') window.PortfolioProvider = PortfolioProvider;          // browser global
 
 // ============================================================
+// BFOS — US holding FX / cost-basis engine
+// ============================================================
+// Pure logic only: no DOM, no localStorage. Keeps the cost basis of a
+// US ('us'-type) holding in USD so the investment P&L is never muddied by
+// the THB exchange rate. Splits a holding's gain into two clean parts:
+//
+//   stock P&L  (USD)  = units*priceUSD - costUSD     -> did the stock do well?
+//   FX P&L     (THB)  = (fx - avgBuyFx) * costUSD    -> did the baht help/hurt?
+//
+// THB value (for net-worth aggregation) is always DERIVED at the current
+// fx, never stored baked-in — so it can't drift out of sync with the rate.
+//
+// US holding shape (fields this engine reads/writes):
+//   units      shares held
+//   priceUSD   latest price per share, in USD          (source of truth)
+//   costUSD    total cost basis in USD (sum of shares*buyPrice)  (locked)
+//   invested   total cost basis in THB actually paid    (locked; existing field)
+// avgBuyFx (THB per USD we actually paid) is derived = invested / costUSD,
+// so no separate rate-at-purchase field is needed.
+// ============================================================
+
+function _num(n) { return (typeof n === 'number' && Number.isFinite(n)) ? n : 0; }
+
+// Resolve priceUSD for a holding, falling back to the legacy THB value when
+// the explicit field is absent (value = units*priceUSD*fx  =>  price = value/units/fx).
+function priceUSDof(h, fx) {
+  const explicit = _num(h && h.priceUSD);
+  if (explicit > 0) return explicit;
+  const units = _num(h && h.units), value = _num(h && h.value), f = _num(fx);
+  return (units > 0 && f > 0) ? value / units / f : 0;
+}
+
+// Resolve costUSD, falling back to the THB cost converted at the given fx
+// (this makes avgBuyFx == fx, i.e. FX P&L starts at 0 for un-migrated data).
+function costUSDof(h, fx) {
+  const explicit = _num(h && h.costUSD);
+  if (explicit > 0) return explicit;
+  const invested = _num(h && h.invested), f = _num(fx);
+  return f > 0 ? invested / f : 0;
+}
+
+// Full P&L breakdown for one US holding at the current fx. Pure / safe on
+// missing fields. Non-US callers should not use this.
+function pnl(h, fx) {
+  const f = _num(fx);
+  const units = _num(h && h.units);
+  const priceUSD = priceUSDof(h, f);
+  const costUSD = costUSDof(h, f);
+  const investedTHB = _num(h && h.invested);
+  const valueUSD = units * priceUSD;
+  const stockGainUSD = valueUSD - costUSD;
+  const stockGainPct = costUSD > 0 ? (stockGainUSD / costUSD) * 100 : 0;
+  const stockGainTHB = stockGainUSD * f;            // stock-only gain expressed in THB at today's rate (matches Dime)
+  const avgBuyFx = costUSD > 0 ? investedTHB / costUSD : f;
+  const valueTHB = valueUSD * f;
+  const fxGainTHB = (f - avgBuyFx) * costUSD;
+  const fxGainPct = avgBuyFx > 0 ? ((f - avgBuyFx) / avgBuyFx) * 100 : 0; // how far the rate moved since you bought
+  const totalGainTHB = valueTHB - investedTHB;
+  return {
+    units, priceUSD, costUSD, valueUSD,
+    stockGainUSD, stockGainPct, stockGainTHB,
+    avgBuyFx, fxGainTHB, fxGainPct,
+    valueTHB, totalGainTHB,
+  };
+}
+
+// Back-fill the USD source-of-truth fields for a legacy US holding that
+// predates this engine. Returns ONLY the fields to merge; avgBuyFx is set to
+// the current fx (FX P&L = 0) since the real purchase rate was never recorded.
+function backfill(h, fx) {
+  return { costUSD: costUSDof(h, fx), priceUSD: priceUSDof(h, fx) };
+}
+
+// Apply a buy to a US holding. Cost basis grows in USD by shares*price (fees
+// stay in the THB `invested` only). Returns the fields to merge onto the holding.
+function buyUS(h, opts) {
+  const f = _num(opts.fx);
+  const price = _num(opts.priceUSD);
+  const amtTHB = _num(opts.amtTHB);
+  const feeTHB = _num(opts.feeTHB);
+  const denom = price * f;
+  const addedUnits = denom > 0 ? (amtTHB - feeTHB) / denom : 0;
+  const units = _num(h && h.units) + addedUnits;
+  const costUSD = costUSDof(h, f) + addedUnits * price;
+  const invested = _num(h && h.invested) + amtTHB;
+  return { addedUnits, units, costUSD, invested, priceUSD: price, value: Math.round(units * price * f) };
+}
+
+// Apply a manual reprice/units-correction to a US holding (NOT a buy):
+// priceUSD + units change, cost basis (costUSD/invested) is untouched.
+function repriceUS(h, opts) {
+  const f = _num(opts.fx);
+  const price = _num(opts.priceUSD);
+  const units = _num(opts.units);
+  return { units, priceUSD: price, value: Math.round(units * price * f) };
+}
+
+const __UsFxEngine = { priceUSDof, costUSDof, pnl, backfill, buyUS, repriceUS };
+
+if (typeof module !== 'undefined' && module.exports) module.exports = __UsFxEngine; // node tests
+if (typeof window !== 'undefined') window.UsFxEngine = __UsFxEngine;                 // browser global
+
+// ============================================================
 // BFOS — Report Engine
 // ============================================================
 // Pure text-report generation extracted verbatim from app.monolith.js's
@@ -2551,109 +2654,6 @@ const __NWHistoryEngine = {
 
 if (typeof module !== 'undefined' && module.exports) module.exports = __NWHistoryEngine; // node tests
 if (typeof window !== 'undefined') window.NWHistoryEngine = __NWHistoryEngine;            // browser global
-
-// ============================================================
-// BFOS — US holding FX / cost-basis engine
-// ============================================================
-// Pure logic only: no DOM, no localStorage. Keeps the cost basis of a
-// US ('us'-type) holding in USD so the investment P&L is never muddied by
-// the THB exchange rate. Splits a holding's gain into two clean parts:
-//
-//   stock P&L  (USD)  = units*priceUSD - costUSD     -> did the stock do well?
-//   FX P&L     (THB)  = (fx - avgBuyFx) * costUSD    -> did the baht help/hurt?
-//
-// THB value (for net-worth aggregation) is always DERIVED at the current
-// fx, never stored baked-in — so it can't drift out of sync with the rate.
-//
-// US holding shape (fields this engine reads/writes):
-//   units      shares held
-//   priceUSD   latest price per share, in USD          (source of truth)
-//   costUSD    total cost basis in USD (sum of shares*buyPrice)  (locked)
-//   invested   total cost basis in THB actually paid    (locked; existing field)
-// avgBuyFx (THB per USD we actually paid) is derived = invested / costUSD,
-// so no separate rate-at-purchase field is needed.
-// ============================================================
-
-function _num(n) { return (typeof n === 'number' && Number.isFinite(n)) ? n : 0; }
-
-// Resolve priceUSD for a holding, falling back to the legacy THB value when
-// the explicit field is absent (value = units*priceUSD*fx  =>  price = value/units/fx).
-function priceUSDof(h, fx) {
-  const explicit = _num(h && h.priceUSD);
-  if (explicit > 0) return explicit;
-  const units = _num(h && h.units), value = _num(h && h.value), f = _num(fx);
-  return (units > 0 && f > 0) ? value / units / f : 0;
-}
-
-// Resolve costUSD, falling back to the THB cost converted at the given fx
-// (this makes avgBuyFx == fx, i.e. FX P&L starts at 0 for un-migrated data).
-function costUSDof(h, fx) {
-  const explicit = _num(h && h.costUSD);
-  if (explicit > 0) return explicit;
-  const invested = _num(h && h.invested), f = _num(fx);
-  return f > 0 ? invested / f : 0;
-}
-
-// Full P&L breakdown for one US holding at the current fx. Pure / safe on
-// missing fields. Non-US callers should not use this.
-function pnl(h, fx) {
-  const f = _num(fx);
-  const units = _num(h && h.units);
-  const priceUSD = priceUSDof(h, f);
-  const costUSD = costUSDof(h, f);
-  const investedTHB = _num(h && h.invested);
-  const valueUSD = units * priceUSD;
-  const stockGainUSD = valueUSD - costUSD;
-  const stockGainPct = costUSD > 0 ? (stockGainUSD / costUSD) * 100 : 0;
-  const stockGainTHB = stockGainUSD * f;            // stock-only gain expressed in THB at today's rate (matches Dime)
-  const avgBuyFx = costUSD > 0 ? investedTHB / costUSD : f;
-  const valueTHB = valueUSD * f;
-  const fxGainTHB = (f - avgBuyFx) * costUSD;
-  const fxGainPct = avgBuyFx > 0 ? ((f - avgBuyFx) / avgBuyFx) * 100 : 0; // how far the rate moved since you bought
-  const totalGainTHB = valueTHB - investedTHB;
-  return {
-    units, priceUSD, costUSD, valueUSD,
-    stockGainUSD, stockGainPct, stockGainTHB,
-    avgBuyFx, fxGainTHB, fxGainPct,
-    valueTHB, totalGainTHB,
-  };
-}
-
-// Back-fill the USD source-of-truth fields for a legacy US holding that
-// predates this engine. Returns ONLY the fields to merge; avgBuyFx is set to
-// the current fx (FX P&L = 0) since the real purchase rate was never recorded.
-function backfill(h, fx) {
-  return { costUSD: costUSDof(h, fx), priceUSD: priceUSDof(h, fx) };
-}
-
-// Apply a buy to a US holding. Cost basis grows in USD by shares*price (fees
-// stay in the THB `invested` only). Returns the fields to merge onto the holding.
-function buyUS(h, opts) {
-  const f = _num(opts.fx);
-  const price = _num(opts.priceUSD);
-  const amtTHB = _num(opts.amtTHB);
-  const feeTHB = _num(opts.feeTHB);
-  const denom = price * f;
-  const addedUnits = denom > 0 ? (amtTHB - feeTHB) / denom : 0;
-  const units = _num(h && h.units) + addedUnits;
-  const costUSD = costUSDof(h, f) + addedUnits * price;
-  const invested = _num(h && h.invested) + amtTHB;
-  return { addedUnits, units, costUSD, invested, priceUSD: price, value: Math.round(units * price * f) };
-}
-
-// Apply a manual reprice/units-correction to a US holding (NOT a buy):
-// priceUSD + units change, cost basis (costUSD/invested) is untouched.
-function repriceUS(h, opts) {
-  const f = _num(opts.fx);
-  const price = _num(opts.priceUSD);
-  const units = _num(opts.units);
-  return { units, priceUSD: price, value: Math.round(units * price * f) };
-}
-
-const __UsFxEngine = { priceUSDof, costUSDof, pnl, backfill, buyUS, repriceUS };
-
-if (typeof module !== 'undefined' && module.exports) module.exports = __UsFxEngine; // node tests
-if (typeof window !== 'undefined') window.UsFxEngine = __UsFxEngine;                 // browser global
 
 
 // ===== Cloud sync (Supabase) =====
