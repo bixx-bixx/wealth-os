@@ -3146,14 +3146,16 @@ function renderHoldings(){
     }else{
       priceCell=`<td><span style="font-size:11px;color:var(--t3)">${mode==='unit'?'ยังไม่ตั้ง units':'manual'}</span></td>`;
     }
-    // gain column: US splits into stock(USD) + FX(THB); everything else is one THB line
+    // gain column: one combined THB number like every other asset; US rows add a
+    // tap-to-expand (▾) breakdown into stock(USD) + FX(THB) — tap works on mobile, hover doesn't
     let gainCell;
     if(isUS){
       const sUp=p.stockGainUSD>=0,fUp=p.fxGainTHB>=0;
-      gainCell=`<td style="font-size:11px;line-height:1.55;white-space:nowrap">
-        <div class="${sUp?'gain':'loss'}">หุ้น ${fmtP(p.stockGainPct)} <span style="color:var(--t3)">(${sUp?'+':'-'}${usd0(Math.abs(p.stockGainUSD))})</span></div>
-        <div class="${fUp?'gain':'loss'}">ค่าเงิน ${fUp?'+':'-'}${fmt(Math.abs(p.fxGainTHB))} <span style="color:var(--t3)">(${p.avgBuyFx.toFixed(1)}→${fx})</span></div>
-      </td>`;
+      gainCell=`<td class="${gain>=0?'gain':'loss'}" style="white-space:nowrap">${gain>=0?'+':''}${fmt(gain)} (${fmtP(gp)})<span id="gc-${x.id}" onclick="event.stopPropagation();toggleGainDetail(${x.id})" style="cursor:pointer;color:var(--t3);font-size:10px;margin-left:5px;user-select:none" title="แยกหุ้น/ค่าเงิน">▾</span>
+        <div id="gd-${x.id}" style="display:none;margin-top:5px;font-size:10px;line-height:1.5;font-weight:400">
+          <div class="${sUp?'gain':'loss'}">หุ้น ${fmtP(p.stockGainPct)} <span style="color:var(--t3)">(${sUp?'+':'-'}${usd0(Math.abs(p.stockGainUSD))})</span></div>
+          <div class="${fUp?'gain':'loss'}">ค่าเงิน ${fUp?'+':'-'}${fmt(Math.abs(p.fxGainTHB))} <span style="color:var(--t3)">(${p.avgBuyFx.toFixed(1)}→${fx})</span></div>
+        </div></td>`;
     }else{
       gainCell=`<td class="${gain>=0?'gain':'loss'}">${gain>=0?'+':''}${fmt(gain)} (${fmtP(gp)})</td>`;
     }
@@ -3178,6 +3180,13 @@ function renderHoldings(){
   document.getElementById('htbody').innerHTML=rows||`<tr><td colspan="12"><div class="empty">ยังไม่มี holdings</div></td></tr>`;
 }
 
+// tap-to-expand the US stock/FX gain breakdown (mobile-friendly: no hover needed)
+function toggleGainDetail(id){
+  const el=document.getElementById('gd-'+id);if(!el)return;
+  const open=!el.style.display||el.style.display==='none';
+  el.style.display=open?'block':'none';
+  const c=document.getElementById('gc-'+id);if(c)c.textContent=open?'▴':'▾';
+}
 // ----- Holdings ordering: group-by-type button + drag-to-reorder (persisted in holdings array) -----
 function sortHoldingsByType(){
   const ord={stock:0,fund:1,us:2,pvd:3,cash:4}; // หุ้นไทย → Fund → US → PVD → Cash; unknown last
