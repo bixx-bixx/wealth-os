@@ -2594,14 +2594,16 @@ function pnl(h, fx) {
   const valueUSD = units * priceUSD;
   const stockGainUSD = valueUSD - costUSD;
   const stockGainPct = costUSD > 0 ? (stockGainUSD / costUSD) * 100 : 0;
+  const stockGainTHB = stockGainUSD * f;            // stock-only gain expressed in THB at today's rate (matches Dime)
   const avgBuyFx = costUSD > 0 ? investedTHB / costUSD : f;
   const valueTHB = valueUSD * f;
   const fxGainTHB = (f - avgBuyFx) * costUSD;
+  const fxGainPct = avgBuyFx > 0 ? ((f - avgBuyFx) / avgBuyFx) * 100 : 0; // how far the rate moved since you bought
   const totalGainTHB = valueTHB - investedTHB;
   return {
     units, priceUSD, costUSD, valueUSD,
-    stockGainUSD, stockGainPct,
-    avgBuyFx, fxGainTHB,
+    stockGainUSD, stockGainPct, stockGainTHB,
+    avgBuyFx, fxGainTHB, fxGainPct,
     valueTHB, totalGainTHB,
   };
 }
@@ -3148,15 +3150,15 @@ function renderHoldings(){
     }else{
       priceCell=`<td><span style="font-size:11px;color:var(--t3)">${mode==='unit'?'ยังไม่ตั้ง units':'manual'}</span></td>`;
     }
-    // gain column: one combined THB number like every other asset; US rows add a
-    // tap-to-expand (▾) breakdown into stock(USD) + FX(THB) — tap works on mobile, hover doesn't
+    // gain column: US shows STOCK gain in THB + % (matches Dime); a tap-to-expand (▾)
+    // reveals the currency (FX) gain/loss in THB + %. Other assets keep one THB line.
     let gainCell;
     if(isUS){
-      const sUp=p.stockGainUSD>=0,fUp=p.fxGainTHB>=0;
-      gainCell=`<td class="${gain>=0?'gain':'loss'}" style="white-space:nowrap">${gain>=0?'+':''}${fmt(gain)} (${fmtP(gp)})<span id="gc-${x.id}" onclick="event.stopPropagation();toggleGainDetail(${x.id})" style="cursor:pointer;color:var(--t3);font-size:10px;margin-left:5px;user-select:none" title="แยกหุ้น/ค่าเงิน">▾</span>
+      const sUp=p.stockGainTHB>=0,fUp=p.fxGainTHB>=0;
+      gainCell=`<td class="${sUp?'gain':'loss'}" style="white-space:nowrap">${sUp?'+':'-'}${fmt(Math.abs(p.stockGainTHB))} (${fmtP(p.stockGainPct)})<span id="gc-${x.id}" onclick="event.stopPropagation();toggleGainDetail(${x.id})" style="cursor:pointer;color:var(--t3);font-size:10px;margin-left:5px;user-select:none" title="กำไร/ขาดทุนค่าเงิน">▾</span>
+        <span style="color:var(--t3);font-size:9px;font-weight:400"> (${sUp?'+':'-'}${usd0(Math.abs(p.stockGainUSD))})</span>
         <div id="gd-${x.id}" style="display:none;margin-top:5px;font-size:10px;line-height:1.5;font-weight:400">
-          <div class="${sUp?'gain':'loss'}">หุ้น ${fmtP(p.stockGainPct)} <span style="color:var(--t3)">(${sUp?'+':'-'}${usd0(Math.abs(p.stockGainUSD))})</span></div>
-          <div class="${fUp?'gain':'loss'}">ค่าเงิน ${fUp?'+':'-'}${fmt(Math.abs(p.fxGainTHB))} <span style="color:var(--t3)">(${p.avgBuyFx.toFixed(1)}→${fx})</span></div>
+          <div class="${fUp?'gain':'loss'}">ค่าเงิน ${fUp?'+':'-'}${fmt(Math.abs(p.fxGainTHB))} (${fmtP(p.fxGainPct)}) <span style="color:var(--t3)">${p.avgBuyFx.toFixed(2)}→${fx}</span></div>
         </div></td>`;
     }else{
       gainCell=`<td class="${gain>=0?'gain':'loss'}">${gain>=0?'+':''}${fmt(gain)} (${fmtP(gp)})</td>`;
