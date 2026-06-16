@@ -1983,6 +1983,15 @@ function pnl(h, fx) {
   };
 }
 
+// Live THB value of a US holding = units * priceUSD * fx, rounded to whole baht.
+// priceUSD is the source of truth; the stored `value` field is only a cache, so
+// callers should derive THB value through this instead of trusting h.value (which
+// can freeze at an old price/rate). Pure / safe on missing fields.
+function valueTHB(h, fx) {
+  const f = _num(fx);
+  return Math.round(_num(h && h.units) * priceUSDof(h, f) * f);
+}
+
 // Back-fill the USD source-of-truth fields for a legacy US holding that
 // predates this engine. Returns ONLY the fields to merge; avgBuyFx is set to
 // the current fx (FX P&L = 0) since the real purchase rate was never recorded.
@@ -2014,7 +2023,7 @@ function repriceUS(h, opts) {
   return { units, priceUSD: price, value: Math.round(units * price * f) };
 }
 
-const __UsFxEngine = { priceUSDof, costUSDof, pnl, backfill, buyUS, repriceUS };
+const __UsFxEngine = { priceUSDof, costUSDof, pnl, valueTHB, backfill, buyUS, repriceUS };
 
 if (typeof module !== 'undefined' && module.exports) module.exports = __UsFxEngine; // node tests
 if (typeof window !== 'undefined') window.UsFxEngine = __UsFxEngine;                 // browser global
@@ -2784,7 +2793,23 @@ const fmt=n=>'฿'+Math.round(n).toLocaleString('th-TH');
 const fmtP=n=>(n>=0?'+':'')+n.toFixed(1)+'%';
 const fxRate=()=>parseFloat(localStorage.getItem('w_fxrate'))||36.5; // cached USD→THB
 const uid=()=>Date.now()+Math.random();
-const tv=()=>DB.get('holdings').reduce((s,h)=>s+h.value,0);
+// Holdings with US `value` derived LIVE (units*priceUSD*fx) so any read never trusts
+// a stale cached value. priceUSD is the source of truth. Use this anywhere a VALUE is
+// summed/shown; writers (buy/reprice/edit) keep using raw DB.get('holdings').
+function liveHoldings(){
+  const fx=fxRate();
+  return (DB.get('holdings')||[]).map(h=>h.type==='us'?{...h,value:UsFxEngine.valueTHB(h,fx)}:h);
+}
+// Symbol to query the price server with. Thai stocks (SET) need a `.BK` suffix for
+// Yahoo Finance — bare 'KKP' returns null. Auto-append it for type 'stock' when no
+// exchange suffix is present. US stocks/ETFs use the bare symbol as-is. Callers MUST
+// read priceMap back by this same key (not the raw stored ticker).
+function queryTicker(x){
+  const t=((x&&x.ticker)||'').trim();
+  if(x&&x.type==='stock'&&t&&!t.includes('.'))return t+'.BK';
+  return t;
+}
+const tv=()=>liveHoldings().reduce((s,h)=>s+h.value,0);
 const ti=()=>DB.get('holdings').reduce((s,h)=>s+h.invested,0);
 
 // ----- Strategic buckets + migration -----
@@ -2823,10 +2848,10 @@ function migrateGoals(){
 // goal current value + inclusion note: pure logic in GoalsEngine (window.GoalsEngine).
 // thin wrapper here injects holdings from DB; goalInclusionNote is called directly as GoalsEngine.goalInclusionNote.
 function getGoalCurrentValue(goal){
-  return GoalsEngine.goalCurrentValue(goal, DB.get('holdings')||[]);
+  return GoalsEngine.goalCurrentValue(goal, liveHoldings());
 }
 function getUSSitusExposure(){
-  return EstateTaxEngine.usSitusExposure(DB.get('holdings')||[], fxRate());
+  return EstateTaxEngine.usSitusExposure(liveHoldings(), fxRate());
 }
 // projectFutureValue extracted to src/features/dca/dcaEngine.js (window.DcaEngine)
 
@@ -2877,7 +2902,7 @@ function toV4Holding(h){
   };
 }
 function getV4Review(){
-  const holdings=DB.get('holdings').map(toV4Holding);
+  const holdings=liveHoldings().map(toV4Holding);
   // rebalance targets only: drop 0-target buckets (e.g. PVD/Retirement, Other) so they
   // never appear as rebalance rows. Buckets with holdings still show via byBucket union.
   const targets=Allocation.buildTargets(DB.get('bucketTargets')); // rebalance buckets w/ positive target only
@@ -2900,7 +2925,7 @@ function getEmergencyStatus(){
 const MONTH_ABBR={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
 // holdings-derived values (with optional override in fireSettings)
 function liquidVal(){const o=DB.get('fireSettings').liquidOverride;if(o!=null&&o!=='')return +o;
-  return DB.get('holdings').filter(h=>['fund','stock','us'].includes(h.type)).reduce((s,h)=>s+h.value,0);}
+  return liveHoldings().filter(h=>['fund','stock','us'].includes(h.type)).reduce((s,h)=>s+h.value,0);}
 function pvdVal(){const o=DB.get('fireSettings').pvdOverride;if(o!=null&&o!=='')return +o;
   return PvdEngine.pvdHoldingsValue(DB.get('holdings'));}
 // nperYears extracted to src/features/dca/dcaEngine.js (window.DcaEngine)
@@ -2981,7 +3006,7 @@ function toggleAlerts(){
   localStorage.setItem('w_hideAlerts',willHide?'1':'0');markDirty();
 }
 function renderDash(){
-  const h=DB.get('holdings'),g=DB.get('goals'),s=DB.get('settings');
+  const h=liveHoldings(),g=DB.get('goals'),s=DB.get('settings');
   const cf=DB.get('cashflows').sort((a,b)=>b.month.localeCompare(a.month))[0]||{};
   const V=tv(),I=ti(),gain=V-I,gp=I>0?(gain/I)*100:0;
   // investment-only gain (ex-cash, ex-PVD) for the Net Worth Snapshot card; bad-input guarded
@@ -3439,6 +3464,8 @@ function saveHolding(){
 }
 async function fetchFx(){
   // USD→THB rate from price server (THB=X). Falls back to last cached rate.
+  // No need to re-derive holding values here: US THB value is computed live from
+  // priceUSD*fx on every read via liveHoldings(), so it can never freeze at an old rate.
   try{
     const res=await fetch('http://localhost:5000/fx',{signal:AbortSignal.timeout(5000)});
     if(res.ok){const d=await res.json();if(d.USDTHB){localStorage.setItem('w_fxrate',d.USDTHB);markDirty();return d.USDTHB;}}
@@ -3459,16 +3486,24 @@ async function refreshPrices(){
   }
   try{
     const fx=await fetchFx();
-    const res=await fetch('http://localhost:5000/prices?tickers='+stocks.map(x=>x.ticker).join(','));
+    const res=await fetch('http://localhost:5000/prices?tickers='+stocks.map(queryTicker).join(','));
     if(!res.ok)throw new Error('Server responded '+res.status);
     const priceMap=await res.json();
     let updated=0,notFound=[],usedFx=false;
     const newH=h.map(x=>{
       if(!x.ticker||!(x.units>0)||x.type==='fund')return x;
-      if(priceMap[x.ticker]!=null){
-        const rate=x.type==='us'?fx:1;
-        if(x.type==='us')usedFx=true;
-        updated++;return{...x,value:Math.round(x.units*priceMap[x.ticker]*rate)};
+      const px=priceMap[queryTicker(x)];
+      if(px!=null){
+        const isUS=x.type==='us';
+        const rate=isUS?fx:1;
+        if(isUS)usedFx=true;
+        updated++;
+        const upd={...x,value:Math.round(x.units*px*rate)};
+        // US: also refresh the USD source-of-truth price, else the split-P&L view
+        // (holdings table + report) keeps deriving valueTHB from the OLD priceUSD
+        // and freezes at the stale price while net worth uses the new value.
+        if(isUS)upd.priceUSD=px;
+        return upd;
       }
       notFound.push(x.name);return x;
     });
@@ -3885,7 +3920,7 @@ function generateReport(){
   try{
     const r=ReportEngine.generateReport({
       review:getV4Review(),
-      holdings:DB.get('holdings'),
+      holdings:liveHoldings(),
       settings:DB.get('settings'),
       cashflows:DB.get('cashflows'),
       goals:DB.get('goals'),
@@ -3951,9 +3986,11 @@ function importBackup(input){
 }
 
 async function testTicker(){
-  const ticker=document.getElementById('hticker').value.trim();
+  const raw=document.getElementById('hticker').value.trim();
   const el=document.getElementById('ticker-result');
-  if(!ticker){el.style.color='var(--amber)';el.textContent='กรุณากรอก Ticker ก่อน';return;}
+  if(!raw){el.style.color='var(--amber)';el.textContent='กรุณากรอก Ticker ก่อน';return;}
+  // resolve the same way the price refresh will (Thai stock -> auto .BK)
+  const ticker=queryTicker({ticker:raw,type:document.getElementById('htype').value});
   el.style.color='var(--t2)';el.textContent='กำลังตรวจสอบ...';
   try{
     const res=await fetch('http://localhost:5000/prices?tickers='+encodeURIComponent(ticker),{signal:AbortSignal.timeout(8000)});
@@ -4041,13 +4078,20 @@ async function refreshPricesSilent(){
   if(!stocks.length)return;
   try{
     const fx=await fetchFx();
-    const res=await fetch('http://localhost:5000/prices?tickers='+stocks.map(x=>x.ticker).join(','),{signal:AbortSignal.timeout(8000)});
+    const res=await fetch('http://localhost:5000/prices?tickers='+stocks.map(queryTicker).join(','),{signal:AbortSignal.timeout(8000)});
     if(!res.ok)return;
     const priceMap=await res.json();
     let updated=0;
     const newH=h.map(x=>{
       if(!x.ticker||!(x.units>0)||x.type==='fund')return x;
-      if(priceMap[x.ticker]!=null){updated++;return{...x,value:Math.round(x.units*priceMap[x.ticker]*(x.type==='us'?fx:1))};}
+      const px=priceMap[queryTicker(x)];
+      if(px!=null){
+        updated++;
+        const isUS=x.type==='us';
+        const upd={...x,value:Math.round(x.units*px*(isUS?fx:1))};
+        if(isUS)upd.priceUSD=px; // keep USD source-of-truth in sync (same as refreshPrices)
+        return upd;
+      }
       return x;
     });
     if(updated>0){
