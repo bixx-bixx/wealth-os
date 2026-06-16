@@ -1935,6 +1935,7 @@ const __rpGoals    = __rpResolve('GoalsEngine',    '../goals/goalsEngine.js');
 const __rpDca      = __rpResolve('DcaEngine',      '../dca/dcaEngine.js');
 const __rpAlloc    = __rpResolve('Allocation',     '../allocation/allocationEngine.js');
 const __rpKill     = __rpResolve('KillConditions', '../../data/killConditions.js');
+const __rpUsFx     = __rpResolve('UsFxEngine',     '../fx/usFxEngine.js');
 
 // text version of the DCA recommendation for the report.
 // `src` is the resolved monthly-DCA descriptor { amount, source, ... } (was resolveMonthlyDca()).
@@ -2101,14 +2102,24 @@ function __rpGenerateReport(opts) {
   if (!__killReady) r += '⚠ KillConditions not loaded — run tools/sync-killconditions.js\n';
   const __indent = t => t.split('\n').map(l => '    ' + l).join('\n');
   h.forEach(x => {
-    const g2 = x.value - x.invested, gp2 = x.invested > 0 ? (g2 / x.invested * 100) : 0;
-    const al = V > 0 ? (x.value / V * 100) : 0;
+    // US holdings: split stock vs FX P&L (same logic as the holdings table) so the
+    // report doesn't blend currency moves into the investment result.
+    const usP = (x.type === 'us' && __rpUsFx) ? __rpUsFx.pnl(x, fx) : null;
+    const curVal = usP ? usP.valueTHB : x.value;
+    const g2 = curVal - x.invested, gp2 = x.invested > 0 ? (g2 / x.invested * 100) : 0;
+    const al = V > 0 ? (curVal / V * 100) : 0;
     const v = toV4Holding(x);
     const flags = `rebalance=${v.rebalance_include} | concentration=${v.concentration_include}` + (v.liquidity_type === 'locked' ? ' | locked' : '');
     r += `\n${x.name} [${x.type || ''}] — ${x.theme || '-'}\n`;
     r += `  Invested Cost   : ${f2(x.invested)}\n`;
-    r += `  Current Value   : ${f2(x.value)}\n`;
-    r += `  Gain/Loss       : ${f2(g2)} (${p2(gp2)})\n`;
+    r += `  Current Value   : ${f2(curVal)}\n`;
+    if (usP) {
+      r += `  Stock Gain/Loss : ${f2(usP.stockGainTHB)} (${p2(usP.stockGainPct)})  [USD cost $${usP.costUSD.toFixed(2)} → now $${usP.valueUSD.toFixed(2)}]\n`;
+      r += `  FX Gain/Loss    : ${f2(usP.fxGainTHB)} (${p2(usP.fxGainPct)})  [buy ${usP.avgBuyFx.toFixed(2)} → now ${(+fx).toFixed(2)}]\n`;
+      r += `  Total Gain/Loss : ${f2(usP.totalGainTHB)} (${p2(gp2)})\n`;
+    } else {
+      r += `  Gain/Loss       : ${f2(g2)} (${p2(gp2)})\n`;
+    }
     r += `  Net Worth Alloc : ${al.toFixed(1)}%\n`;
     r += `  Bucket          : ${x.bucket || __rpAlloc.inferBucket(x)}  |  US-situs: ${x.isUSSitus ? 'Yes' : 'No'}\n`;
     r += `  Risk Flags      : ${flags}\n`;
