@@ -2792,6 +2792,9 @@ DB.def('bucketTargets',{
 const fmt=n=>'฿'+Math.round(n).toLocaleString('th-TH');
 const fmtP=n=>(n>=0?'+':'')+n.toFixed(1)+'%';
 const fxRate=()=>parseFloat(localStorage.getItem('w_fxrate'))||36.5; // cached USD→THB
+// Price API base: local Flask server (price_server.py) when opened as file:// on the
+// PC, else the cloud Edge Function so the HTTPS live site / mobile can refresh too.
+const PRICE_API=(location.protocol==='file:')?'http://localhost:5000':'https://nplhhyhtstyzqxiymwrq.supabase.co/functions/v1/price';
 const uid=()=>Date.now()+Math.random();
 // Holdings with US `value` derived LIVE (units*priceUSD*fx) so any read never trusts
 // a stale cached value. priceUSD is the source of truth. Use this anywhere a VALUE is
@@ -3467,7 +3470,7 @@ async function fetchFx(){
   // No need to re-derive holding values here: US THB value is computed live from
   // priceUSD*fx on every read via liveHoldings(), so it can never freeze at an old rate.
   try{
-    const res=await fetch('http://localhost:5000/fx',{signal:AbortSignal.timeout(5000)});
+    const res=await fetch(PRICE_API+'/fx',{signal:AbortSignal.timeout(5000)});
     if(res.ok){const d=await res.json();if(d.USDTHB){localStorage.setItem('w_fxrate',d.USDTHB);markDirty();return d.USDTHB;}}
   }catch(e){/* fall through to cached */}
   return parseFloat(localStorage.getItem('w_fxrate'))||36.5;
@@ -3486,7 +3489,7 @@ async function refreshPrices(){
   }
   try{
     const fx=await fetchFx();
-    const res=await fetch('http://localhost:5000/prices?tickers='+stocks.map(queryTicker).join(','));
+    const res=await fetch(PRICE_API+'/prices?tickers='+stocks.map(queryTicker).join(','));
     if(!res.ok)throw new Error('Server responded '+res.status);
     const priceMap=await res.json();
     let updated=0,notFound=[],usedFx=false;
@@ -3993,7 +3996,7 @@ async function testTicker(){
   const ticker=queryTicker({ticker:raw,type:document.getElementById('htype').value});
   el.style.color='var(--t2)';el.textContent='กำลังตรวจสอบ...';
   try{
-    const res=await fetch('http://localhost:5000/prices?tickers='+encodeURIComponent(ticker),{signal:AbortSignal.timeout(8000)});
+    const res=await fetch(PRICE_API+'/prices?tickers='+encodeURIComponent(ticker),{signal:AbortSignal.timeout(8000)});
     if(!res.ok)throw new Error('server error '+res.status);
     const data=await res.json();
     const price=data[ticker];
@@ -4062,7 +4065,7 @@ function saveSettings(){
 async function checkServer(showModal){
   const dot=document.getElementById('sdot'),lbl=document.getElementById('slbl');
   try{
-    const res=await fetch('http://localhost:5000/ping',{signal:AbortSignal.timeout(2000)});
+    const res=await fetch(PRICE_API+'/ping',{signal:AbortSignal.timeout(2000)});
     if(!res.ok)throw new Error();
     dot.className='sdot on';lbl.textContent='Server Online';
   }catch{
@@ -4078,7 +4081,7 @@ async function refreshPricesSilent(){
   if(!stocks.length)return;
   try{
     const fx=await fetchFx();
-    const res=await fetch('http://localhost:5000/prices?tickers='+stocks.map(queryTicker).join(','),{signal:AbortSignal.timeout(8000)});
+    const res=await fetch(PRICE_API+'/prices?tickers='+stocks.map(queryTicker).join(','),{signal:AbortSignal.timeout(8000)});
     if(!res.ok)return;
     const priceMap=await res.json();
     let updated=0;
