@@ -151,8 +151,20 @@ textarea{resize:vertical;min-height:72px}
 .sdot{width:5px;height:5px;border-radius:50%;background:var(--t3);flex-shrink:0}
 .sdot.on{background:var(--green)}.sdot.off{background:var(--red)}
 /* ===== Mobile responsive ===== */
+.alloc-wrap{display:flex;align-items:center;gap:28px}
+.alloc-donut{position:relative;width:200px;height:200px;flex-shrink:0}
+.alloc-legend{flex:1;display:flex;flex-direction:column;gap:14px;min-width:0}
+.lg-row{display:flex;align-items:center;gap:12px;font-size:14px}
+.lg-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.lg-name{color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lg-pct{margin-left:auto;color:var(--t2);font-weight:600;font-variant-numeric:tabular-nums}
+.nw-big{font-family:var(--fd);font-size:34px;font-weight:700;letter-spacing:-1px;color:var(--t1);line-height:1.15;margin:8px 0 2px;font-variant-numeric:tabular-nums}
+.nw-change{font-size:13px;font-weight:600;margin-bottom:10px}
 @media(max-width:760px){
   html,body{overflow-x:hidden;max-width:100%}
+  .nw-big{font-size:26px}
+  .alloc-wrap{flex-direction:column;align-items:stretch;gap:18px}
+  .alloc-donut{align-self:center}
   .main,.page,.card,.g2,.metrics{min-width:0}
   .app{grid-template-columns:1fr;grid-template-rows:52px auto 1fr;height:100vh}
   .topbar{padding:0 12px;gap:10px}
@@ -237,6 +249,8 @@ textarea{resize:vertical;min-height:72px}
   <div id="dalerts"></div>
   <div class="card">
     <div class="ct">Net Worth Trend <span id="nw-sub" style="color:var(--t3);text-transform:none"></span></div>
+    <div id="nw-big" class="nw-big"></div>
+    <div id="nw-change" class="nw-change"></div>
     <div id="nw-trend"></div>
   </div>
   <div class="g2">
@@ -259,9 +273,11 @@ textarea{resize:vertical;min-height:72px}
       <div id="dpolicy"></div>
     </div>
     <div class="card">
-      <div class="ct">Goal progress</div>
-      <div id="dgoals"></div>
-      <div id="dproj" class="co co-g" style="margin-top:12px;font-size:11px"></div>
+      <div class="ct">Portfolio breakdown</div>
+      <div class="alloc-wrap">
+        <div class="alloc-donut"><canvas id="cAlloc" role="img" aria-label="Asset allocation donut chart"></canvas></div>
+        <div class="alloc-legend" id="allocLegend"></div>
+      </div>
     </div>
   </div>
   <div class="g2">
@@ -270,8 +286,9 @@ textarea{resize:vertical;min-height:72px}
       <div id="dussitus"></div>
     </div>
     <div class="card">
-      <div class="ct">Portfolio breakdown</div>
-      <div style="position:relative;height:200px"><canvas id="cAlloc" role="img" aria-label="Asset allocation donut chart"></canvas></div>
+      <div class="ct">Goal progress</div>
+      <div id="dgoals"></div>
+      <div id="dproj" class="co co-g" style="margin-top:12px;font-size:11px"></div>
     </div>
   </div>
   <div class="card">
@@ -1647,6 +1664,13 @@ if (typeof window !== 'undefined') window.DemoPortfolio = __DemoPortfolio;      
       "killText": "- **renewal rate หลุดลงต่อเนื่อง (จาก 92%) หรือ membership fee income หยุดโต** — ค่าสมาชิกคือกำไรจริง ถ้า renewal ลง = value proposition เริ่มเสื่อม/การแข่งขันกดดัน = thesis หลักสั่น\n- **comparable sales (ex-gas/FX) ชะลอเป็นเลขหลักเดียวต่ำๆ หรือติดลบต่อเนื่อง** — comps คือตัววัดว่าลูกค้ายังมาบ่อย/ใช้จ่ายเพิ่มไหม ถ้าแผ่วโดยไม่ใช่เหตุชั่วคราว = traffic engine เริ่มหมดแรง\n- **gross margin หดแรงต่อเนื่อง (จากการแข่งราคา/ต้นทุน) จน operating income โตช้ากว่ายอดขายหลายไตรมาส** — โมเดลพึ่ง margin บางแต่ปริมาณมหาศาล ถ้า margin ถูกบีบจน operating leverage หาย = เครื่องยนต์เริ่มฝืด",
       "recheckText": null
     },
+    "GEV": {
+      "asOf": "2026-06-18",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **book-to-bill ต่ำกว่า 1 หรือ backlog เริ่มหดติดกัน** — backlog/RPO คือเสาหลักทั้งหมดของ thesis ตอนนี้ ~2.0 ถ้าออเดอร์ใหม่เข้าช้ากว่าส่งมอบหลายไตรมาส = สัญญาณดีมานด์ AI-power เริ่มพลิก\n- **gas turbine pricing พลิกลง** (ตอนนี้ออเดอร์ใหม่ +10–20%) — ถ้า pricing power หาย แปลว่าคู่แข่ง (Siemens Energy, Mitsubishi) เพิ่มกำลังผลิตทันจนแย่งดีมานด์ = margin upside หาย\n- **Wind ขาดทุนบานปลายเกิน guide ~$400M** หรือต้องตั้งสำรอง/write-off ก้อนใหม่ — Wind เป็นตัวฉุดที่ถ้าแย่ลงอีกจะลบล้างกำไรที่ Power/Electrification ทำได้",
+      "recheckText": null
+    },
     "GOOGL": {
       "asOf": "2026-05-28",
       "recheckAsOf": null,
@@ -1701,6 +1725,13 @@ if (typeof window !== 'undefined') window.DemoPortfolio = __DemoPortfolio;      
       "recheckAsOf": null,
       "indicator": null,
       "killText": "- **รายได้โฆษณาโตชะลอแรง (เหลือเลขหลักเดียว/สิบต้นๆ) ขณะ capex ยังสูง** — thesis คือ \"AI capex → โฆษณาแม่นขึ้น → รายได้โต\" ถ้ารายได้ชะลอแต่ capex ยังพุ่ง = เงินที่เทไปไม่แปลงเป็นรายได้ เดิมพันเริ่มพัง\n\n- **คำตัดสิน youth litigation เสียหายระดับหลายหมื่นล้าน หรือ FTC ชนะอุทธรณ์บังคับขาย Instagram/WhatsApp** — 2 อันนี้ filing ระบุเองว่าอาจ material; ตัวแรกเป็นเงินก้อนโต ตัวหลังคือการตัดเครื่องจักรกำไรออกจากบริษัท = เปลี่ยน thesis ทั้งหมด\n\n- **FoA operating margin หลุดลงต่ำกว่า ~45-50% ต่อเนื่องจาก depreciation/ต้นทุน AI โดยไม่มีรายได้มาชดเชย** — ตอนนี้ FoA margin 52% คือหัวใจกำไร ถ้าค่าเสื่อม data center กดลงมากโดยรายได้ไม่โตตาม = ROI ของ capex ไม่จริง",
+      "recheckText": null
+    },
+    "MRVL": {
+      "asOf": "2026-06-17",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **ลูกค้า custom รายใหญ่หาย/ลด 1 ราย** — ถ้า Distributor A (37%) หรือ Customer A (14%) ลดสัดส่วนรายได้ลงชัดเจน หรือมีข่าวลูกค้า custom silicon (Amazon/Microsoft/Google) ย้ายไปเจ้าอื่น/ออกแบบเอง = เสาหลักรายได้สั่น\n- **growth ชะลอต่ำกว่า guide ชัดเจน** — บริษัท guide FY27 +40% ถ้ารายไตรมาสเริ่มโตต่ำกว่าเป้านี้มากๆ หรือหั่น guidance ลง = thesis \"เร่งโต\" เริ่มพัง (เทียบ run-rate กับเป้า ~$11.5B)\n- **มาร์จิ้น non-GAAP หดต่อเนื่อง** — ตอนนี้ non-GAAP GM ~59% ขาขึ้น ถ้าหดติดกันหลายไตรมาส = สัญญาณ pricing power custom silicon อ่อนลง หรือ mix แย่ลง",
       "recheckText": null
     },
     "MSFT": {
@@ -1792,6 +1823,27 @@ if (typeof window !== 'undefined') window.DemoPortfolio = __DemoPortfolio;      
       "recheckAsOf": null,
       "indicator": null,
       "killText": "- **payments volume / processed transactions growth หลุดเป็นเลขหลักเดียวต่ำๆ หรือติดลบ 2 ไตรมาสติด โดยไม่ใช่เหตุชั่วคราว** — thesis ทั้งก้อนคือ \"ปริมาณการใช้จ่ายโตต่อเนื่อง\" ถ้าปริมาณหยุดโต = secular growth story สั่น\n- **คดี interchange MDL / DOJ debit ตัดสินบังคับเปลี่ยนโครงสร้างราคา interchange หรือเปิดเครือข่ายให้คู่แข่ง** — ไม่ใช่แค่จ่ายค่าปรับครั้งเดียว แต่กระทบ take rate ที่เป็นหัวใจรายได้ (ดู trial เม.ย./ก.ย. 2026)\n- **VAS + cross-border growth ชะลอพร้อมกันต่อเนื่อง** — ถ้าทั้งเสาใหม่ (VAS) และส่วน margin สูง (cross-border) แผ่วพร้อมกัน แปลว่า engine การเติบโตที่เหนือ volume ปกติเริ่มหมด",
+      "recheckText": null
+    },
+    "VRT": {
+      "asOf": "2026-06-17",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **backlog เริ่มหดหรือ book-to-bill ต่ำกว่า 1 ติดกัน** — backlog $15B คือเสาหลักของ thesis ถ้าออร์เดอร์ใหม่เข้าช้ากว่าที่ส่งมอบ (book-to-bill <1) หลายไตรมาส = สัญญาณ AI capex cycle กำลังพลิก\n- **organic growth ชะลอต่ำกว่า guide ชัดเจน** — บริษัท guide organic +29–31% FY2026 ถ้ารายไตรมาสเริ่มหลุดเป้านี้มากๆ หรือหั่น guidance = thesis \"เร่งโต\" เริ่มพัง\n- **adjusted operating margin หดต่อเนื่อง** — ตอนนี้ขาขึ้น (Q1 20.8%, เป้า >27%) ถ้าโดน tariff/ต้นทุน/price war กดจนหดติดกันหลายไตรมาส = pricing power เริ่มอ่อน",
+      "recheckText": null
+    },
+    "VST": {
+      "asOf": "2026-06-17",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **Adjusted EBITDA จริงหลุด guidance ลงชัดเจน** — ถ้าราคาไฟรอบใหม่ลงแรงจน Adjusted EBITDA ต่ำกว่ากรอบ $6.8–7.6B มากๆ หรือบริษัทหั่น guidance = เครื่องจักรกำไรเริ่มสะดุด (ดู Adjusted EBITDA ไม่ใช่ GAAP)\n- **PPA/colocation deals สะดุดหรือถูกยกเลิก** — thesis AI-power พึ่งดีล AWS/Meta/Helix ถ้ามีข่าวเลื่อน/ยกเลิก/ติดปัญหา regulator (เช่น FERC เปลี่ยนกฎ colocation) = ขา upside หลักหาย\n- **คดี Moss Landing บานปลายเกินคาด** หรือ Winter Storm Uri พลิกกลับ (Texas Supreme Court รับพิจารณาแล้วพลิกคำตัดสิน) = ความเสี่ยงทางกฎหมายก้อนใหญ่กลับมา",
+      "recheckText": null
+    },
+    "WDC": {
+      "asOf": "2026-06-17",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **มาร์จิ้นเริ่มหดต่อเนื่อง 2 ไตรมาสติด** — ตอนนี้ gross margin ขาขึ้น (50%+) ถ้ากลับหัวลงติดกัน 2 ไตรมาส = สัญญาณรอบ cyclical กำลังพลิกลง (เทียบ Q3 FY26 50.2% GAAP เป็นฐาน)\n- **ดีมานด์ \"sold out\" เริ่มแตก** — ถ้าผู้บริหารเปลี่ยนคำพูดเรื่อง HDD ขายหมด/สัญญายาว เป็นโทนระวังตัว หรือมีข่าว hyperscaler รายใหญ่เลื่อน/ลดคำสั่งซื้อ = thesis หลักเริ่มสั่น\n- **ราคาขายต่อหน่วยเริ่มลด** (ตอนนี้ +9% YoY) — ถ้าพลิกเป็นติดลบ แปลว่า pricing power หาย กลับเข้าวงจรราคาตัดกันแบบ HDD ยุคเก่า",
       "recheckText": null
     },
     "WMT": {
@@ -3138,9 +3190,14 @@ function renderDash(){
   const d15=s.dca||15000,r=0.06,y=18;
   document.getElementById('dproj').textContent=`พอร์ตปัจจุบัน ${fmt(V)} + DCA ${fmt(d15)}/เดือน อีก ${y} ปี ที่ 6% ≈ ${fmt(DcaEngine.projectFutureValue(V,d15,r,y))} (รวมพอร์ตปัจจุบัน + DCA อนาคต)`;
   if(chartA)chartA.destroy();
-  const lb=[],da=[],co=['#4f9cf9','#a78bfa','#f5a623','#3ecf8e','#f97b5a','#f06060'];
+  const lb=[],da=[],co=['#4f9cf9','#a78bfa','#f5a623','#3ecf8e','#f97b5a','#f06060','#38bdf8','#34d399','#fbbf24','#c084fc','#fb7185','#22d3ee','#a3e635','#f472b6'];
   h.forEach(x=>{if(x.value>0){lb.push(x.name);da.push(x.value);}});
-  chartA=new Chart(document.getElementById('cAlloc'),{type:'doughnut',data:{labels:lb,datasets:[{data:da,backgroundColor:co.slice(0,da.length),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9896a8',boxWidth:10,font:{size:11}}}},cutout:'65%'}});
+  const cAt=i=>co[i%co.length];
+  const allocTot=da.reduce((a,b)=>a+b,0);
+  const allocCenter={id:'allocCenter',afterDraw(c){const a=c.chartArea;if(!a)return;const rs=getComputedStyle(document.documentElement),fd=(rs.getPropertyValue('--fd')||'sans-serif').trim();const cx=(a.left+a.right)/2,cy=(a.top+a.bottom)/2;const tStr=V>=1e6?'฿'+(V/1e6).toFixed(2)+'M':V>=1e3?'฿'+(V/1e3).toFixed(0)+'K':'฿'+Math.round(V);const x=c.ctx;x.save();x.textAlign='center';x.textBaseline='middle';x.fillStyle=(rs.getPropertyValue('--t1')||'#f2f0f8').trim();x.font='700 22px '+fd;x.fillText(tStr,cx,cy-8);x.fillStyle=(rs.getPropertyValue('--t3')||'#5a5868').trim();x.font='400 11px '+fd;x.fillText('มูลค่ารวม',cx,cy+15);x.restore();}};
+  chartA=new Chart(document.getElementById('cAlloc'),{type:'doughnut',data:{labels:lb,datasets:[{data:da,backgroundColor:da.map((_,i)=>cAt(i)),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{displayColors:false,callbacks:{label:c=>c.label+': '+(allocTot?Math.round(c.parsed/allocTot*100):0)+'% · '+fmt(c.parsed)}}}},plugins:[allocCenter]});
+  const lgEl=document.getElementById('allocLegend');
+  if(lgEl){let lh='';lb.forEach((nm,i)=>{const pct=allocTot?Math.round(da[i]/allocTot*100):0;lh+='<div class="lg-row"><span class="lg-dot" style="background:'+cAt(i)+'"></span><span class="lg-name">'+nm+'</span><span class="lg-pct">'+pct+'%</span></div>';});lgEl.innerHTML=lh;}
   renderNWTrend(V,I);    // Phase 8B — record daily snapshot + draw trend
   renderDashDecisions(); // Phase 5B additive section (active/due/latest)
 }
@@ -3150,6 +3207,8 @@ let chartNW=null;
 function renderNWTrend(net,invested){
   const E=window.NWHistoryEngine;
   const el=document.getElementById('nw-trend'); if(!el||!E)return;
+  const bigEl=document.getElementById('nw-big'),chgEl=document.getElementById('nw-change');
+  if(bigEl)bigEl.textContent=fmt(net);
   const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'}); // Thai calendar day (UTC+7), not UTC — so the day rolls at เที่ยงคืนไทย, not 07:00
   const snap={date:today,net:net,invested:invested};
   let hist=DB.get('nwHistory')||[];
@@ -3160,13 +3219,15 @@ function renderNWTrend(net,invested){
     if(chartNW){chartNW.destroy();chartNW=null;}
     el.innerHTML='<div class="empty">กำลังเก็บข้อมูล net worth — กลับมาดูแนวโน้มพรุ่งนี้ (เก็บวันละ 1 จุด)</div>';
     if(sub)sub.textContent='';
+    if(chgEl)chgEl.textContent='';
     return;
   }
   const s=E.summarize(hist),up=s.changeAbs>=0;
-  if(sub)sub.innerHTML='· <span style="color:'+(up?'var(--green)':'var(--red)')+'">'+(up?'↑':'↓')+' '+fmt(Math.abs(s.changeAbs))+' ('+fmtP(s.changePct)+')</span> ใน '+s.periodDays+' วัน · '+s.count+' จุด';
+  if(sub)sub.innerHTML='· '+s.periodDays+' วันล่าสุด · '+s.count+' จุด';
+  if(chgEl)chgEl.innerHTML='<span style="color:'+(up?'var(--green)':'var(--red)')+'">'+(up?'▲':'▼')+' '+fmt(Math.abs(s.changeAbs))+' ('+fmtP(s.changePct)+')</span> <span style="color:var(--t3)">ตั้งแต่เริ่มบันทึก</span>';
   el.innerHTML='<div style="position:relative;height:200px"><canvas id="cNW" role="img" aria-label="Net worth trend line chart"></canvas></div>';
   if(chartNW){chartNW.destroy();chartNW=null;}
-  chartNW=new Chart(document.getElementById('cNW'),{type:'line',data:{labels:hist.map(e=>e.date),datasets:[{label:'Net Worth',data:hist.map(e=>e.net),borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,.14)',borderWidth:2.5,fill:true,tension:.25,pointRadius:2,pointHoverRadius:4,pointBackgroundColor:'#38bdf8'}]},plugins:[{id:'nwGlow',beforeDatasetDraw(c){const x=c.ctx;x.save();x.shadowColor='rgba(56,189,248,.85)';x.shadowBlur=14;},afterDatasetDraw(c){c.ctx.restore();}}],options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9896a8',font:{size:10},maxRotation:0,autoSkip:true,maxTicksLimit:7},grid:{display:false}},y:{ticks:{color:'#9896a8',font:{size:10},crossAlign:'far',callback:v=>v>=1e6?'฿'+(v/1e6).toFixed(1)+'M':'฿'+(v/1e3).toFixed(0)+'K'},grid:{color:'rgba(255,255,255,.05)'}}}}});
+  chartNW=new Chart(document.getElementById('cNW'),{type:'line',data:{labels:hist.map(e=>e.date),datasets:[{label:'Net Worth',data:hist.map(e=>e.net),borderColor:'#38bdf8',borderWidth:2.5,fill:true,tension:.35,pointRadius:c=>c.dataIndex===hist.length-1?4:0,pointHoverRadius:5,pointBackgroundColor:'#38bdf8',pointBorderColor:'#38bdf8',backgroundColor:c=>{const a=c.chart.chartArea;if(!a)return'rgba(56,189,248,.12)';const g=c.chart.ctx.createLinearGradient(0,a.top,0,a.bottom);g.addColorStop(0,'rgba(56,189,248,.30)');g.addColorStop(.55,'rgba(56,189,248,.07)');g.addColorStop(1,'rgba(56,189,248,0)');return g;}}]},plugins:[{id:'nwGlow',beforeDatasetDraw(c){const x=c.ctx;x.save();x.shadowColor='rgba(56,189,248,.85)';x.shadowBlur=14;},afterDatasetDraw(c){c.ctx.restore();}}],options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:6,right:8,bottom:4,left:4}},interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{displayColors:false,callbacks:{label:c=>'฿'+Math.round(c.parsed.y).toLocaleString('en-US')}}},scales:{x:{display:false},y:{display:false}}}});
 }
 
 // HOLDINGS
