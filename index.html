@@ -3194,7 +3194,19 @@ function renderDash(){
   h.forEach(x=>{if(x.value>0){lb.push(x.name);da.push(x.value);}});
   const cAt=i=>co[i%co.length];
   const allocTot=da.reduce((a,b)=>a+b,0);
-  const allocCenter={id:'allocCenter',afterDraw(c){const a=c.chartArea;if(!a)return;const rs=getComputedStyle(document.documentElement),fd=(rs.getPropertyValue('--fd')||'sans-serif').trim();const cx=(a.left+a.right)/2,cy=(a.top+a.bottom)/2;const tStr=V>=1e6?'฿'+(V/1e6).toFixed(2)+'M':V>=1e3?'฿'+(V/1e3).toFixed(0)+'K':'฿'+Math.round(V);const x=c.ctx;x.save();x.textAlign='center';x.textBaseline='middle';x.fillStyle=(rs.getPropertyValue('--t1')||'#f2f0f8').trim();x.font='700 22px '+fd;x.fillText(tStr,cx,cy-8);x.fillStyle=(rs.getPropertyValue('--t3')||'#5a5868').trim();x.font='400 11px '+fd;x.fillText('มูลค่ารวม',cx,cy+15);x.restore();}};
+  const allocCenter={id:'allocCenter',afterDraw(c){const a=c.chartArea;if(!a)return;const rs=getComputedStyle(document.documentElement),fd=(rs.getPropertyValue('--fd')||'sans-serif').trim();const cx=(a.left+a.right)/2,cy=(a.top+a.bottom)/2;const num=V>=1e6?(V/1e6).toFixed(2)+'M':V>=1e3?(V/1e3).toFixed(0)+'K':''+Math.round(V);const x=c.ctx;x.save();x.textBaseline='middle';x.textAlign='left';
+    // Draw "฿" and the number in SEPARATE fillText calls and centre the pair manually.
+    // The number uses Sora (--fd, Latin-only); "฿" has no Sora glyph so it falls back.
+    // Mixing both in one fillText makes Safari mis-measure the run → "฿" overlaps the
+    // digits and textAlign:center drifts right (visible on iOS). Splitting avoids that.
+    const numFont='700 22px '+fd,bahtFont='700 20px '+fd,gap=2;
+    x.font=bahtFont;const wB=x.measureText('฿').width;
+    x.font=numFont;const wN=x.measureText(num).width;
+    const startX=cx-(wB+gap+wN)/2;
+    x.fillStyle=(rs.getPropertyValue('--t1')||'#f2f0f8').trim();
+    x.font=bahtFont;x.fillText('฿',startX,cy-8);
+    x.font=numFont;x.fillText(num,startX+wB+gap,cy-8);
+    x.textAlign='center';x.fillStyle=(rs.getPropertyValue('--t3')||'#5a5868').trim();x.font='400 11px '+fd;x.fillText('มูลค่ารวม',cx,cy+15);x.restore();}};
   chartA=new Chart(document.getElementById('cAlloc'),{type:'doughnut',data:{labels:lb,datasets:[{data:da,backgroundColor:da.map((_,i)=>cAt(i)),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{displayColors:false,callbacks:{label:c=>c.label+': '+(allocTot?Math.round(c.parsed/allocTot*100):0)+'% · '+fmt(c.parsed)}}}},plugins:[allocCenter]});
   const lgEl=document.getElementById('allocLegend');
   if(lgEl){let lh='';lb.forEach((nm,i)=>{const pct=allocTot?Math.round(da[i]/allocTot*100):0;lh+='<div class="lg-row"><span class="lg-dot" style="background:'+cAt(i)+'"></span><span class="lg-name">'+nm+'</span><span class="lg-pct">'+pct+'%</span></div>';});lgEl.innerHTML=lh;}
