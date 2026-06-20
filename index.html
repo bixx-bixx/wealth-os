@@ -102,6 +102,32 @@ tr:hover td{background:rgba(255,255,255,.03)}
 .tp{background:var(--amber-d);color:var(--amber);border-color:rgba(245,166,35,.2)}
 .tc{background:var(--green-d);color:var(--green-m);border-color:rgba(62,207,142,.2)}
 .gain{color:var(--green)}.loss{color:var(--red)}
+/* FIRE inputs grid (DCA/FIRE page) */
+.ffire-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.ffire-grid .ff label{font-size:10px;color:var(--t3)}
+.ffire-grid input{font-size:13px;font-variant-numeric:tabular-nums}
+.ffire-sec{grid-column:1/-1;font-size:11px;color:var(--t1);font-weight:600;border-top:1px solid var(--b1);padding-top:9px;margin-top:4px}
+.ffire-sec:first-child{border-top:none;padding-top:0;margin-top:0}
+/* Wealth Plan — rendered markdown */
+.wp{font-size:13px;line-height:1.75;color:var(--t2);max-width:920px}
+.wp h1{font-family:var(--fd);font-size:24px;font-weight:700;color:var(--t1);letter-spacing:-.5px;margin:0 0 4px}
+.wp h2{font-family:var(--fd);font-size:17px;font-weight:600;color:var(--t1);margin:26px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--b1)}
+.wp h3{font-size:14px;font-weight:600;color:var(--t1);margin:20px 0 8px}
+.wp p{margin:10px 0}
+.wp strong{color:var(--t1);font-weight:600}
+.wp em{color:var(--t3);font-style:italic}
+.wp code{background:var(--s3);border:1px solid var(--b2);border-radius:4px;padding:1px 5px;font-size:12px}
+.wp ul,.wp ol{margin:8px 0;padding-left:22px}
+.wp li{margin:5px 0}
+.wp ul ul,.wp ol ul,.wp ul ol{margin:4px 0}
+.wp hr{border:none;border-top:1px solid var(--b1);margin:22px 0}
+.wp blockquote{margin:12px 0;padding:10px 14px;border-left:3px solid var(--amber);background:var(--amber-d);border-radius:0 8px 8px 0;color:var(--t2)}
+.wp blockquote p{margin:0}
+.wp-tw{overflow-x:auto;margin:12px 0}
+.wp-table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.wp-table th{text-align:left;color:var(--t3);font-weight:600;font-size:11px;letter-spacing:0;text-transform:none;padding:8px 12px;border-bottom:1px solid var(--b2);white-space:nowrap}
+.wp-table td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04)}
+.wp-table tr:hover td{background:rgba(255,255,255,.03)}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .ff{display:flex;flex-direction:column;gap:5px}
 .ff.full{grid-column:1/-1}
@@ -127,6 +153,17 @@ textarea{resize:vertical;min-height:72px}
 .gp{font-size:11px;color:var(--t2)}
 .gtrack{height:6px;background:var(--b1);border-radius:3px;overflow:hidden}
 .gfill{height:100%;border-radius:3px;background:var(--green)}
+.hidden{display:none}
+.ddladder{border:1px solid rgba(255,255,255,.08);border-radius:8px;overflow:hidden}
+.ddrow{display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:10px;padding:10px 12px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.05)}
+.ddrow:last-child{border-bottom:none}
+.ddrow.active{background:rgba(79,156,249,.14);box-shadow:inset 3px 0 0 var(--blue)}
+.ddrow .dddd{font-variant-numeric:tabular-nums;font-weight:700;color:var(--t2)}
+.ddrow .ddamt{color:var(--t1)}
+.ddrow .ddmark{font-size:11px;color:var(--blue);white-space:nowrap}
+.ddset{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;color:var(--t2);gap:10px}
+.ddset:last-child{border-bottom:none}
+.ddinp{width:120px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;background:var(--b1);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--t1);padding:4px 8px}
 .cfrow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04)}
 .cfrow:last-child{border-bottom:none}
 .cfl{font-size:12px;color:var(--t2)}
@@ -229,6 +266,9 @@ textarea{resize:vertical;min-height:72px}
   <div class="ni" onclick="nav('goals',this)"><span class="nic">◉</span>Goals</div>
   <div class="ni" onclick="nav('dcafire',this)"><span class="nic">▲</span>DCA / FIRE</div>
   <div class="ndiv"></div>
+  <div class="ns">Plan</div>
+  <div class="ni" onclick="nav('wealthplan',this)"><span class="nic">★</span>Wealth Plan</div>
+  <div class="ndiv"></div>
   <div class="ns">Export</div>
   <div class="ni" onclick="nav('export',this)"><span class="nic">◈</span>Export Report</div>
 </nav>
@@ -285,11 +325,7 @@ textarea{resize:vertical;min-height:72px}
       <div class="ct">US-situs estate tax</div>
       <div id="dussitus"></div>
     </div>
-    <div class="card">
-      <div class="ct">Goal progress</div>
-      <div id="dgoals"></div>
-      <div id="dproj" class="co co-g" style="margin-top:12px;font-size:11px"></div>
-    </div>
+    <div id="dd-body"></div>
   </div>
   <div class="card">
     <div class="ct">Major Decisions <span style="color:var(--t3);text-transform:none">· strategy/policy ที่บันทึกไว้</span></div>
@@ -411,21 +447,44 @@ textarea{resize:vertical;min-height:72px}
     <div class="ct">เงินสดปลายเดือน</div>
     <div style="position:relative;height:200px"><canvas id="cDcaCash" role="img" aria-label="Cash at month end"></canvas></div>
   </div>
-  <div class="card" id="dfassets"></div>
+  <div class="card">
+    <div class="ct">FIRE inputs — แก้ได้เอง <span style="color:var(--t3);text-transform:none;font-weight:400">· Sleeve + PVD แยกกันทบต้น แล้วรวม</span></div>
+    <div class="ffire-grid" id="dffire-edit"></div>
+  </div>
+  <div class="card" id="dffire-status"></div>
+  <div class="card">
+    <div class="ct">ปีที่ถึงเป้า <span style="color:var(--t3);text-transform:none;font-weight:400">· รวม Sleeve + PVD (นับ vested)</span></div>
+    <div class="tw"><table id="dffire-results"></table></div>
+    <div style="margin-top:10px;font-size:10px;color:var(--t3);line-height:1.6" id="dffire-resultnote"></div>
+  </div>
+  <div class="card">
+    <div class="ct">Milestone รายปี <span style="color:var(--t3);text-transform:none;font-weight:400">· scenario Base · เงินที่ได้จริง (accessible)</span></div>
+    <div class="tw"><table id="dffire-milestone"></table></div>
+  </div>
+  <div class="card">
+    <div class="ct">Net Worth — Actual vs Plan <span style="color:var(--t3);text-transform:none;font-weight:400">· แถบ Floor→Base · actual จาก snapshot รายวัน</span></div>
+    <div id="dffire-nw-note" style="font-size:11px;color:var(--t2);line-height:1.6;margin-bottom:8px"></div>
+    <div style="position:relative;height:250px"><canvas id="cFireNW" role="img" aria-label="Net worth actual vs plan band"></canvas></div>
+  </div>
   <div class="g2">
     <div class="card">
-      <div class="ct">FIRE — Liquid → เป้าเต็ม (ไม่นับ PVD, conservative)</div>
-      <div class="tw"><table id="dffire1"></table></div>
-      <div style="margin-top:10px;font-size:10px;color:var(--t3)">เริ่มจาก Liquid ปัจจุบัน · monthly = (1+annual)^(1/12)−1</div>
+      <div class="ct">DCA สะสม — Actual vs Plan <span style="color:var(--t3);text-transform:none;font-weight:400">· เทียบเส้นแผน/เดือน</span></div>
+      <div style="position:relative;height:220px"><canvas id="cFireDca" role="img" aria-label="Cumulative DCA actual vs plan"></canvas></div>
     </div>
     <div class="card">
-      <div class="ct">FIRE — หัก PVD เป็น floor (เป้า = เป้า−PVD)</div>
-      <div class="tw"><table id="dffire2"></table></div>
-      <div style="margin-top:10px;font-size:10px;color:var(--t3)" id="dffirenote"></div>
+      <div class="ct">Ahead / Behind <span style="color:var(--t3);text-transform:none;font-weight:400">· net worth: actual − plan(base)</span></div>
+      <div style="position:relative;height:220px"><canvas id="cFireDelta" role="img" aria-label="Net worth ahead or behind plan"></canvas></div>
     </div>
   </div>
 </div>
 
+
+<div id="page-wealthplan" class="page">
+  <div class="ph">
+    <div><div class="pt">Wealth Plan</div><div class="ps" id="wpsub">แผนการเงินสู่ 10M — single source of truth</div></div>
+  </div>
+  <div class="card wp" id="wpbody"></div>
+</div>
 
 <div id="page-export" class="page">
   <div class="ph">
@@ -1270,7 +1329,79 @@ function buildDcaPlan(review,monthlyDca,policy,holdings,monthIndex){
     pausedStocks,reviewStocks,warnStocks,thaiResumeEligible:curPct(thai)<policy.thaiResumeBelowPct};
 }
 
-const __DcaEngine={ DCA_POLICY, projectFutureValue, nperYears, activeMonthsFor, dcaStatus, buildDcaPlan };
+// ============================================================
+// PVD-aware FIRE projection (Sleeve + PVD member + PVD employer)
+// ============================================================
+// Two/three compounding engines summed, solved by monthly iteration (the sum of
+// annuities at different rates has no closed form). The PVD EMPLOYER portion grows
+// with a tenure-stepped contribution rate and is counted only at its VESTED fraction
+// — so "accessible net worth" is honest about money not yet earned. The MEMBER
+// portion (own savings + any transferred-in balance) is always 100% the member's.
+//
+// Schedules are baked from the fund regulation (วอเล่ย์/MRT):
+//   Employer contribution rate by years worked (ข้อ 5.02):
+//     ≤10y → 5% · >10–15y → 7.5% · >15y → 15%
+//   Vesting of employer money + its returns by years worked (ข้อ 6.02):
+//     <2y → 0% · 2y → 20% · 3y → 40% · 4y → 60% · 5y → 80% · ≥6y → 100%
+
+// vested fraction (0..1) of the employer PVD portion at a given tenure (years)
+function pvdVestingPct(years){
+  if(years<2)return 0; if(years<3)return 0.20; if(years<4)return 0.40;
+  if(years<5)return 0.60; if(years<6)return 0.80; return 1;
+}
+// employer PVD contribution rate (fraction of salary) at a given tenure (years)
+function pvdEmployerRate(years){
+  if(years<=10)return 0.05; if(years<=15)return 0.075; return 0.15;
+}
+
+// Project Sleeve + PVD month-by-month. Returns { years, series, atReach } where
+//   years   = years for accessible net worth to reach `target` (null if > maxYears, 0 if already there)
+//   series  = yearly snapshots [{year, sleeve, pvdMember, pvdEmployer, vestPct, accessible, full}]
+//   atReach = snapshot interpolated at the reach month (null if not reached)
+// p = { sleeveStart, dca, sleeveReturn,           // sleeve (always 100% member's)
+//       pvdMember, pvdEmployer, pvdReturn,        // PVD balances + blended return
+//       salary, memberRate, serviceYears,         // contribution drivers (memberRate as fraction)
+//       maxYears, seriesYears }
+function projectFire(p, target){
+  const maxM=Math.round((p.maxYears||60)*12);
+  const seriesM=Math.round((p.seriesYears||0)*12);
+  const step=Math.max(1,Math.round(p.seriesStep||12)); // months between captured snapshots
+  const rmS=Math.pow(1+(p.sleeveReturn||0),1/12)-1;
+  const rmP=Math.pow(1+(p.pvdReturn||0),1/12)-1;
+  let sleeve=+p.sleeveStart||0, mem=+p.pvdMember||0, er=+p.pvdEmployer||0;
+  const memberContrib=(+p.salary||0)*(+p.memberRate||0);  // member สะสม, fixed-rate
+  const t0=+p.serviceYears||0;
+  const vest=m=>pvdVestingPct(t0+m/12);
+  const accessibleAt=()=>sleeve+mem; // employer part added with vest below
+  const netAt=m=>sleeve+mem+er*vest(m);
+  const fullAt=()=>sleeve+mem+er;
+
+  const series=[];
+  const snap=(m)=>({year:m/12, sleeve, pvdMember:mem, pvdEmployer:er,
+    vestPct:vest(m), accessible:netAt(m), full:fullAt()});
+  if(seriesM>0)series.push({...snap(0),year:0});
+
+  let prev=netAt(0), years=(target!=null&&prev>=target)?0:null, atReach=years===0?snap(0):null;
+  for(let m=1;m<=maxM;m++){
+    const tenPrev=t0+(m-1)/12;                       // tenure during this month → employer rate
+    const erContrib=(+p.salary||0)*pvdEmployerRate(tenPrev);
+    sleeve=sleeve*(1+rmS)+(+p.dca||0);
+    mem=mem*(1+rmP)+memberContrib;
+    er=er*(1+rmP)+erContrib;
+    const cur=netAt(m);
+    if(seriesM>0&&m<=seriesM&&m%step===0)series.push(snap(m));
+    if(years===null&&target!=null&&cur>=target){
+      const frac=(cur>prev)?(target-prev)/(cur-prev):0;
+      years=(m-1+frac)/12;
+      atReach=snap(m);
+    }
+    prev=cur;
+    if(years!==null&&seriesM===0)break; // only needed the reach time
+  }
+  return { years, series, atReach };
+}
+
+const __DcaEngine={ DCA_POLICY, projectFutureValue, nperYears, activeMonthsFor, dcaStatus, buildDcaPlan, pvdVestingPct, pvdEmployerRate, projectFire };
 if (typeof module !== 'undefined' && module.exports) module.exports = __DcaEngine; // node tests
 if (typeof window !== 'undefined') window.DcaEngine = __DcaEngine;                  // browser global
 
@@ -1643,6 +1774,13 @@ if (typeof window !== 'undefined') window.DemoPortfolio = __DemoPortfolio;      
       "killText": "- **AI semiconductor revenue โตชะลอแรงผิดคาด หรือมีลูกค้า XPU รายใหญ่ประกาศเลื่อน/ยกเลิกโปรแกรม** — thesis ทั้งหมดอิงตัวเลข AI chip >$100B ปี 2027 ถ้า growth rate ตกจากระดับ +100%+ มาเหลือเลขหลักสิบต้นๆ เร็วเกินคาด หรือ Google/Meta/Anthropic/OpenAI รายใดถอนตัว = thesis แตก\n\n- **Gross margin ลดต่อเนื่องจาก mix การขาย AI/rack (ไม่ใช่แค่ไตรมาสเดียว)** — ผู้บริหารยืนยันว่า margin จะไม่โดนกดเชิงโครงสร้าง แต่ถ้าเห็น consolidated gross margin (non-GAAP) หลุดจาก ~77% ลงต่อเนื่อง 2-3 ไตรมาสจริง (ไม่ใช่แค่ guide) = คำยืนยันผู้บริหารผิด ต้องทบทวน\n\n- **VMware ARR หรือ software revenue เริ่มหดจากลูกค้า churn** — การขึ้นราคา/เปลี่ยนเป็น subscription หลังดีลทำให้ลูกค้าบางส่วนไม่พอใจ ถ้า ARR (ตอนนี้ +17%) พลิกเป็นติดลบ หรือ software revenue หด = ขากำไรนิ่งที่ใช้คานเริ่มพัง + เพิ่มความเสี่ยง goodwill impairment",
       "recheckText": "🟢 **AI semi โตชะลอ/ลูกค้าถอน** — Q2 AI semi $10.8B **+143% YoY** (เร่งขึ้น ไม่ใช่ชะลอ), Q3 guide ~$16B **+200%+**, bookings >$30B vs ส่ง $10.8B, ลูกค้า 6 รายครบ + commitment เพิ่ม → ห่างเงื่อนไขชัดเจน *(งบ Q2 ใหม่ยืนยันแล้ว)*\n\n🟡 **Gross margin ลดต่อเนื่องจาก mix** — Q2 non-GAAP GM **77.1%** (ที่เส้นพอดี, −32bps YoY), Q3 **guide ลงมา ~74%** แต่ยังเป็น guide ไม่ใช่ actual + CFO บอกเป็น mix shift ไม่ใช่ structural → เข้าเงื่อนไขบางส่วน ยังไม่ครบ streak 2-3 ไตรมาส **เปิด archive (Q1) + รองบ Q3 จริงนับต่อ**\n\n🟢 **VMware ARR/software หดจาก churn** — ARR **+17%** (ชะลอจาก +19% Q1 แต่ยังบวกแรง), software revenue $7.2B **+9%** (โตต่อ ไม่หด), Q3 guide +31% → ห่างเงื่อนไข \"หด/ติดลบ\" **แต่จับตา ARR decel 19%→17%** (ตลาดอ่านเป็น software miss ส่วนหนึ่งของหุ้นร่วงวันรายงาน)\n\n⚠️ อย่าเชื่อ tag อย่างเดียว — เปิด section 3 + 5 + archive (briefs/archive/AVGO-2026-05-28.md) ยืนยันด้วยตา"
     },
+    "AXON": {
+      "asOf": "2026-06-19",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **Material weakness ไม่ถูกแก้ (ไม่ remediate) ภายในปี 2026** หรือลุกลามเป็น restatement/SEC enforcement/คดี — นี่คือตัวที่ต้อง watch ที่สุด\n- **FCF ยังต่ำ/ติดลบต่อเนื่อง** ทั้งที่รายได้โต — ถ้าโตแต่ไม่เคยแปลงเป็นเงินสดได้ thesis \"compounder\" พัง\n- **revenue growth หลุดต่ำกว่า ~25%** หรือ ARR/NRR เริ่มชะลอ — เพราะ valuation สูงต้องการการโตสูงต่อเนื่อง\n- Dedrone เสียส่วนแบ่งให้ Motorola D-Fend อย่างมีนัย / AI bookings โมเมนตัมหาย",
+      "recheckText": null
+    },
     "BRK.B": {
       "asOf": "2026-06-05",
       "recheckAsOf": null,
@@ -1657,11 +1795,25 @@ if (typeof window !== 'undefined') window.DemoPortfolio = __DemoPortfolio;      
       "killText": "- **Winter Storm Uri / Oklahoma AG ตัดสินเป็นเงินก้อนใหญ่ที่ material** — บริษัทยังไม่ตั้งสำรอง ถ้าแพ้ใหญ่ = ทั้งค่าเสียหาย + ความเชื่อมั่น (trial Oklahoma คาด 2027, Texas Supreme Court รอคำตัดสิน)\n- **data-center PPA pipeline สะดุด — hyperscaler ยกเลิก/เลื่อนดีลใหญ่ หรือ FERC co-location ruling ออกมาบล็อกโมเดล** thesis ทั้งก้อนคือ \"ขายไฟนิวเคลียร์ให้ data center\" ถ้าตัวนี้พัง growth premium หาย\n- **Calpine accretion ต่ำกว่าแผน หรือ leverage หลังดีลกดเครดิตหลุด investment grade** — ถ้า ~$2/share accretion ไม่มาตามที่ guide หรือหนี้ $22B เริ่มเป็นภาระ = ดีลที่ควรเร่งโตกลับถ่วง\n- **nuclear PTC / policy support ถูกตัด** — กำไรส่วนหนึ่งพึ่งเครดิตภาษี ถ้าถูกยกเลิกจะกระทบ economics ของฝูงนิวเคลียร์โดยตรง",
       "recheckText": null
     },
+    "CMG": {
+      "asOf": "2026-06-19",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **comp sales ติดลบ 2-3 ไตรมาสติดต่อกันใน 2026** ทั้งที่ออกเมนูใหม่+loyalty แล้ว — แปลว่า traffic ไม่กลับ ปัญหาเชิงโครงสร้าง ไม่ใช่แค่รอบเศรษฐกิจ → thesis เติบโตพัง\n- **restaurant-level margin หลุดต่ำกว่า ~22-23% ต่อเนื่อง** หรือ operating margin ไหลลงเรื่อยๆ — แปลว่าขึ้นราคาไม่ได้/ต้นทุนคุมไม่อยู่ กำไรจะหดแม้รายได้โต\n- เปิดร้านใหม่ช้าลงกว่าเป้า ~350/ปีอย่างมีนัย หรือร้านใหม่ทำยอดต่ำกว่ารุ่นก่อนชัดเจน — เพราะตอนนี้ \"การเปิดร้าน\" คือเครื่องยนต์โตเครื่องเดียวที่เหลือ ถ้าเครื่องนี้สะดุดคือจบ\n- คดี portion-size บานปลายเป็นปัญหา brand วงกว้าง (ไม่ใช่แค่ legal accrual แต่กระทบ traffic จริง)",
+      "recheckText": null
+    },
     "COST": {
       "asOf": "2026-06-05",
       "recheckAsOf": null,
       "indicator": null,
       "killText": "- **renewal rate หลุดลงต่อเนื่อง (จาก 92%) หรือ membership fee income หยุดโต** — ค่าสมาชิกคือกำไรจริง ถ้า renewal ลง = value proposition เริ่มเสื่อม/การแข่งขันกดดัน = thesis หลักสั่น\n- **comparable sales (ex-gas/FX) ชะลอเป็นเลขหลักเดียวต่ำๆ หรือติดลบต่อเนื่อง** — comps คือตัววัดว่าลูกค้ายังมาบ่อย/ใช้จ่ายเพิ่มไหม ถ้าแผ่วโดยไม่ใช่เหตุชั่วคราว = traffic engine เริ่มหมดแรง\n- **gross margin หดแรงต่อเนื่อง (จากการแข่งราคา/ต้นทุน) จน operating income โตช้ากว่ายอดขายหลายไตรมาส** — โมเดลพึ่ง margin บางแต่ปริมาณมหาศาล ถ้า margin ถูกบีบจน operating leverage หาย = เครื่องยนต์เริ่มฝืด",
+      "recheckText": null
+    },
+    "FICO": {
+      "asOf": "2026-06-19",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **เห็น volume จริงไหลไป VantageScore ใน mortgage** — ถ้า Q3/Q4 FY2026 (รายงาน ส.ค./พ.ย.) mortgage score volume เริ่มหดหรือ Scores growth ดิ่ง ทั้งที่ตลาดจำนองไม่ได้แย่ลง = thesis ผูกขาดเริ่มพัง\n- **ถูกบังคับลดราคา score จากแรงกดดันการเมือง/FHFA** — ถ้าต้องลดราคาจริง (ไม่ใช่แค่ปรับโมเดล 10T) Scores margin 88% จะหด กระทบกำไรทั้งบริษัท\n- คดี antitrust แพ้ หรือมีคำสั่งเปลี่ยนวิธีกระจาย/กำหนดราคา FICO Score\n- เครดิตบูโรเจ้าใดเจ้าหนึ่ง (จาก 51% ที่กระจุก) ลดการพึ่งพา FICO หรือดันคู่แข่ง",
       "recheckText": null
     },
     "GEV": {
@@ -1676,6 +1828,13 @@ if (typeof window !== 'undefined') window.DemoPortfolio = __DemoPortfolio;      
       "recheckAsOf": null,
       "indicator": null,
       "killText": "- **Cloud segment margin หล่นกลับต่ำกว่า 20% 2 ไตรมาสติด** — ตัว thesis ใหญ่สุดของ bull case อยู่ที่ Cloud margin expansion จริง ถ้า Wiz drag + new TPU build-out กดให้กลับไปต่ำกว่า 20% (เทียบ FY25 = 24%, Q1 26 = 33%) แปลว่า leverage ไม่อยู่ พอที่จะ rethink thesis\n- **DOJ Search/Ad Tech structural remedy บังคับ divest หรือ break-up** — ถ้าศาลสุดท้ายบังคับ structural remedy (ไม่ใช่แค่ behavioral remedy แบบ data sharing) เช่น spin off Chrome, ad exchange, หรือบังคับ unbundling ระดับธุรกิจหลัก — เปลี่ยน business model + economics ของ Search/Ad ทันที (FY2025 cutoff: DOJ Search appeal pending, DOJ AdTech รอ final judgment)\n- **Capex ขึ้นเกิน $200B FY27 พร้อม Cloud growth ลดต่ำกว่า 30%** — ตอนนี้ guidance FY27 แค่ \"significantly higher\" จาก $180-190B ถ้าไปแตะ $200B+ ขณะที่ Cloud โตหลุดต่ำกว่า 30% (FY25 = 36%, Q1 26 = 63%) แปลว่า ROI ของ AI infra spend หาย และ FCF จะถูกบีบหนักขึ้น",
+      "recheckText": null
+    },
+    "INTU": {
+      "asOf": "2026-06-19",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **TurboTax paying units หดต่อเนื่อง** (ไม่ใช่แค่โตช้า) — แปลว่า IRS Direct File/คู่แข่งกินฐานจริง ไม่ใช่แค่บริษัทเลือกทิ้งลูกค้าฟรี\n- **QuickBooks/GBS growth หลุดต่ำกว่า ~10%** — เพราะนี่คือขาหลัก (59%) และเป็นเหตุผลหลักของ thesis \"ลูกค้าติดหนึบ\"\n- **securities fraud investigation ลุกลามเป็นคดีจริง** หรือพบว่าบริษัทบิดเบือนข้อมูลจริง\n- Analyst Day (17 ก.ย. 2026) บริษัท \"reset\" long-term growth target ลงแรง (Stifel คาดไว้) = ยอมรับว่าโตช้าลงถาวร",
       "recheckText": null
     },
     "ISRG": {
@@ -1746,6 +1905,20 @@ if (typeof window !== 'undefined') window.DemoPortfolio = __DemoPortfolio;      
       "recheckAsOf": null,
       "indicator": null,
       "killText": "- **DRAM ASP ลด QoQ ติด 2 ไตรมาส** — ราคา DRAM = early signal ของ cycle turn; ถ้าราคาเริ่มลง = supply เริ่มแซง demand → margin จะ erode เร็วกว่า revenue\n- **HBM market share เสียให้ SK Hynix หรือ Samsung** — ตอนนี้ Micron มี Vera Rubin + sold-out; ถ้าคู่แข่ง qualify ใน gen ใหม่และได้ allocation NVIDIA = thesis สำคัญที่สุดพัง\n- **Capex overspend without revenue catch-up** — ถ้า FY27 capex >$35B แต่ revenue หรือ FCF ไม่ตามทัน + ROIC ลดต่ำกว่า cost of capital → bear case classic memory cycle\n- **CHIPS Act funding ถูก clawback หรือ tariff/policy เปลี่ยน** — funding $6.4B + 35% ITC พึ่งโครงสร้างนโยบาย; ถ้าเปลี่ยน = cash position หาย + fab construction delay\n\n---",
+      "recheckText": null
+    },
+    "NBIS": {
+      "asOf": "2026-06-20",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **AI cloud adj. EBITDA margin หยุดไต่หรือหดลงหลายไตรมาส** ทั้งที่รายได้ยังโต — เพราะ thesis ทั้งหมดวางอยู่บน \"scale แล้ว margin จะดีขึ้นเรื่อยๆ\" (จาก 24%→45%) ถ้า margin ไม่ไปต่อ = เผาเงินโดยไม่เห็นปลายทางกำไร\n- **ระดมทุนยากขึ้น / ดอกเบี้ยที่ออก convertible สูงขึ้นชัด หรือ raise แล้ว dilute หนัก** — เพราะโมเดลพึ่งตลาดทุน ถ้าเส้นเลือดนี้ตีบ แผน capex $20-25B เดินไม่ได้\n- **ARR โตหลุดเป้าชัดเจน** (exit 2026 ต่ำกว่ากรอบ $7-9B มาก) หรือลูกค้า hyperscaler รายใหญ่ (Meta/Microsoft) ลด/เลื่อน/ยกเลิก commitment — เพราะ backlog ส่วนใหญ่กระจุกที่ไม่กี่ราย\n- **ไม่ remediate material weakness ได้ภายในปี-สองปี** หรือเจอ restatement (แก้ตัวเลขย้อนหลัง) — สัญญาณว่าตัวเลขที่เราใช้ตัดสินใจเชื่อไม่ได้",
+      "recheckText": null
+    },
+    "NFLX": {
+      "asOf": "2026-06-19",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **op margin หยุดขยายหรือหดลงหลายไตรมาส** ทั้งที่รายได้ยังโต — เพราะ margin expansion คือแกนหลักของ thesis ถ้าหยุด = เหตุผลถือหายไปครึ่งหนึ่ง\n- **รายได้โตหลุดต่ำกว่า ~10%** อย่างต่อเนื่อง หรือเห็นสัญญาณคนยกเลิกหลังขึ้นราคา (engagement/retention ลด) — แปลว่า pricing power เริ่มหมด\n- **ads ไม่โตตามเป้า** (พลาด ~$3B / ไม่โตเท่าตัว) — เพราะ ads คือขาโตใหม่ที่ตลาดคาดหวัง\n- กลับไปไล่ซื้อกิจการใหญ่ราคาแพง (เสียวินัยการเงินที่เพิ่งโชว์ตอนถอน WBD)",
       "recheckText": null
     },
     "NOW": {
@@ -1867,6 +2040,24 @@ if (typeof window !== 'undefined') window.DemoPortfolio = __DemoPortfolio;      
   const api = { data: KILL_CONDITIONS, get };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; // node tests
   if (typeof window !== 'undefined') window.KillConditions = api;            // browser global
+})();
+
+// ============================================================
+// GENERATED FILE — DO NOT EDIT
+//
+// Source : wealth-plan-10M.md (wealth plan)
+// By     : tools/sync-wealthplan.js   (run: node tools/sync-wealthplan.js)
+//
+// Display-only reference: the RAW markdown of the wealth plan. The app
+// renders it to HTML at view time (mdToHtml). NOT used in any calc/alert.
+// ============================================================
+;(function () {
+  const WEALTH_PLAN = {
+    asOf: "20 มิ.ย. 2026",
+    markdown: "# แผนการเงินสู่ 10M THB — ฉบับสรุป\n\n_อัปเดต: 20 มิ.ย. 2026 · base case ที่ \"เป็นไปได้จริง\" ไม่พึ่งโชค_\n\n---\n\n## 1. เป้าหมาย\n\n| | |\n|---|---|\n| เป้า | **Net worth 10,000,000 THB** (รวม PVD, ไม่รวมเงินสดฉุกเฉิน) |\n| Timeline จริง | **~12 ปี** (ปลายปีที่ 12 ≈ 9.9M, แตะ 10M ต้นปีที่ 13) |\n| Floor อนุรักษ์ | ~14 ปี (กรณีตลาดแย่ตลอด) |\n| Return ที่ \"ต้องการ\" | แค่ **8% (sleeve) / 4% (PVD)** — ไม่ต้องไล่ 15% |\n\n> **หมายเหตุสำคัญ:** ตัวเลข 18 ปีในแผนเดิมสูงเกินจริง เพราะมันตัด PVD ทิ้ง + ใช้ return อนุรักษ์เกินไป เมื่อนับ PVD ที่มีจริง timeline หดเหลือ ~12 ปี โดยไม่ต้องเพิ่มความเสี่ยง\n\n---\n\n## 2. สมมติฐาน (ตรวจได้ ปรับได้)\n\n| ตัวแปร | ค่า | หมายเหตุ |\n|---|---|---|\n| Sleeve เริ่มต้น | 775,000 | investment base ปัจจุบัน ไม่รวมเงินสด |\n| DCA | 20,000/เดือน | คงที่ (ไม่นับ salary growth = อนุรักษ์) |\n| Sleeve return | 8% nominal | base; floor 6% |\n| PVD เริ่มต้น | 990,000 | |\n| PVD สมทบ | 8,415/เดือน | 7.5% นาย + 5% นายจ้าง × 67,320 |\n| PVD return | 4% | base; floor 3% (ตาม conservative ที่ตั้งไว้) |\n\n**Upside ที่ยังไม่นับ (เป็น margin of safety):** เงินเดือนขึ้น, employer step 5%→7.5% ราวปีที่ 7, DCA ที่อาจเพิ่มจาก side income/GCME\n\n---\n\n## 3. ตาราง Milestone ปีต่อปี\n\nใช้ track ว่าปีไหนควรแตะเท่าไหร่ ถ้าต่ำกว่า floor ต่อเนื่อง = ต้อง review\n\n| ปี | Sleeve @8% | PVD @4% | **รวม (base)** | รวม (floor 6/3%) |\n|---:|---:|---:|---:|---:|\n| 1 | 1,086,000 | 1,132,000 | **2,218,000** | 2,190,000 |\n| 2 | 1,423,000 | 1,281,000 | **2,703,000** | 2,638,000 |\n| 3 | 1,787,000 | 1,435,000 | **3,222,000** | 3,108,000 |\n| 4 | 2,181,000 | 1,595,000 | **3,777,000** | 3,603,000 |\n| 5 | 2,608,000 | 1,762,000 | **4,371,000** | 4,124,000 |\n| 6 | 3,070,000 | 1,936,000 | **5,006,000** | 4,673,000 |\n| 7 | 3,570,000 | 2,117,000 | **5,687,000** | 5,250,000 |\n| 8 | 4,112,000 | 2,305,000 | **6,417,000** | 5,858,000 |\n| 9 | 4,698,000 | 2,501,000 | **7,199,000** | 6,498,000 |\n| 10 | 5,332,000 | 2,705,000 | **8,037,000** | 7,172,000 |\n| 11 | 6,019,000 | 2,917,000 | **8,935,000** | 7,882,000 |\n| 12 | 6,762,000 | 3,137,000 | **9,899,000** | 8,630,000 |\n| 13 | 7,566,000 | 3,367,000 | **10,933,000** | 9,419,000 |\n\n**เงินที่นายใส่เองสะสมถึงปีที่ 12:** DCA 2,880,000 + PVD (ส่วนนาย) 727,000 = ~3.6M → ที่เหลือ ~6.3M มาจากการทบต้น + สมทบนายจ้าง\n\n---\n\n## 4. แผนปฏิบัติ\n\n### Phase 1 — ล็อกฐาน (ทำเลย · คุมได้ 100%)\n\n1. **DCA 20,000/เดือน สม่ำเสมอ** — เครื่องยนต์หลัก ความสม่ำเสมอสำคัญกว่าจำนวน อย่าให้หล่นเวลามีรายจ่ายปีนเขา/ทริป\n   - DCA split ให้รักษา target 50/20/15/15 (ดู Phase 2) — ช่วงปรับเข้าเป้า redirect เข้า Broad/Individual ก่อน\n2. **เติม emergency fund 4.9 → 6 เดือน** (ขาด ~34,000) เดือนละนิด คู่ขนาน ไม่หยุด DCA\n3. **เช็ก PVD ว่าเป็น employee's choice ไหม**\n   - ถ้าเลือก allocation เองได้ + ตอนนี้หนัก bond (80%) → พิจารณาเลื่อนไป equity มากขึ้น\n   - นี่คือคันโยก return ที่ใหญ่สุดในทั้ง net worth (ขยับ PVD 4%→6% มีผลมากกว่าจัด sleeve ทั้งก้อน เพราะฐาน 990k)\n   - PVD ถอนไม่ได้จนออกงาน → panic-sell ไม่ได้ → รับผันผวนได้มากกว่าพอร์ตปกติ\n\n### Phase 2 — ปรับ bucket เข้า target (ทำผ่าน DCA ไม่ต้องขาย)\n\n**Target allocation (ล็อกแล้ว): Broad 50 / Nasdaq 20 / Individual 15 / Thai 15**\nMag7 look-through ~29% · expected ~8-10% · turnover แค่ ~6%\n\n| bucket | ตอนนี้ | เป้า (THB) | move |\n|---|---|---|---|\n| US Broad | 358,061 (46.2%) | 387,631 (50%) | +29,570 ซื้อ |\n| Nasdaq | 195,269 (25.2%) | 155,052 (20%) | −40,217 หยุดเติม ปล่อย drift |\n| US Individual | 101,355 (13.1%) | 116,289 (15%) | +14,934 ซื้อ |\n| Thai | 120,575 (15.6%) | 116,289 (15%) | −4,286 ถือไว้ |\n\n4. **วิธีปรับ: redirect DCA 2-3 เดือน** — เทเข้า Broad + Individual, หยุดเติม Nasdaq → พอร์ต drift เข้าเป้าเองโดยไม่ต้องขาย (เลี่ยง realize gain + ค่าธรรมเนียม + remittance tax)\n5. **Thai 15%:** อย่าอัด KKP เพิ่ม (single-name 15.6% แล้ว) — ส่วนที่เติมใหม่กระจายไป Thai index/dividend fund แทน\n6. **หุ้นเดี่ยว + brief/kill-condition system** = เก็บเป็นของที่ชอบ + ฝึกฝีมือ แต่ bounded 15% ไม่ใช่ return engine (แต่ละตัว 2-3% = noise ต่อพอร์ตรวม)\n\n### Phase 3 — บีบ 12 → 10 ปี (เฉพาะถ้าต้องการจริง)\n\n7. คันโยกเดียวที่ซื่อสัตย์ = **เพิ่มเงินใส่ผ่านรายได้ ไม่ใช่ดัน return**\n   - ต้องการ +11,000/เดือน เข้า DCA (รวมเป็น ~31k) เพื่อแตะ 10M ปีที่ 10 พอดี\n   - แหล่ง: ส่วนต่าง comp จาก contract GCME / climbing guide / AI tools\n   - รายได้เพิ่มที่ลงทุนจริง ย่นเป้า 2-3 ปี — return ทำให้ไม่ได้ และไม่มี ruin risk\n\n---\n\n## 5. Guardrails (มีอยู่แล้ว — รักษาไว้)\n\n**แผนเพิ่ม DCA ตอนตลาดลง (sequence hedge ตัวจริง):**\n- ลง 10% → DCA ปกติ\n- ลง 20% → +25%\n- ลง 30% → +50%\n- ลง 40% → ใช้เงินสดพิเศษบางส่วน\n\n**Kill condition รายหุ้น** — review ตาม trigger ที่เขียนไว้ ไม่ใช่ตามอารมณ์\n\n---\n\n## 6. สิ่งที่ \"ไม่ทำ\" (สำคัญพอๆ กับสิ่งที่ทำ)\n\n- ❌ **ไม่ไล่ return 15-17%** — ที่ฐาน 775k คันโยกคือเงินใส่ + เวลา ไม่ใช่ผลตอบแทน\n- ❌ **ไม่ใช้ leverage / LETF / concentration** เพื่อย่นเวลา — trade ที่แย่ เพิ่ม ruin risk เพื่อแลกไม่กี่ปี\n- ❌ **ไม่ขยายบัคเก็ตหุ้นเดี่ยว** เพื่อหวังเร่งผลตอบแทน — มันคือ noise\n- ❌ **ไม่ optimize เกินจำเป็น** — เคสนี้คือ \"แผนชนะแล้วถ้าไม่ทำพัง\" ทำตามแผนน่าเบื่อๆ ดีที่สุด\n\n---\n\n## 7. จุดที่ต้อง Review\n\n| เมื่อไหร่ | เช็กอะไร |\n|---|---|\n| ทุกเดือน | DCA 20k ลงครบไหม |\n| ทุกไตรมาส | actual vs milestone table (ข้อ 3) |\n| ปีละครั้ง | PVD underlying allocation, drift > ±5%, สมมติฐาน return ยังสมจริงไหม |\n| เมื่อ comp เปลี่ยน | (GCME/เลื่อนตำแหน่ง) → ปรับ DCA ขึ้นทันที |\n| ปีที่ ~7 | employer PVD step 5%→7.5% → อัปเดตสมมติฐาน |\n\n---\n\n## บรรทัดล่าง\n\nแผนนี้พา net worth แตะ **10M ในปีที่ ~12** ที่ DCA 20k โดยต้องการ return แค่ 8%/4% ซึ่งต่ำกว่าที่พอร์ต megacap-heavy ปัจจุบันให้ (~8-10%) — มี margin of safety ในตัว\n\nตัวแปรที่ตัดสินความสำเร็จไม่ใช่ \"เลือกหุ้นถูกไหม\" แต่คือ **(1) DCA สม่ำเสมอ (2) PVD จัด allocation ให้เหมาะ (3) ไม่ทำพังตอนตลาดลง** ทั้งสามอย่างนายคุมได้เอง\n\n_ไม่ใช่คำแนะนำการลงทุนเฉพาะบุคคล — เป็นกรอบให้ตัดสินใจเอง ตัวเลขเป็นประมาณการบนสมมติฐานข้างต้น_\n"
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = WEALTH_PLAN; // node tests
+  if (typeof window !== 'undefined') window.WealthPlan = WEALTH_PLAN;                 // browser global
 })();
 
 // ============================================================
@@ -2727,6 +2918,73 @@ const __NWHistoryEngine = {
 if (typeof module !== 'undefined' && module.exports) module.exports = __NWHistoryEngine; // node tests
 if (typeof window !== 'undefined') window.NWHistoryEngine = __NWHistoryEngine;            // browser global
 
+// ============================================================
+// BFOS — Drawdown / DCA-boost engine
+// ============================================================
+// Pure logic only: no DOM, no localStorage. Tracks how far a benchmark
+// index (S&P 500) has fallen from its peak (ATH high-water mark) and maps
+// that drawdown to a DCA "boost tier" — buy more when the market is cheap.
+//
+// Why benchmark, not net worth: net worth is muddied by monthly DCA inflows
+// and a bond-heavy PVD + cash, so it understates how far the market actually
+// fell. The trigger is "buy stocks when stocks are cheap" -> measure the
+// index itself.
+//
+// Drawdown is a NEGATIVE fraction: (price - peak)/peak. 0 at/above peak.
+// Tier thresholds (`dd`) are NEGATIVE percent numbers (-10, -20, ...).
+// Dual-export (node tests + window.DrawdownEngine).
+// ============================================================
+
+function _num(n) { return (typeof n === 'number' && Number.isFinite(n)) ? n : 0; }
+
+// Drawdown from peak as a fraction (e.g. -0.07 = 7% below ATH). 0 if no peak.
+function drawdownPct(price, peak) {
+  const p = _num(price), pk = _num(peak);
+  if (pk <= 0) return 0;
+  return (p - pk) / pk;
+}
+
+// Auto high-water mark: peak never decreases. Use on every price refresh.
+function updatePeak(peak, price) {
+  return Math.max(_num(peak), _num(price));
+}
+
+// Active tier for the current drawdown. `ddPctNum` is a percent NUMBER
+// (e.g. -7 for -7%). Returns the DEEPEST tier whose threshold has been
+// reached (ddPctNum <= tier.dd), or null if the market hasn't fallen far
+// enough to reach the first tier.
+function activeTier(ddPctNum, tiers) {
+  const list = (Array.isArray(tiers) ? tiers.slice() : []).sort((a, b) => b.dd - a.dd); // shallow -> deep
+  let active = null;
+  for (const t of list) {
+    if (ddPctNum <= t.dd) active = t;
+  }
+  return active;
+}
+
+// Recommended monthly DCA given the normal amount and the active tier.
+// tier.amount (absolute) wins; else normal * (1 + boostPct/100); null -> normal.
+function recommendedDca(normalDca, tier) {
+  const base = _num(normalDca);
+  if (!tier) return base;
+  if (tier.amount != null) return _num(tier.amount);
+  return Math.round(base * (1 + _num(tier.boostPct) / 100));
+}
+
+// Default boost ladder. boostPct is a percent (25 => +25%). The deepest tier
+// is a "deploy spare cash" signal (no fixed multiple).
+const DEFAULT_TIERS = [
+  { dd: -10, boostPct: 0,  label: 'DCA ปกติ' },
+  { dd: -20, boostPct: 25, label: '+25%' },
+  { dd: -30, boostPct: 50, label: '+50%' },
+  { dd: -40, boostPct: 0,  label: 'ใช้เงินสดพิเศษ', special: true },
+];
+
+const __DrawdownEngine = { drawdownPct, updatePeak, activeTier, recommendedDca, DEFAULT_TIERS };
+
+if (typeof module !== 'undefined' && module.exports) module.exports = __DrawdownEngine; // node tests
+if (typeof window !== 'undefined') window.DrawdownEngine = __DrawdownEngine;            // browser global
+
 
 // ===== Cloud sync (Supabase) =====
 const SB_URL='https://nplhhyhtstyzqxiymwrq.supabase.co';
@@ -2828,11 +3086,26 @@ DB.def('fireSettings',{
   targetDCA:30000,fire1:10000000,fire2:20000000,
   retLow:0.07,retBase:0.10,retHigh:0.12,trackingStart:'2026-06',
   pvdOverride:null,liquidOverride:null,lastRefresh:null,
-  monthlyExpense:30000
+  monthlyExpense:30000,
+  // FIRE projection (Sleeve + PVD, vesting-aware). Defaults seeded from the real
+  // PVD statement (16/06/2026) + fund regulation; all editable inline on the page.
+  projDca:20000,                                   // forward DCA assumption (≠ targetDCA tracking)
+  pvdMember:882154,pvdEmployer:109554,             // PVD split: member (100% vested) / employer (vests over 6y)
+  salary:67320,memberRate:7.5,serviceYears:3.1,    // contribution drivers (memberRate %, อายุงาน ปี)
+  sleeveRetLow:0.06,sleeveRetBase:0.08,sleeveRetHigh:0.10, // sleeve return scenarios
+  pvdRetLow:0.03,pvdRetBase:0.04,pvdRetHigh:0.045         // PVD blended return scenarios (current bond-heavy mix)
 });
 DB.def('bucketTargets',{
   "US Broad Index":50,"US Growth / Nasdaq":20,"Thai Dividend/Thai Stocks":15,
   "Thai Equity Index":0,"US Individual Stocks":15,"Emerging/Other":0
+});
+// Drawdown / DCA-boost tracker (Goals page). Benchmark = S&P 500 (^GSPC direct,
+// VOO proxy fallback). peak = auto high-water mark unless peakAuto=false (manual pin).
+// price/asOf/usedSymbol refreshed on every silent price pull. Logic in window.DrawdownEngine.
+DB.def('drawdownCfg',{
+  peak:0,peakAuto:true,price:0,asOf:null,usedSymbol:null,
+  normalDca:20000,
+  tiers:[{dd:-10,boostPct:0,label:'DCA ปกติ'},{dd:-20,boostPct:25,label:'+25%'},{dd:-30,boostPct:50,label:'+50%'},{dd:-40,boostPct:0,label:'ใช้เงินสดพิเศษ',special:true}]
 }); // policy 50/20/15/15 (US Broad / US Growth·Nasdaq / US Individual / Thai Dividend). Cash=fixed reserve แยกต่างหาก
 
 // Portfolio source abstraction lives in src/data/portfolioProvider.js (window.PortfolioProvider).
@@ -2984,6 +3257,40 @@ function liquidVal(){const o=DB.get('fireSettings').liquidOverride;if(o!=null&&o
 function pvdVal(){const o=DB.get('fireSettings').pvdOverride;if(o!=null&&o!=='')return +o;
   return PvdEngine.pvdHoldingsValue(DB.get('holdings'));}
 // nperYears extracted to src/features/dca/dcaEngine.js (window.DcaEngine)
+
+// FIRE-projection config with read-time fallbacks. DB.def only seeds when the whole
+// fireSettings key is absent, so users whose settings predate the dual-engine model
+// would have these sub-fields undefined — resolve defaults here instead.
+const FIRE_DEFAULTS={projDca:20000,salary:67320,memberRate:7.5,serviceYears:3.1,
+  pvdMember:882154,pvdEmployer:109554,
+  sleeveRetLow:0.06,sleeveRetBase:0.08,sleeveRetHigh:0.10,
+  pvdRetLow:0.03,pvdRetBase:0.04,pvdRetHigh:0.045};
+function fireCfg(){
+  const f=DB.get('fireSettings')||{};
+  const g=(k,d)=>{const v=f[k];return (v==null||v==='')?d:+v;};
+  return {
+    sleeveStart:liquidVal(),                       // sleeve start = liquid (override or holdings)
+    projDca:g('projDca',FIRE_DEFAULTS.projDca),
+    salary:g('salary',FIRE_DEFAULTS.salary),
+    memberRate:g('memberRate',FIRE_DEFAULTS.memberRate),   // stored as %
+    serviceYears:g('serviceYears',FIRE_DEFAULTS.serviceYears),
+    pvdMember:g('pvdMember',FIRE_DEFAULTS.pvdMember),
+    pvdEmployer:g('pvdEmployer',FIRE_DEFAULTS.pvdEmployer),
+    fire1:g('fire1',10000000),fire2:g('fire2',20000000),
+    sleeveRet:[g('sleeveRetLow',FIRE_DEFAULTS.sleeveRetLow),g('sleeveRetBase',FIRE_DEFAULTS.sleeveRetBase),g('sleeveRetHigh',FIRE_DEFAULTS.sleeveRetHigh)],
+    pvdRet:[g('pvdRetLow',FIRE_DEFAULTS.pvdRetLow),g('pvdRetBase',FIRE_DEFAULTS.pvdRetBase),g('pvdRetHigh',FIRE_DEFAULTS.pvdRetHigh)]
+  };
+}
+// inline edit of a FIRE field (called from onchange). isPct → stored as fraction.
+// 'sleeveStart' maps to liquidOverride (clearing it falls back to holdings auto).
+function saveFireField(key,raw,isPct){
+  const f=DB.get('fireSettings')||{};
+  const n=parseFloat(String(raw).replace(/,/g,''));
+  if(key==='sleeveStart'){ f.liquidOverride=isNaN(n)?null:n; }
+  else if(!isNaN(n)){ f[key]=isPct?(n/100):n; }
+  DB.set('fireSettings',f);
+  renderDcaFire();
+}
 const THAI_MONTH={'ม.ค.':1,'ก.พ.':2,'มี.ค.':3,'เม.ย.':4,'พ.ค.':5,'มิ.ย.':6,'ก.ค.':7,'ส.ค.':8,'ก.ย.':9,'ต.ค.':10,'พ.ย.':11,'ธ.ค.':12};
 // "มิ.ย. 2026" / "Jun 2026" / "2026-06" / date string -> "yyyy-mm"
 function toMonthKey(v){
@@ -3046,9 +3353,99 @@ function nav(id,el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   el.classList.add('active');
-  ({dashboard:renderDash,holdings:renderHoldings,cashflow:renderCF,journal:renderJournal,decisions:renderDecisions,goals:renderGoals,dcafire:renderDcaFire,export:renderExport})[id]?.();
+  ({dashboard:renderDash,holdings:renderHoldings,cashflow:renderCF,journal:renderJournal,decisions:renderDecisions,goals:renderGoals,dcafire:renderDcaFire,wealthplan:renderWealthPlan,export:renderExport})[id]?.();
   // re-fit charts after iOS settles layout (fixes blurry canvas created at wrong size on mobile)
   setTimeout(()=>{document.querySelectorAll('#page-'+id+' canvas').forEach(cv=>{const c=window.Chart&&Chart.getChart(cv);if(c){try{c.resize()}catch(e){}}})},150);
+}
+
+// WEALTH PLAN — render the raw markdown (window.WealthPlan, generated by
+// tools/sync-wealthplan.js) to HTML. Display-only; the .md is the source of
+// truth. Supports the subset the plan uses: headings, GFM pipe tables, bold,
+// italic, inline code, blockquotes, hr, ordered/unordered lists (1 nest level).
+function mdInline(s){
+  s=String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/(^|[\s(])_([^_]+)_(?=[\s).,:]|$)/g,'$1<em>$2</em>');
+  return s;
+}
+function mdTableRow(line){
+  let l=line.trim();
+  if(l.startsWith('|'))l=l.slice(1);
+  if(l.endsWith('|'))l=l.slice(0,-1);
+  return l.split('|').map(c=>c.trim());
+}
+function mdToHtml(md){
+  const lines=String(md).replace(/\r\n/g,'\n').split('\n');
+  let html='',i=0;
+  const isSep=l=>/^\s*\|?[\s:|-]*-[\s:|-]*\|?\s*$/.test(l)&&l.includes('-');
+  while(i<lines.length){
+    let line=lines[i];
+    // blank
+    if(!line.trim()){i++;continue;}
+    // hr
+    if(/^\s*([-*_])\1{2,}\s*$/.test(line)){html+='<hr>';i++;continue;}
+    // heading
+    const h=line.match(/^(#{1,6})\s+(.*)$/);
+    if(h){const lv=Math.min(h[1].length,3);html+=`<h${lv}>${mdInline(h[2].trim())}</h${lv}>`;i++;continue;}
+    // table: a pipe line immediately followed by a separator row
+    if(line.includes('|')&&i+1<lines.length&&isSep(lines[i+1])){
+      const header=mdTableRow(line);
+      const align=mdTableRow(lines[i+1]).map(c=>{const l=c.startsWith(':'),r=c.endsWith(':');return l&&r?'center':r?'right':l?'left':'';});
+      let t='<div class="wp-tw"><table class="wp-table"><thead><tr>';
+      header.forEach((c,k)=>t+=`<th${align[k]?` style="text-align:${align[k]}"`:''}>${mdInline(c)}</th>`);
+      t+='</tr></thead><tbody>';
+      i+=2;
+      while(i<lines.length&&lines[i].includes('|')&&lines[i].trim()){
+        const cells=mdTableRow(lines[i]);
+        t+='<tr>'+cells.map((c,k)=>`<td${align[k]?` style="text-align:${align[k]}"`:''}>${mdInline(c)}</td>`).join('')+'</tr>';
+        i++;
+      }
+      html+=t+'</tbody></table></div>';continue;
+    }
+    // blockquote
+    if(/^\s*>/.test(line)){
+      let buf=[];
+      while(i<lines.length&&/^\s*>/.test(lines[i])){buf.push(lines[i].replace(/^\s*>\s?/,''));i++;}
+      html+=`<blockquote><p>${buf.map(mdInline).join('<br>')}</p></blockquote>`;continue;
+    }
+    // list (ordered or unordered), with one level of nesting by indent
+    if(/^\s*([-*]|\d+\.)\s+/.test(line)){
+      const ordered=/^\s*\d+\.\s+/.test(line);
+      let out=`<${ordered?'ol':'ul'}>`,openSub=false;
+      while(i<lines.length&&/^\s*([-*]|\d+\.)\s+/.test(lines[i])){
+        const cur=lines[i];
+        const indent=(cur.match(/^\s*/)[0]||'').length;
+        const text=mdInline(cur.replace(/^\s*([-*]|\d+\.)\s+/,''));
+        if(indent>=2){ // nested
+          if(!openSub){out+='<ul>';openSub=true;}
+          out+=`<li>${text}</li>`;
+        }else{
+          if(openSub){out+='</ul>';openSub=false;}
+          out+=`<li>${text}</li>`;
+        }
+        i++;
+      }
+      if(openSub)out+='</ul>';
+      out+=`</${ordered?'ol':'ul'}>`;html+=out;continue;
+    }
+    // paragraph (gather until blank / block start)
+    let buf=[line];i++;
+    while(i<lines.length&&lines[i].trim()&&!/^\s*(#{1,6}\s|>|([-*_])\2{2,}\s*$|([-*]|\d+\.)\s)/.test(lines[i])&&!(lines[i].includes('|')&&i+1<lines.length&&isSep(lines[i+1]))){
+      buf.push(lines[i]);i++;
+    }
+    html+=`<p>${buf.map(mdInline).join('<br>')}</p>`;
+  }
+  return html;
+}
+function renderWealthPlan(){
+  const el=document.getElementById('wpbody');if(!el)return;
+  const wp=window.WealthPlan;
+  if(!wp||!wp.markdown){el.innerHTML='<div class="co co-a">ยังไม่มีข้อมูลแผน — รัน <code>node tools/sync-wealthplan.js</code> แล้ว build ใหม่</div>';return;}
+  el.innerHTML=mdToHtml(wp.markdown);
+  const sub=document.getElementById('wpsub');
+  if(sub&&wp.asOf)sub.textContent='อัปเดต: '+wp.asOf+' · single source of truth: wealth-plan-10M.md';
 }
 
 // DASHBOARD
@@ -3181,14 +3578,8 @@ function renderDash(){
     <div class="cfrow"><span class="cfl">Warn USD 50,000</span><span class="cfv mu">${fmt(EstateTaxEngine.WARN_USD*us.fx)}</span></div>
     <div class="cfrow"><span class="cfl">Cap USD 60,000</span><span class="cfv mu">${fmt(EstateTaxEngine.CAP_USD*us.fx)}</span></div>
     <div class="co ${usStat.c}" style="margin-top:10px;font-size:12px">Status: ${usStat.t} <span style="color:var(--t3)">@ FX ${us.fx}</span></div>`;
-  // Goal progress (+ basis)
-  let gh='';
-  g.slice(0,3).forEach(x=>{const cur=getGoalCurrentValue(x),p=GoalsEngine.goalProgressPct(cur,x.target);
-    const basis=x.cat==='wealth'?`<div style="font-size:10px;color:var(--t3);margin-top:2px">${GoalsEngine.goalInclusionNote(x)} · ${fmt(cur)}/${fmt(x.target)}</div>`:'';
-    gh+=`<div class="gi"><div class="gh"><span class="gn">${x.name}</span><span class="gp">${p}%</span></div><div class="gtrack"><div class="gfill" style="width:${p}%"></div></div>${basis}</div>`;});
-  document.getElementById('dgoals').innerHTML=gh||'<div class="empty">ยังไม่มีเป้าหมาย</div>';
-  const d15=s.dca||15000,r=0.06,y=18;
-  document.getElementById('dproj').textContent=`พอร์ตปัจจุบัน ${fmt(V)} + DCA ${fmt(d15)}/เดือน อีก ${y} ปี ที่ 6% ≈ ${fmt(DcaEngine.projectFutureValue(V,d15,r,y))} (รวมพอร์ตปัจจุบัน + DCA อนาคต)`;
+  // Drawdown / DCA-boost tracker (replaces the old Goal-progress card on the dashboard)
+  renderDrawdown();
   if(chartA)chartA.destroy();
   const lb=[],da=[],co=['#4f9cf9','#a78bfa','#f5a623','#3ecf8e','#f97b5a','#f06060','#38bdf8','#34d399','#fbbf24','#c084fc','#fb7185','#22d3ee','#a3e635','#f472b6'];
   h.forEach(x=>{if(x.value>0){lb.push(x.name);da.push(x.value);}});
@@ -3835,7 +4226,80 @@ function buildProjChart(dca){
   const line=(rate,color,label)=>({label,data:yrs.map((_,i)=>Math.round(DcaEngine.projectFutureValue(V0,dca,rate,i))),borderColor:color,tension:.3,pointRadius:0,fill:false});
   const ds=[line(0.04,'#5a5868','4% Conservative'),line(0.06,'#4f9cf9','6% Base'),line(0.08,'#3ecf8e','8% Optimistic'),line(0.10,'#f5a623','10% Aggressive')];
   if(chartP)chartP.destroy();
-  chartP=new Chart(document.getElementById('cProj'),{type:'line',data:{labels:yrs,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9896a8',boxWidth:12,font:{size:11}}}},scales:{x:{ticks:{color:'#9896a8'},grid:{color:'rgba(255,255,255,.05)'}},y:{ticks:{color:'#9896a8',font:{size:10},crossAlign:'far',callback:v=>v>=1e6?'฿'+(v/1e6).toFixed(1)+'M':'฿'+(v/1e3).toFixed(0)+'K'},grid:{color:'rgba(255,255,255,.05)'}}}}}); 
+  chartP=new Chart(document.getElementById('cProj'),{type:'line',data:{labels:yrs,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9896a8',boxWidth:12,font:{size:11}}}},scales:{x:{ticks:{color:'#9896a8'},grid:{color:'rgba(255,255,255,.05)'}},y:{ticks:{color:'#9896a8',font:{size:10},crossAlign:'far',callback:v=>v>=1e6?'฿'+(v/1e6).toFixed(1)+'M':'฿'+(v/1e3).toFixed(0)+'K'},grid:{color:'rgba(255,255,255,.05)'}}}}});
+}
+// ----- Drawdown / DCA-boost tracker (dashboard card, replaces Goal-progress) — DB/render glue; logic in window.DrawdownEngine -----
+const DRAW_DEFAULTS={normalDca:20000,tiers:[{dd:-10,boostPct:0,label:'DCA ปกติ'},{dd:-20,boostPct:25,label:'+25%'},{dd:-30,boostPct:50,label:'+50%'},{dd:-40,boostPct:0,label:'ใช้เงินสดพิเศษ',special:true}]};
+function drawCfg(){
+  const c=DB.get('drawdownCfg')||{};
+  return {
+    peak:+c.peak||0,peakAuto:c.peakAuto!==false,price:+c.price||0,
+    asOf:c.asOf||null,usedSymbol:c.usedSymbol||'S&P 500',
+    normalDca:(c.normalDca==null||c.normalDca==='')?DRAW_DEFAULTS.normalDca:+c.normalDca,
+    tiers:(Array.isArray(c.tiers)&&c.tiers.length)?c.tiers:DRAW_DEFAULTS.tiers
+  };
+}
+// inline edit of a drawdown field. 'peak' pins manually (peakAuto=false); blank peak -> back to auto.
+function saveDrawField(key,raw){
+  const c=DB.get('drawdownCfg')||{};
+  const n=parseFloat(String(raw).replace(/,/g,''));
+  if(key==='peak'){
+    if(String(raw).trim()===''||isNaN(n)){c.peakAuto=true;}             // cleared -> resume auto high-water mark
+    else{c.peak=n;c.peakAuto=false;}                                    // pinned manual ATH
+  }else if(key==='normalDca'&&!isNaN(n)){c.normalDca=n;}
+  DB.set('drawdownCfg',c);renderDrawdown();
+}
+function resetDrawPeak(){const c=DB.get('drawdownCfg')||{};c.peakAuto=true;c.peak=+c.price||0;DB.set('drawdownCfg',c);renderDrawdown();}
+function renderDrawdown(){
+  const el=document.getElementById('dd-body');if(!el)return;
+  const E=window.DrawdownEngine,c=drawCfg();
+  const ddNum=(E?E.drawdownPct(c.price,c.peak):0)*100;   // negative when below peak
+  const ddShown=Math.min(0,ddNum);                       // never show positive drawdown
+  const tier=E?E.activeTier(ddNum,c.tiers):null;
+  const recDca=E?E.recommendedDca(c.normalDca,tier):c.normalDca;
+  const ddCol=ddShown<=-20?'var(--red)':ddShown<=-10?'var(--amber)':'var(--green)';
+  const fxr=fxRate();
+  const stale=c.price>0?'':' · <span style="color:var(--amber)">ยังไม่ได้ดึงราคา — เปิดทิ้งไว้สักครู่</span>';
+  // status line
+  let status;
+  if(c.price<=0)status='รอราคา S&P 500…';
+  else if(!tier)status=`ยังไม่ถึง tier เพิ่ม DCA · DCA ปกติ ${fmt(c.normalDca)}`;
+  else if(tier.special)status=`ตลาดลง ${Math.abs(ddShown).toFixed(1)}% → 🔻 สัญญาณ "ใช้เงินสดพิเศษ"`;
+  else if((+tier.boostPct||0)>0)status=`ตลาดลง ${Math.abs(ddShown).toFixed(1)}% → เพิ่ม DCA ${tier.label} = ${fmt(recDca)}/เดือน`;
+  else status=`ตลาดลง ${Math.abs(ddShown).toFixed(1)}% → DCA ปกติ ${fmt(recDca)}/เดือน`;
+  // tier ladder rows (active = the matched tier object)
+  const rows=c.tiers.slice().sort((a,b)=>b.dd-a.dd).map(t=>{
+    const amt=E?E.recommendedDca(c.normalDca,t):c.normalDca;
+    const isActive=tier&&t.dd===tier.dd;
+    const reached=ddShown<=t.dd;
+    const amtTxt=t.special?'ใช้เงินสดพิเศษ':(+t.boostPct||0)>0?`${t.label} · ${fmt(amt)}`:`DCA ปกติ · ${fmt(amt)}`;
+    return `<div class="ddrow${isActive?' active':''}">
+      <span class="dddd">${t.dd}%</span>
+      <span class="ddamt">${amtTxt}</span>
+      <span class="ddmark">${isActive?'◀ อยู่ตรงนี้':reached?'✓':''}</span></div>`;
+  }).join('');
+  const peakField=c.peakAuto
+    ? `<input class="ddinp" placeholder="${c.peak>0?Math.round(c.peak).toLocaleString()+' (auto)':'auto'}" onchange="saveDrawField('peak',this.value)">`
+    : `<input class="ddinp" value="${Math.round(c.peak)}" onchange="saveDrawField('peak',this.value)"> <button class="btn" style="padding:2px 8px;font-size:10px" onclick="resetDrawPeak()">auto</button>`;
+  el.innerHTML=`
+  <div class="card">
+    <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
+      <span>${c.usedSymbol} — drawdown</span>
+      <button class="btn" style="padding:2px 8px;font-size:10px" onclick="document.getElementById('dd-set').classList.toggle('hidden')">⚙️</button>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:2px 0 8px">
+      <div style="font-size:30px;font-weight:700;color:${ddCol}">${ddShown<=0?ddShown.toFixed(1):'0.0'}%</div>
+      <div style="font-size:11px;color:var(--t3)">ราคา ${c.price>0?c.price.toLocaleString('en-US',{maximumFractionDigits:2}):'—'} · พีค ${c.peak>0?Math.round(c.peak).toLocaleString():'—'}${stale}</div>
+    </div>
+    <div style="font-size:12px;margin-bottom:10px">${status}</div>
+    <div class="ddladder">${rows}</div>
+    <div id="dd-set" class="hidden" style="margin-top:12px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px">
+      <div class="ddset"><span>DCA ปกติ/เดือน</span><input class="ddinp" value="${Math.round(c.normalDca)}" onchange="saveDrawField('normalDca',this.value)"></div>
+      <div class="ddset"><span>พีค (ATH)</span><span>${peakField}</span></div>
+      <div style="font-size:10px;color:var(--t3);margin-top:6px">พีคเก็บอัตโนมัติจากราคาสูงสุดที่เคยเห็น — แก้เองได้เผื่อปักหมุด ATH จริง (ล้างช่อง = auto)</div>
+      <div class="ddset" style="margin-top:8px"><span>USD / THB</span><span style="font-weight:600">${fxr.toFixed(2)}</span></div>
+    </div>
+  </div>`;
 }
 function newGoal(){
   ['gname','gtgt','gcur','gyear'].forEach(id=>document.getElementById(id).value='');
@@ -3856,6 +4320,7 @@ function delG(id){if(!confirm('ลบ?'))return;DB.set('goals',DB.get('goals').f
 
 // DCA / FIRE
 let chartDcaBar=null,chartDcaCum=null,chartDcaCash=null;
+let chartFireNW=null,chartFireDca=null,chartFireDelta=null;
 async function refreshDca(){
   const btn=document.getElementById('dfrefresh'),old=btn.textContent;
   btn.textContent='กำลังดึง...';btn.disabled=true;
@@ -3920,26 +4385,210 @@ function renderDcaFire(){
   }
   document.getElementById('dftbody').innerHTML=rows||'<tr><td colspan="6"><div class="empty">ยังไม่มีเดือนในปีนี้</div></td></tr>';
 
-  const liquid=liquidVal(),pvd=pvdVal();
-  document.getElementById('dfassets').innerHTML=`
-    <div class="ct">มูลค่าที่ใช้คำนวณ FIRE</div>
-    <div class="cfrow"><span class="cfl">Liquid — หุ้น+กองทุน${fs.liquidOverride!=null?' (override)':' (auto)'}</span><span class="cfv">${fmt(liquid)}</span></div>
-    <div class="cfrow"><span class="cfl">PVD ${fs.pvdOverride!=null?'(override)':'(auto)'}</span><span class="cfv">${fmt(pvd)}</span></div>
-    <div class="cfrow"><span class="cfl" style="color:var(--t1);font-weight:500">Total net worth</span><span class="cfv" style="color:var(--green)">${fmt(liquid+pvd)}</span></div>`;
-
-  const rets=[['7%',fs.retLow],['10%',fs.retBase],['12%',fs.retHigh]],yc=v=>v==null?'—':v.toFixed(1)+' ปี';
-  const fireTable=floor=>{
-    const t1=floor?Math.max(fs.fire1-pvd,0):fs.fire1,t2=floor?Math.max(fs.fire2-pvd,0):fs.fire2;
-    let h=`<thead><tr><th></th>${rets.map(r=>`<th>${r[0]}</th>`).join('')}</tr></thead><tbody>`;
-    h+=`<tr><td>${fmt(fs.fire1)}</td>${rets.map(r=>`<td>${yc(DcaEngine.nperYears(r[1],target,liquid,t1))}</td>`).join('')}</tr>`;
-    h+=`<tr><td>${fmt(fs.fire2)}</td>${rets.map(r=>`<td>${yc(DcaEngine.nperYears(r[1],target,liquid,t2))}</td>`).join('')}</tr>`;
-    return h+'</tbody>';
-  };
-  document.getElementById('dffire1').innerHTML=fireTable(false);
-  document.getElementById('dffire2').innerHTML=fireTable(true);
-  document.getElementById('dffirenote').textContent=`Liquid ต้องถึง ${fmt(Math.max(fs.fire1-pvd,0))} (=10M−PVD) และ ${fmt(Math.max(fs.fire2-pvd,0))} (=20M−PVD) · DCA ${fmt(target)}/เดือน`;
+  renderFireProjection(avg);
 
   drawDcaCharts(year,startMonth,byMonth,target,activeTarget);
+}
+
+// FIRE — Sleeve + PVD as two/three independent compounding engines summed, vesting-aware.
+// `avgActual` = YTD average actual DCA (a hint next to the assumption field).
+function renderFireProjection(avgActual){
+  const fc=fireCfg();
+  const p0={sleeveStart:fc.sleeveStart,dca:fc.projDca,pvdMember:fc.pvdMember,
+    pvdEmployer:fc.pvdEmployer,salary:fc.salary,memberRate:fc.memberRate/100,
+    serviceYears:fc.serviceYears};
+  const sub=t=>`<span style="color:var(--t3);text-transform:none;font-weight:400">${t}</span>`;
+
+  // ---- editable inputs grid ----
+  const inp=(key,label,val,isPct)=>{
+    const v=isPct?(val*100):val;
+    const disp=isPct?(+v.toFixed(2)):(Math.abs(v)>=1000?Math.round(v):v);
+    return `<div class="ff"><label>${label}</label><input id="ffire_${key}" inputmode="decimal" value="${disp}" onchange="saveFireField('${key}',this.value,${isPct?'true':'false'})"></div>`;
+  };
+  const dcaHint=avgActual>0?` ${sub('· จริง '+fmt(Math.round(avgActual)))}`:'';
+  document.getElementById('dffire-edit').innerHTML=
+    `<div class="ffire-sec">Sleeve — หุ้น+กองทุน ${sub('· ได้ 100% เสมอ')}</div>`+
+    inp('sleeveStart','Sleeve เริ่มต้น (฿)',fc.sleeveStart,false)+
+    inp('projDca','DCA สมมติฐาน/เดือน (฿)'+dcaHint,fc.projDca,false)+
+    `<div class="ffire-sec">PVD — สมาชิก 100% ${sub('· นายจ้างได้ตาม vesting อายุงาน')}</div>`+
+    inp('pvdMember','PVD ส่วนสมาชิก (฿)',fc.pvdMember,false)+
+    inp('pvdEmployer','PVD ส่วนนายจ้าง (฿)',fc.pvdEmployer,false)+
+    inp('salary','เงินเดือนฐาน (฿/ด.)',fc.salary,false)+
+    inp('memberRate','อัตราสะสมของนาย (%)',fc.memberRate,false)+
+    inp('serviceYears','อายุงานปัจจุบัน (ปี)',fc.serviceYears,false)+
+    `<div class="ffire-sec">ผลตอบแทน/ปี ${sub('· Floor · Base · Stretch')}</div>`+
+    inp('sleeveRetLow','Sleeve floor (%)',fc.sleeveRet[0],true)+
+    inp('sleeveRetBase','Sleeve base (%)',fc.sleeveRet[1],true)+
+    inp('sleeveRetHigh','Sleeve stretch (%)',fc.sleeveRet[2],true)+
+    inp('pvdRetLow','PVD floor (%)',fc.pvdRet[0],true)+
+    inp('pvdRetBase','PVD base (%)',fc.pvdRet[1],true)+
+    inp('pvdRetHigh','PVD stretch (%)',fc.pvdRet[2],true)+
+    `<div class="ffire-sec">เป้าหมาย (฿)</div>`+
+    inp('fire1','เป้า 1',fc.fire1,false)+
+    inp('fire2','เป้า 2',fc.fire2,false);
+
+  // ---- "accessible now" + vesting status ----
+  const vestNow=DcaEngine.pvdVestingPct(fc.serviceYears);
+  const accessNow=fc.sleeveStart+fc.pvdMember+fc.pvdEmployer*vestNow;
+  const fullNow=fc.sleeveStart+fc.pvdMember+fc.pvdEmployer;
+  const unvested=fc.pvdEmployer*(1-vestNow),yrsTo100=Math.max(6-fc.serviceYears,0);
+  document.getElementById('dffire-status').innerHTML=`
+    <div class="ct">เงินที่ได้จริงตอนนี้ ${sub('· ถ้าลาออกวันนี้ (นับ vested จริง)')}</div>
+    <div class="cfrow"><span class="cfl">Sleeve (หุ้น+กองทุน)</span><span class="cfv">${fmt(fc.sleeveStart)}</span></div>
+    <div class="cfrow"><span class="cfl">PVD ส่วนสมาชิก ${sub('· 100%')}</span><span class="cfv">${fmt(fc.pvdMember)}</span></div>
+    <div class="cfrow"><span class="cfl">PVD ส่วนนายจ้าง × vested ${Math.round(vestNow*100)}%</span><span class="cfv">${fmt(fc.pvdEmployer*vestNow)}</span></div>
+    <div class="cfrow"><span class="cfl" style="color:var(--t1);font-weight:500">รวมที่ได้จริง</span><span class="cfv" style="color:var(--green)">${fmt(accessNow)}</span></div>
+    <div style="margin-top:8px;font-size:11px;color:var(--t3);line-height:1.6">ยังไม่ vested ${fmt(unvested)} (${Math.round((1-vestNow)*100)}% ของส่วนนายจ้าง) — ได้ครบ 100% อีก ~${yrsTo100.toFixed(1)} ปี · net เต็ม (ถ้าอยู่ต่อ) ${fmt(fullNow)}</div>`;
+
+  // ---- years-to-target table: targets × scenarios ----
+  const scen=[['Floor',0],['Base',1],['Stretch',2]];
+  const yfmt=y=>y==null?'>60 ปี':y.toFixed(1)+' ปี';
+  const reach=(t,si)=>DcaEngine.projectFire({...p0,sleeveReturn:fc.sleeveRet[si],pvdReturn:fc.pvdRet[si]},t).years;
+  let rh=`<thead><tr><th>เป้า</th>${scen.map(s=>`<th>${s[0]}<div style="font-weight:400;color:var(--t3);font-size:9px;text-transform:none">sleeve ${+(fc.sleeveRet[s[1]]*100).toFixed(1)}% · PVD ${+(fc.pvdRet[s[1]]*100).toFixed(1)}%</div></th>`).join('')}</tr></thead><tbody>`;
+  [fc.fire1,fc.fire2].forEach(t=>{rh+=`<tr><td>${fmt(t)}</td>${scen.map(s=>`<td>${yfmt(reach(t,s[1]))}</td>`).join('')}</tr>`;});
+  document.getElementById('dffire-results').innerHTML=rh+'</tbody>';
+  const memContrib=Math.round(fc.salary*fc.memberRate/100),erRate=DcaEngine.pvdEmployerRate(fc.serviceYears)*100;
+  document.getElementById('dffire-resultnote').innerHTML=`Sleeve ${fmt(fc.sleeveStart)} + PVD ${fmt(fc.pvdMember+fc.pvdEmployer)} · DCA ${fmt(fc.projDca)}/ด. · PVD สมทบ/ด. = สมาชิก ${fmt(memContrib)} + นายจ้าง ${erRate}% (สเต็ปเป็น 7.5% ครบ 10 ปีทำงาน, 15% ครบ 15 ปี) · ส่วนนายจ้างนับ vested%`;
+
+  // ---- milestone (base scenario, accessible net worth) ----
+  const base=DcaEngine.projectFire({...p0,sleeveReturn:fc.sleeveRet[1],pvdReturn:fc.pvdRet[1],seriesYears:14,maxYears:15},fc.fire1);
+  const stop=base.years!=null?Math.min(14,Math.ceil(base.years)+1):14;
+  let mh=`<thead><tr><th>ปี</th><th>Sleeve</th><th>PVD รวม</th><th>vested</th><th>รวม (accessible)</th></tr></thead><tbody>`;
+  base.series.filter(s=>s.year>=1&&s.year<=stop).forEach(s=>{
+    const hit=base.years!=null&&s.year>=base.years;
+    mh+=`<tr${hit?' style="background:rgba(62,207,142,.07)"':''}><td>${Math.round(s.year)}</td><td>${fmt(Math.round(s.sleeve))}</td><td>${fmt(Math.round(s.pvdMember+s.pvdEmployer))}</td><td>${Math.round(s.vestPct*100)}%</td><td class="${s.accessible>=fc.fire1?'gain':''}">${fmt(Math.round(s.accessible))}</td></tr>`;
+  });
+  document.getElementById('dffire-milestone').innerHTML=mh+'</tbody>';
+
+  drawFireCompareCharts(fc,p0);
+}
+
+// Actual-vs-plan charts on the DCA/FIRE page (Chart.js). All guard on missing data.
+// SINGLE BASIS for charts 1 & 3 = investable net worth (sleeve + PVD, EXCLUDING cash),
+// matching the plan target's definition (10M ไม่รวมเงินสดฉุกเฉิน). Actual net excludes
+// cash too (e.net − cashNow), so actual vs plan is apples-to-apples.
+//   1) cFireNW    — investable net worth: actual snapshots over a Floor→Base plan band
+//   2) cFireDca   — cumulative DCA actual (dcaLog) vs plan (projDca/เดือน)
+//   3) cFireDelta — investable net worth ahead/behind: actual − plan(base), same basis
+function drawFireCompareCharts(fc,p0){
+  if(typeof Chart==='undefined')return;
+  const tick='#9896a8',grid='rgba(255,255,255,.05)';
+  const bk=v=>'฿'+(Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'M':Math.abs(v)>=1000?(v/1000).toFixed(0)+'K':Math.round(v));
+  const MS_MONTH=30.4375*86400000,nowMs=Date.now(),yr0=new Date().getFullYear();
+  // cash held today — subtracted from historical net so actual is on the no-cash plan basis
+  const cashNow=liveHoldings().filter(h=>h.type==='cash').reduce((s,h)=>s+(+h.value||0),0);
+  const hist=(window.NWHistoryEngine?NWHistoryEngine.sortByDate(DB.get('nwHistory')||[]):[]);
+  const netInvOf=e=>(e.netInv!=null?e.netInv:e.net-cashNow); // investable net (no cash)
+
+  // ONE fixed plan curve (anchored at the earliest snapshot date, else today) reused by
+  // charts 1 & 3, so "ahead/behind" is the real gap to the base line — not anchored to 0.
+  const anchorMs=hist.length?Math.min(nowMs,Date.parse(hist[0].date)):nowMs;
+  const monthsBack=Math.max(0,(nowMs-anchorMs)/MS_MONTH);
+  const memberContrib=fc.salary*fc.memberRate/100;
+  const erContribNow=fc.salary*DcaEngine.pvdEmployerRate(fc.serviceYears);
+  // invert projectFutureValue: today's balance un-grown to the anchor date
+  const unwind=(fv,c,rm,n)=>n<=0?fv:(fv-(rm>0?c*((Math.pow(1+rm,n)-1)/rm):c*n))/Math.pow(1+rm,n);
+  const yToFire=DcaEngine.projectFire({...p0,sleeveReturn:fc.sleeveRet[1],pvdReturn:fc.pvdRet[1]},fc.fire1).years;
+  const horizon=Math.max(5,Math.min(20,(yToFire!=null?Math.ceil(yToFire)+2:15)));
+  const totM=Math.round(monthsBack+horizon*12)+1;
+  function curveFor(sleeveR,pvdR){
+    const rmS=Math.pow(1+sleeveR,1/12)-1,rmP=Math.pow(1+pvdR,1/12)-1;
+    return DcaEngine.projectFire({
+      sleeveStart:unwind(fc.sleeveStart,fc.projDca,rmS,monthsBack),
+      pvdMember:unwind(fc.pvdMember,memberContrib,rmP,monthsBack),
+      pvdEmployer:unwind(fc.pvdEmployer,erContribNow,rmP,monthsBack),
+      dca:fc.projDca,salary:fc.salary,memberRate:fc.memberRate/100,
+      serviceYears:Math.max(0,fc.serviceYears-monthsBack/12),
+      sleeveReturn:sleeveR,pvdReturn:pvdR,seriesYears:totM/12,seriesStep:1,maxYears:totM/12+1
+    },null).series; // series[i] = month i after anchor; .full = sleeve+member+employer (no cash)
+  }
+  const baseSeries=curveFor(fc.sleeveRet[1],fc.pvdRet[1]);
+  const floorSeries=curveFor(fc.sleeveRet[0],fc.pvdRet[0]);
+  // x (years from today) = (monthIndex − monthsBack)/12
+  const toPts=ser=>ser.map((s,i)=>({x:(i-monthsBack)/12,y:s.full}));
+
+  // ---- 1) Investable net worth: actual vs plan band ----
+  (function(){
+    const cv=document.getElementById('cFireNW'); if(!cv)return;
+    if(chartFireNW){chartFireNW.destroy();chartFireNW=null;}
+    const basePts=toPts(baseSeries),floorPts=toPts(floorSeries);
+    const actualPts=hist.map(e=>({x:(Date.parse(e.date)-nowMs)/MS_MONTH/12,y:netInvOf(e)})).filter(p=>isFinite(p.x));
+    const xMin=actualPts.length?Math.min(0,actualPts[0].x):0,xMax=horizon;
+    const noteEl=document.getElementById('dffire-nw-note');
+    if(noteEl){
+      const planToday=fc.sleeveStart+fc.pvdMember+fc.pvdEmployer;
+      const last=actualPts.length?actualPts[actualPts.length-1].y:null;
+      noteEl.innerHTML=`basis เดียวกัน = sleeve + PVD <b style="color:var(--t1)">ไม่รวมเงินสด</b> · plan วันนี้ <b style="color:var(--t1)">${fmt(planToday)}</b>`
+        +(last!=null?` · actual ล่าสุด <b style="color:var(--t1)">${fmt(Math.round(last))}</b> (หัก cash ${fmt(Math.round(cashNow))}) · ${actualPts.length} snapshot`
+          :` · <span style="color:var(--amber)">ยังไม่มี snapshot net worth — เก็บวันละจุด กลับมาดูพรุ่งนี้</span>`);
+    }
+    chartFireNW=new Chart(cv,{type:'line',data:{datasets:[
+      {label:'Plan floor',data:floorPts,borderColor:'rgba(62,207,142,.45)',borderDash:[5,4],borderWidth:1.5,pointRadius:0,fill:false,tension:.2},
+      {label:'Plan base',data:basePts,borderColor:'#3ecf8e',borderWidth:2,pointRadius:0,fill:'-1',backgroundColor:'rgba(62,207,142,.10)',tension:.2},
+      {label:'Actual (no cash)',data:actualPts,borderColor:'#38bdf8',borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#38bdf8',fill:false},
+      {label:'เป้า '+bk(fc.fire1),data:[{x:xMin,y:fc.fire1},{x:xMax,y:fc.fire1}],borderColor:'#9896a8',borderDash:[3,3],borderWidth:1,pointRadius:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:false},
+      plugins:{legend:{labels:{color:tick,boxWidth:10,font:{size:11}}},tooltip:{callbacks:{
+        title:i=>i.length?('ปี '+(yr0+Math.round(i[0].parsed.x))):'',
+        label:c=>c.dataset.label+': ฿'+Math.round(c.parsed.y).toLocaleString('en-US')}}},
+      scales:{x:{type:'linear',min:xMin,max:xMax,ticks:{color:tick,stepSize:Math.max(1,Math.round((xMax-xMin)/7)),callback:v=>String(yr0+Math.round(v))},grid:{display:false}},
+        y:{ticks:{color:tick,font:{size:10},crossAlign:'far',callback:bk},grid:{color:grid}}}}});
+  })();
+
+  // ---- 2) Cumulative DCA: actual vs plan ----
+  (function(){
+    const cv=document.getElementById('cFireDca'); if(!cv)return;
+    if(chartFireDca){chartFireDca.destroy();chartFireDca=null;}
+    const log=(DB.get('dcaLog')||[]).filter(d=>d&&d.month);
+    const byM={};log.forEach(d=>{byM[d.month]=(typeof d.invested==='number'&&isFinite(d.invested))?d.invested:null;});
+    const months=Object.keys(byM).sort();
+    const start=(DB.get('fireSettings').trackingStart)||months[0];
+    const labels=[],actual=[],plan=[];
+    if(start&&months.length){
+      const end=months[months.length-1];
+      let[y,m]=start.split('-').map(Number),aCum=0,pCum=0;
+      const[ey,em]=end.split('-').map(Number);
+      let guard=0;
+      while((y<ey||(y===ey&&m<=em))&&guard++<600){
+        const key=y+'-'+String(m).padStart(2,'0');
+        pCum+=fc.projDca; if(byM[key]!=null)aCum+=byM[key];
+        labels.push(String(y).slice(2)+'-'+String(m).padStart(2,'0'));
+        actual.push(byM[key]!=null?aCum:null); plan.push(pCum);
+        m++; if(m>12){m=1;y++;}
+      }
+    }
+    chartFireDca=new Chart(cv,{type:'line',data:{labels,datasets:[
+      {label:'Actual สะสม',data:actual,borderColor:'#3ecf8e',backgroundColor:'rgba(62,207,142,.10)',borderWidth:2.5,pointRadius:2,tension:.25,fill:true,spanGaps:true},
+      {label:'Plan สะสม',data:plan,borderColor:'#f5a623',borderDash:[4,3],borderWidth:1.5,pointRadius:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:tick,boxWidth:10,font:{size:11}}},tooltip:{callbacks:{label:c=>c.dataset.label+': ฿'+Math.round(c.parsed.y).toLocaleString('en-US')}}},
+      scales:{x:{ticks:{color:tick,font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:8},grid:{display:false}},
+        y:{ticks:{color:tick,font:{size:10},crossAlign:'far',callback:bk},grid:{color:grid}}}}});
+  })();
+
+  // ---- 3) Ahead/Behind: investable net worth actual − plan(base), same no-cash basis ----
+  (function(){
+    const cv=document.getElementById('cFireDelta'); if(!cv)return;
+    if(chartFireDelta){chartFireDelta.destroy();chartFireDelta=null;}
+    let labels=[],deltas=[],zero=[];
+    if(hist.length>=1){
+      hist.forEach(e=>{
+        const off=Math.round((Date.parse(e.date)-anchorMs)/MS_MONTH);
+        const idx=Math.max(0,Math.min(off,baseSeries.length-1));
+        const planFull=baseSeries[idx]?baseSeries[idx].full:(fc.sleeveStart+fc.pvdMember+fc.pvdEmployer);
+        labels.push(e.date.slice(5)); deltas.push(Math.round(netInvOf(e)-planFull)); zero.push(0);
+      });
+    }
+    chartFireDelta=new Chart(cv,{type:'line',data:{labels,datasets:[
+      {label:'Actual − Plan',data:deltas,borderColor:'#38bdf8',borderWidth:2.5,tension:.25,fill:false,
+        pointRadius:3,pointBackgroundColor:deltas.map(v=>v>=0?'#3ecf8e':'#f06060'),
+        segment:{borderColor:c=>c.p1.parsed.y>=0?'#3ecf8e':'#f06060'}},
+      {label:'On plan',data:zero,borderColor:'#9896a8',borderDash:[3,3],borderWidth:1,pointRadius:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:tick,boxWidth:10,font:{size:11}}},tooltip:{callbacks:{label:c=>(c.parsed.y>=0?'นำแผน +':'ตามหลัง ')+'฿'+Math.round(c.parsed.y).toLocaleString('en-US')}}},
+      scales:{x:{ticks:{color:tick,font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:8},grid:{display:false}},
+        y:{ticks:{color:tick,font:{size:10},crossAlign:'far',callback:bk},grid:{color:grid}}}}});
+  })();
 }
 function drawDcaCharts(year,startMonth,byMonth,target,activeTarget){
   const TN=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
@@ -4148,7 +4797,28 @@ async function checkServer(showModal){
 }
 setInterval(checkServer,10000);
 
+// S&P 500 drawdown benchmark. Tries ^GSPC (index) first, falls back to VOO (ETF
+// proxy) so it works even if the price source rejects the ^ index symbol. Updates
+// drawdownCfg.price + the auto high-water-mark peak. Safe/silent on failure.
+async function refreshBenchmark(){
+  const E=window.DrawdownEngine; if(!E)return;
+  try{
+    const res=await fetch(PRICE_API+'/prices?tickers='+encodeURIComponent('^GSPC')+',VOO',{signal:AbortSignal.timeout(8000)});
+    if(!res.ok)return;
+    const m=await res.json();
+    let px=m['^GSPC'],sym='S&P 500';
+    if(px==null){px=m['VOO'];sym='VOO (proxy)';}
+    if(px==null)return;
+    const cfg=DB.get('drawdownCfg')||{};
+    cfg.price=px;cfg.usedSymbol=sym;cfg.asOf=new Date().toISOString();
+    if(cfg.peakAuto!==false)cfg.peak=E.updatePeak(cfg.peak,px);
+    else if(!(cfg.peak>0))cfg.peak=px;            // manual mode but no peak pinned yet -> seed from first price
+    DB.set('drawdownCfg',cfg);
+    renderDrawdown();   // repaint the dashboard card (no-op if dd-body absent)
+  }catch(e){/* silent */}
+}
 async function refreshPricesSilent(){
+  refreshBenchmark();                             // independent of holdings — runs even with no stock holdings
   const h=DB.get('holdings');
   const stocks=h.filter(x=>x.ticker&&x.units>0&&x.type!=='fund');
   if(!stocks.length)return;
