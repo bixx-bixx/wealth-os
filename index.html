@@ -3500,6 +3500,8 @@ function toggleAssets(){
   if(btn)btn.textContent=willShow?'ซ่อนรายตัว':'แสดงรายตัว';
   localStorage.setItem('w_showAssets',willShow?'1':'0');markDirty();
 }
+// rebalance trim-plan mode: 'target' = ขายกลับเป้า · 'buffer' = ขายแค่หลุดเส้นเตือน (friction ต่ำกว่า)
+function setTrimMode(m){localStorage.setItem('w_trimMode',m==='buffer'?'buffer':'target');renderDash();}
 function renderDash(){
   const h=liveHoldings(),g=DB.get('goals'),s=DB.get('settings');
   const cf=DB.get('cashflows').sort((a,b)=>b.month.localeCompare(a.month))[0]||{};
@@ -3640,6 +3642,38 @@ function renderDash(){
     if(plan.usIndividualReview)dcaHtml+=`<div class="co co-a" style="font-size:11px;margin-top:4px">US Individual &gt;20% — trigger review</div>`;
     dcaHtml+=`<div style="font-size:10px;color:var(--t3);margin-top:8px">Skip: ${plan.skip.join(', ')}</div>`;
   }
+  // --- เกลี่ยพอร์ต (sell-side lever) — completes the policy's 2nd lever with baht amounts.
+  // Shows ONLY when a bucket breaches its trim line (Nasdaq ≥25 / US Indiv·Thai ≥20), not on small drift.
+  // Two modes (toggle, persisted): 'target' = ขายกลับเป้า · 'buffer' = ขายแค่หลุดเส้นเตือน.
+  const __trimMode=localStorage.getItem('w_trimMode')==='buffer'?'buffer':'target';
+  const __trBase=review.rebalanceBase;
+  const __trRow=bk=>review.drift.rows.find(r=>r.bucket===bk)||{currentPct:0,targetPct:0,value:0};
+  const __TRIM={'US Growth / Nasdaq':{line:25,target:20},'US Individual Stocks':{line:20,target:15},'Thai Dividend/Thai Stocks':{line:20,target:15}}; // keep in sync with the policy card
+  const __overs=[];
+  Object.entries(__TRIM).forEach(([bk,t])=>{const r=__trRow(bk);if(r.currentPct>=t.line){
+    const toPct=__trimMode==='buffer'?Math.max(t.target,t.line-2):t.target;
+    const amt=Math.max(0,r.value-toPct/100*__trBase);
+    if(amt>500)__overs.push({bk,cur:r.currentPct,toPct,amt});
+  }});
+  const __trMod=`<span onclick="setTrimMode('${__trimMode==='buffer'?'target':'buffer'}')" style="cursor:pointer;font-size:10px;color:var(--t3);user-select:none;white-space:nowrap" title="สลับวิธีคิดจำนวนที่ขาย">วิธี: <b style="color:var(--t1)">${__trimMode==='buffer'?'buffer':'กลับเป้า'}</b> ⇄</span>`;
+  dcaHtml+=`<div style="border-top:1px solid rgba(255,255,255,.08);margin:12px 0 8px"></div>`;
+  dcaHtml+=`<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:var(--t3)">เกลี่ยพอร์ต <span style="color:var(--t3)">· ขายส่วนเกิน</span></span>${__overs.length?__trMod:''}</div>`;
+  if(!__overs.length){
+    dcaHtml+=`<div class="co co-g" style="font-size:11px">✓ ทุกถังอยู่ในกรอบ — เทเงินใหม่ตามแผน ไม่ต้องขาย</div>`;
+  }else{
+    // destinations = under-target buckets (shortfall to target), excl. the over buckets; remainder -> US Broad sink
+    const __overSet=new Set(__overs.map(o=>o.bk));
+    const __T=__overs.reduce((s,o)=>s+o.amt,0);
+    const __un=review.drift.rows.filter(r=>!__overSet.has(r.bucket)&&r.currentPct<r.targetPct).map(r=>({bk:r.bucket,short:(r.targetPct-r.currentPct)/100*__trBase}));
+    const __sT=__un.reduce((s,u)=>s+u.short,0);
+    const __dests=[];let __used=0;
+    __un.forEach(u=>{const a=__sT>0?Math.min(u.short,__T*u.short/__sT):0;if(a>500){__dests.push({bk:u.bk,amt:a});__used+=a;}});
+    const __rem=__T-__used;
+    if(__rem>500){const ub=__dests.find(d=>d.bk==='US Broad Index');if(ub)ub.amt+=__rem;else __dests.push({bk:'US Broad Index',amt:__rem});}
+    __overs.forEach(o=>{dcaHtml+=`<div class="cfrow"><span class="cfl" style="color:var(--amber)">🔻 ${o.bk} <span style="color:var(--t3);font-size:10px">${o.cur.toFixed(1)}% → ${o.toPct}%</span></span><span class="cfv" style="color:var(--amber)">ขาย ~${fmt(o.amt)}</span></div>`;});
+    __dests.forEach(d=>{dcaHtml+=`<div class="cfrow" style="padding-left:14px"><span class="cfl" style="color:var(--t3);font-size:11px">→ ${d.bk}</span><span class="cfv" style="color:var(--green);font-size:11px">+${fmt(d.amt)}</span></div>`;});
+    dcaHtml+=`<div style="font-size:10px;color:var(--t3);margin-top:6px">💡 เทเงินใหม่ (DCA) เข้าตัวที่ขาดก่อน — ขายเฉพาะส่วนที่ DCA ไม่พอกลบ</div>`;
+  }
   document.getElementById('ddca').innerHTML=dcaHtml;
   // Net Worth Snapshot card
   const pvdVal=PvdEngine.pvdHoldingsValue(h);
@@ -3648,15 +3682,27 @@ function renderDash(){
   let usFxTHB=0;
   invH.forEach(x=>{if(x.type==='us'&&window.UsFxEngine)usFxTHB+=UsFxEngine.pnl(x,__fx).fxGainTHB;});
   const exFxGain=invGain-usFxTHB; // investment gain without the FX component (stock/fund only)
+  // net-worth composition + liquidity split (cash = all cash-type = emg.cash; locked = PVD)
+  const __cash=emg.cash,__inv=review.rebalanceBase,__pvd=pvdVal;
+  const __other=Math.max(0,V-__inv-__pvd-__cash);
+  const __pc=x=>V>0?x/V*100:0;
+  const __pInv=__pc(__inv),__pPvd=__pc(__pvd),__pCash=__pc(__cash),__pOther=__pc(__other);
+  const __liquid=Math.max(0,V-__pvd),__pLiquid=__pc(__liquid),__pLocked=__pc(__pvd);
+  const __seg=(w,c)=>w>0?`<div style="width:${w}%;background:${c}"></div>`:'';
+  const __leg=(c,label,p)=>`<span><b style="color:${c}">●</b> ${label} ${p.toFixed(1)}%</span>`;
   document.getElementById('dsnap').innerHTML=`
     <div class="cfrow"><span class="cfl">Net Worth</span><span class="cfv">${fmt(V)}</span></div>
+    <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;margin:9px 0 6px;background:var(--b1)">${__seg(__pInv,'var(--blue)')}${__seg(__pPvd,'var(--purple)')}${__seg(__pCash,'var(--amber)')}${__seg(__pOther,'var(--t3)')}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:10px;color:var(--t3);margin-bottom:8px">${__leg('var(--blue)','เงินลงทุน',__pInv)}${__leg('var(--purple)','PVD',__pPvd)}${__leg('var(--amber)','เงินสด',__pCash)}${__pOther>0.5?__leg('var(--t3)','อื่น ๆ',__pOther):''}</div>
     <div class="cfrow"><span class="cfl">เงินลงทุน <span style="color:var(--t3);font-size:10px">ex-cash, ex-PVD</span></span><span class="cfv">${fmt(review.rebalanceBase)}</span></div>
     <div class="cfrow"><span class="cfl">Gain/Loss (เงินลงทุน) <span id="invfx-c" onclick="toggleInvFx()" style="cursor:pointer;color:var(--t3);font-size:10px;user-select:none" title="แยกค่าเงินหุ้น US">▾</span></span><span class="cfv ${invGain>=0?'up':'dn'}">${invGain>=0?'+':''}${fmt(invGain)} (${fmtP(invGp)})</span></div>
     <div id="invfx-d" style="display:none">
       <div class="cfrow" style="padding-left:14px"><span class="cfl" style="color:var(--t3);font-size:11px">↳ ไม่รวมค่าเงิน <span style="font-size:9px">หุ้น/กองทุน</span></span><span class="cfv ${exFxGain>=0?'up':'dn'}" style="font-size:11px">${exFxGain>=0?'+':''}${fmt(exFxGain)}</span></div>
       <div class="cfrow" style="padding-left:14px"><span class="cfl" style="color:var(--t3);font-size:11px">↳ ค่าเงิน <span style="font-size:9px">หุ้น US รวม</span></span><span class="cfv ${usFxTHB>=0?'up':'dn'}" style="font-size:11px">${usFxTHB>=0?'+':''}${fmt(usFxTHB)}</span></div>
     </div>
-    <div class="cfrow"><span class="cfl">PVD / Retirement</span><span class="cfv">${fmt(pvdVal)} <span style="color:var(--t3);font-size:10px">(${V>0?PvdEngine.pvdPercent(pvdVal,V).toFixed(1):0}%)</span></span></div>
+    <div style="border-top:1px solid rgba(255,255,255,.06);margin:9px 0 7px"></div>
+    <div class="cfrow"><span class="cfl">สภาพคล่อง <span style="color:var(--t3);font-size:10px">ใช้ได้เลย</span></span><span class="cfv">${fmt(__liquid)} <span style="color:var(--t3);font-size:10px">(${__pLiquid.toFixed(1)}%)</span></span></div>
+    <div class="cfrow"><span class="cfl">ล็อกใน PVD <span style="color:var(--t3);font-size:10px">จนเกษียณ</span></span><span class="cfv">${fmt(__pvd)} <span style="color:var(--t3);font-size:10px">(${__pLocked.toFixed(1)}%)</span></span></div>
     <div class="cfrow"><span class="cfl">Emergency <span style="color:var(--t3);font-size:10px">${emg.months} เดือน = ${fmt(emg.target)}</span></span><span class="cfv ${emg.ok?'up':'dn'}">${fmt(emg.cash)} · ${emg.coverage.toFixed(1)} ด. ${emg.ok?'✓':'⚠'}</span></div>`;
   // (removed) "Policy & DCA status · 70/15/15" — superseded by the live นโยบาย Rebalance block above
   // US-situs card
