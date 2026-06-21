@@ -85,11 +85,37 @@ input,select,textarea,button{font-family:var(--fm);font-size:13px}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .alist{display:flex;flex-direction:column;gap:10px}
 .arow{display:flex;flex-direction:column;gap:4px}
-.ameta{display:flex;justify-content:space-between}
-.an{font-size:12px;color:var(--t1)}
-.ap{font-size:11px;color:var(--t2)}
+.ameta{display:flex;justify-content:space-between;align-items:baseline}
+.an{font-size:13.5px;color:var(--t1);font-weight:500}
+.ap{font-size:12px;color:var(--t2)}
 .btrack{height:4px;background:var(--b1);border-radius:2px;overflow:hidden;position:relative}
 .bfill{height:100%;border-radius:2px;transition:width .7s ease}
+.asublist{margin:9px 0 2px;padding:2px 0 2px 12px;border-left:2px solid rgba(120,160,255,.18)}
+.asub{display:grid;grid-template-columns:minmax(0,1fr) 88px 58px 62px 62px 62px;align-items:baseline;gap:12px;font-size:12.5px;padding:5px 0}
+.asub>span:not(.asub-n){text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.asub+.asub{border-top:1px solid rgba(255,255,255,.04)}
+.asub-hd{padding:0 0 5px;border:none}
+.asub-hd span{font-size:9.5px;color:var(--t3);letter-spacing:.04em;text-transform:uppercase;font-weight:400}
+.asub-n{color:var(--t1)}
+.asub-n::before{content:"\25CF\00a0\00a0";color:var(--blue);font-size:9px;opacity:.6}
+.asub-val{color:var(--t1);font-weight:500}
+.asub-usd{color:var(--t3);font-size:11px}
+.asub-num{color:var(--t2)}
+.asub-num.up{color:var(--green)}
+.asub-num.dn{color:var(--red)}
+.assets-hidden .asublist{display:none}
+.trimb{font-size:10px;color:var(--amber);background:var(--amber-d);padding:2px 8px;border-radius:999px;margin-left:8px;font-weight:500}
+.rpol{display:flex;flex-direction:column;gap:2px;font-size:13px}
+.rpol-h{font-size:11.5px;color:var(--t2);letter-spacing:.02em;margin:12px 0 4px;padding-left:9px;border-left:2px solid var(--blue);font-weight:600}
+.rpol-h:first-child{margin-top:2px}
+.rpol-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:5px 0}
+.rpol-row+.rpol-row{border-top:1px solid rgba(255,255,255,.04)}
+.rpol-l{color:var(--t1)}
+.rpol-s{font-size:11.5px;font-variant-numeric:tabular-nums;white-space:nowrap;padding:3px 11px;border-radius:999px;font-weight:500}
+.chip-ok{color:var(--green);background:rgba(62,207,142,.12)}
+.chip-warn{color:var(--amber);background:var(--amber-d)}
+.chip-bad{color:var(--red);background:rgba(240,96,96,.14)}
+.chip-mut{color:var(--t3);background:rgba(255,255,255,.05)}
 .tw{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th{text-align:left;color:var(--t3);font-weight:400;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--b1)}
@@ -305,12 +331,15 @@ textarea{resize:vertical;min-height:72px}
   </div>
   <div class="g2">
     <div class="card">
-      <div class="ct">Rebalance allocation <span style="color:var(--t3);text-transform:none">· ฐาน rebalance base (ไม่รวม PVD)</span></div>
+      <div class="ct" style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <span>Rebalance allocation <span style="color:var(--t3);text-transform:none">· ฐาน rebalance base (ไม่รวม PVD)</span></span>
+        <span id="asset-toggle" onclick="toggleAssets()" style="cursor:pointer;font-size:11px;color:var(--t3);text-transform:none;white-space:nowrap;user-select:none">แสดงรายตัว</span>
+      </div>
       <div class="alist" id="dalloc"></div>
-      <div style="margin-top:10px;font-size:10px;color:var(--t3)">เส้นขาว = target % · ตัวเลขขวา = drift</div>
+      <div style="margin-top:12px;font-size:11px;color:var(--t3)">เส้นขาว = target % · ตัวเลขขวา = drift · ใต้ถัง = สัดส่วนรายตัว (% ของถัง · กำไร/ขาดทุน)</div>
       <div style="border-top:1px solid rgba(255,255,255,.08);margin:12px 0 10px"></div>
-      <div style="font-size:11px;color:var(--t3);text-transform:none;margin-bottom:6px">Policy &amp; DCA status · 70/15/15</div>
-      <div id="dpolicy"></div>
+      <div style="font-size:11px;color:var(--t3);text-transform:none;margin-bottom:6px">นโยบาย Rebalance <span style="color:var(--t3)">· ตั้งครั้งเดียว ใช้ตลอด (สถานะ live)</span></div>
+      <div id="dRebalPolicy"></div>
     </div>
     <div class="card">
       <div class="ct">Portfolio breakdown</div>
@@ -3457,6 +3486,14 @@ function toggleAlerts(){
   btn.textContent=willHide?'แสดง':'ซ่อน';
   localStorage.setItem('w_hideAlerts',willHide?'1':'0');markDirty();
 }
+// show/hide the per-asset breakdown under each bucket (default hidden — keeps the card clean)
+function toggleAssets(){
+  const d=document.getElementById('dalloc'),btn=document.getElementById('asset-toggle');
+  const willShow=d.classList.contains('assets-hidden');
+  d.classList.toggle('assets-hidden',!willShow);
+  if(btn)btn.textContent=willShow?'ซ่อนรายตัว':'แสดงรายตัว';
+  localStorage.setItem('w_showAssets',willShow?'1':'0');markDirty();
+}
 function renderDash(){
   const h=liveHoldings(),g=DB.get('goals'),s=DB.get('settings');
   const cf=DB.get('cashflows').sort((a,b)=>b.month.localeCompare(a.month))[0]||{};
@@ -3485,17 +3522,82 @@ function renderDash(){
     const ia=__bo.indexOf(a.bucket),ib=__bo.indexOf(b.bucket);
     return (ia<0?99:ia)-(ib<0?99:ib);
   });
+  // per-asset breakdown: group live holdings by rebalance bucket (ไม่รวม cash/PVD)
+  const __fxA=fxRate(),__single=Allocation.SINGLE_NAME_BUCKETS,__bbh={};
+  h.forEach(x=>{const b=x.bucket;if(!__bo.includes(b))return;(__bbh[b]=__bbh[b]||[]).push(x);});
+  // Nasdaq soft/hard line flag (live) — policy: 25% นุ่ม, 28–30% แข็ง
+  const __nasFlag=row=>{if(row.bucket!=='US Growth / Nasdaq')return '';
+    const c=row.currentPct;
+    if(c>=28)return ' <span style="color:var(--red);font-size:11px">⚠ เส้นแข็ง</span>';
+    if(c>=25)return ' <span style="color:var(--amber);font-size:11px">⚠ เส้นนุ่ม</span>';
+    return '';};
   __drows.forEach((row,i)=>{
     const driftTxt=fmtP(row.driftPct);
     const dcol=Math.abs(row.driftPct)<=RiskV4.RISK_CONFIG.DRIFT_TOLERANCE?'var(--t3)':row.driftPct>0?'var(--amber)':'var(--blue)';
     const tgtVal=Math.round(row.targetPct/100*review.rebalanceBase);
+    // sub-rows: each asset in this bucket, sorted by value desc
+    const subs=(__bbh[row.bucket]||[]).slice().sort((a,b)=>(+b.value||0)-(+a.value||0));
+    const isSingle=__single.includes(row.bucket);
+    // column header (once per bucket) — same grid as the rows so numbers line up
+    const hd=`<div class="asub asub-hd"><span></span><span>มูลค่า</span><span>USD</span><span>% ถัง</span><span>% พอร์ต</span><span>กำไร</span></div>`;
+    let sr='';
+    subs.forEach(x=>{
+      const av=+x.value||0,inv=+x.invested||0;
+      const pctB=row.value>0?av/row.value*100:0;            // % ของถัง
+      const pctP=review.rebalanceBase>0?av/review.rebalanceBase*100:0; // % ของพอร์ต (ใช้กับกฎหุ้นเดี่ยว 5%)
+      const gp=inv>0?(av-inv)/inv*100:0;
+      const isUS=x.type==='us',usd=isUS?Math.round(UsFxEngine.pnl(x,__fxA).valueUSD):0;
+      const trim=isSingle&&pctP>=5;
+      sr+=`<div class="asub"><span class="asub-n">${x.name}${trim?'<span class="trimb">trim →3–4%</span>':''}</span>`
+        +`<span class="asub-val">${fmt(av)}</span>`
+        +`<span class="asub-usd">${isUS?`~$${usd.toLocaleString()}`:''}</span>`
+        +`<span class="asub-num">${pctB.toFixed(1)}%</span>`
+        +`<span class="asub-num">${pctP.toFixed(1)}%</span>`
+        +`<span class="asub-num ${gp>=0?'up':'dn'}">${gp>=0?'+':''}${gp.toFixed(1)}%</span></div>`;
+    });
     ab+=`<div class="arow">
-      <div class="ameta"><span class="an">${row.bucket}</span><span class="ap">${row.currentPct.toFixed(1)}% / ${row.targetPct.toFixed(0)}% <span style="color:${dcol}">${driftTxt}</span></span></div>
+      <div class="ameta"><span class="an">${row.bucket}${__nasFlag(row)}</span><span class="ap">${row.currentPct.toFixed(1)}% / ${row.targetPct.toFixed(0)}% <span style="color:${dcol}">${driftTxt}</span></span></div>
       <div class="btrack"><div class="bfill" style="width:${Math.min(100,row.currentPct)}%;background:${bcolors[i%bcolors.length]}"></div>
       <div style="position:absolute;top:0;bottom:0;left:${Math.min(100,row.targetPct)}%;width:2px;background:rgba(255,255,255,.45)"></div></div>
-      <div style="display:flex;justify-content:flex-end;font-size:9px;color:var(--t3);margin-top:2px">${fmt(row.value)} / ${fmt(tgtVal)}</div></div>`;
+      <div style="display:flex;justify-content:flex-end;font-size:10.5px;color:var(--t3);margin-top:3px;font-variant-numeric:tabular-nums">${fmt(row.value)} / ${fmt(tgtVal)}</div>
+      ${sr?`<div class="asublist">${hd}${sr}</div>`:''}</div>`;
   });
   document.getElementById('dalloc').innerHTML=ab||'<div class="empty">ยังไม่มี holdings</div>';
+  // per-asset breakdown is collapsed by default (default hidden); restore saved state + button label
+  const __showAssets=localStorage.getItem('w_showAssets')==='1';
+  document.getElementById('dalloc').classList.toggle('assets-hidden',!__showAssets);
+  const __atg=document.getElementById('asset-toggle');
+  if(__atg)__atg.textContent=__showAssets?'ซ่อนรายตัว':'แสดงรายตัว';
+  // Rebalance policy (live): bucket trim thresholds + per-name 5% layer — display reference,
+  // status computed from the same drift rows (ไม่คิดเป้าเอง) so it never drifts from the card above.
+  const __pol=document.getElementById('dRebalPolicy');
+  if(__pol){
+    const cur=bk=>(review.drift.rows.find(r=>r.bucket===bk)||{currentPct:0}).currentPct;
+    const cN=cur('US Growth / Nasdaq'),cU=cur('US Individual Stocks'),cT=cur('Thai Dividend/Thai Stocks'),cB=cur('US Broad Index');
+    const st=(v,txt,cls)=>`<span class="rpol-s ${cls}">${v.toFixed(1)}% ${txt}</span>`;
+    const nas=cN>=28?st(cN,'⚠ เส้นแข็ง — ขายคืน 20%','chip-bad'):cN>=25?st(cN,'⚠ แตะเส้นนุ่ม','chip-warn'):st(cN,'✓','chip-ok');
+    const ui=cU>=20?st(cU,'⚠ trim 20%','chip-warn'):st(cU,'✓','chip-ok');
+    const th=cT>=20?st(cT,'⚠ trim 20%','chip-warn'):cT<10?st(cT,'⚠ หลุดล่าง — เติม','chip-warn'):st(cT,'✓','chip-ok');
+    const brd=st(cB,'ไม่มีเพดาน','chip-mut');
+    // per-name layer: single-name holdings ≥5% of rebalance base
+    const over=[];
+    h.forEach(x=>{if(!__single.includes(x.bucket))return;const p=review.rebalanceBase>0?(+x.value||0)/review.rebalanceBase*100:0;if(p>=5)over.push(`${x.name} ${p.toFixed(1)}%`);});
+    const M='color:var(--t3)';
+    let ph=`<div class="rpol">`;
+    ph+=`<div class="rpol-h">ชั้นถัง (หลัก) · ดริฟเกิน ±5 จุดจากเป้า</div>`;
+    ph+=`<div class="rpol-row"><span class="rpol-l">US Broad <span style="${M}">50%</span></span>${brd}</div>`;
+    ph+=`<div class="rpol-row"><span class="rpol-l">Nasdaq <span style="${M}">20% · นุ่ม 25 / แข็ง 28–30</span></span>${nas}</div>`;
+    ph+=`<div class="rpol-row"><span class="rpol-l">US Individual <span style="${M}">15% · trim 20</span></span>${ui}</div>`;
+    ph+=`<div class="rpol-row"><span class="rpol-l">Thai (KKP) <span style="${M}">15% · trim 20 / floor 10</span></span>${th}</div>`;
+    ph+=`<div class="rpol-h">ชั้นรายตัว (เสริม) · หุ้นเดี่ยว ≥5% พอร์ต → trim กลับ ~3–4%</div>`;
+    ph+=over.length
+      ?`<div class="rpol-row"><span class="rpol-l" style="color:var(--amber)">⚠ ${over.join(' · ')}</span></div>`
+      :`<div class="rpol-row"><span style="${M}">ตอนนี้ไม่มีตัวไหนแตะ 5% ✓</span></div>`;
+    ph+=`<div class="rpol-h">วิธีทำ (friction ต่ำ→สูง)</div>`;
+    ph+=`<div style="font-size:12px;${M};line-height:1.75;padding:2px 0">1) เงินใหม่ก่อน — DCA/ปันผล เทเข้าตัวที่ขาด · ไม่ต้องขาย<br>2) ขายส่วนเกิน — เมื่อเงินใหม่ไม่พอ หรือดริฟเยอะเกิน</div>`;
+    ph+=`</div>`;
+    __pol.innerHTML=ph;
+  }
   // systemErrors banner
   document.getElementById('dsyserr').innerHTML=review.systemErrors.length
     ?`<div class="co co-a" style="margin-bottom:14px;border-color:var(--red);color:var(--red)">⚠ Portfolio data มี validation error — review ก่อนเชื่อ dashboard<br>${review.systemErrors.map(e=>'· '+e).join('<br>')}</div>`
@@ -3550,26 +3652,7 @@ function renderDash(){
     </div>
     <div class="cfrow"><span class="cfl">PVD / Retirement</span><span class="cfv">${fmt(pvdVal)} <span style="color:var(--t3);font-size:10px">(${V>0?PvdEngine.pvdPercent(pvdVal,V).toFixed(1):0}%)</span></span></div>
     <div class="cfrow"><span class="cfl">Emergency <span style="color:var(--t3);font-size:10px">${emg.months} เดือน = ${fmt(emg.target)}</span></span><span class="cfv ${emg.ok?'up':'dn'}">${fmt(emg.cash)} · ${emg.coverage.toFixed(1)} ด. ${emg.ok?'✓':'⚠'}</span></div>`;
-  // Policy & status card (70/15/15 + US Individual / KKP DCA status)
-  const dpol=document.getElementById('dpolicy');
-  if(dpol){
-    const tgt=DB.get('bucketTargets')||{};
-    const rowOf=bk=>review.drift.rows.find(r=>r.bucket===bk)||{currentPct:0,targetPct:tgt[bk]||0};
-    const kkpH=h.find(x=>(x.name||'').toUpperCase()==='KKP');
-    const kkpPct=(review.rebalanceBase>0&&kkpH)?(kkpH.value/review.rebalanceBase*100):0;
-    const usRow=rowOf('US Individual Stocks');
-    const usAllowed=usRow.currentPct<17;
-    const polRow=(bk,label)=>{const r=rowOf(bk);return `<div class="cfrow"><span class="cfl">${label}</span><span class="cfv">${r.currentPct.toFixed(1)}% <span style="color:var(--t3);font-size:10px">/ ${(tgt[bk]||0)}%</span></span></div>`;};
-    let polHtml=`<div style="font-size:10px;color:var(--t3);margin-bottom:6px">current / target</div>`;
-    polHtml+=polRow('US Broad Index','US Broad Index');
-    polHtml+=polRow('US Growth / Nasdaq','US Growth / Nasdaq');
-    polHtml+=polRow('US Individual Stocks','US Individual Stocks');
-    polHtml+=polRow('Thai Dividend/Thai Stocks','Thai Dividend (KKP/KGI)');
-    polHtml+=`<div style="border-top:1px solid rgba(255,255,255,.08);margin:8px 0"></div>`;
-    polHtml+=`<div class="cfrow"><span class="cfl">US Individual <span style="color:var(--t3);font-size:10px">DCA ${usAllowed?'allowed':'paused'}${usRow.currentPct>20?' · review':''}</span></span><span class="cfv ${usAllowed?'up':'dn'}">${usRow.currentPct.toFixed(1)}% / 15%</span></div>`;
-    polHtml+=`<div class="cfrow"><span class="cfl">KKP <span style="color:var(--t3);font-size:10px">DCA paused (policy 0)${kkpPct>20?' · review':''}</span></span><span class="cfv">${kkpPct.toFixed(1)}% / 15%</span></div>`;
-    dpol.innerHTML=polHtml;
-  }
+  // (removed) "Policy & DCA status · 70/15/15" — superseded by the live นโยบาย Rebalance block above
   // US-situs card
   const us=getUSSitusExposure();
   const usStat={CAP:{t:'CAP — เกิน USD 60k',c:'co-a'},WARN:{t:'WARN — ใกล้ USD 60k',c:'co-a'},OK:{t:'OK',c:'co-g'}}[EstateTaxEngine.estateTaxStatus(us.usd)];
@@ -3630,7 +3713,30 @@ function renderNWTrend(net,invested){
   if(chgEl)chgEl.innerHTML='<span style="color:'+(up?'var(--green)':'var(--red)')+'">'+(up?'▲':'▼')+' '+fmt(Math.abs(s.changeAbs))+' ('+fmtP(s.changePct)+')</span> <span style="color:var(--t3)">ตั้งแต่เริ่มบันทึก</span>';
   el.innerHTML='<div style="position:relative;height:200px"><canvas id="cNW" role="img" aria-label="Net worth trend line chart"></canvas></div>';
   if(chartNW){chartNW.destroy();chartNW=null;}
-  chartNW=new Chart(document.getElementById('cNW'),{type:'line',data:{labels:hist.map(e=>e.date),datasets:[{label:'Net Worth',data:hist.map(e=>e.net),borderColor:'#38bdf8',borderWidth:2.5,fill:true,tension:.35,pointRadius:c=>c.dataIndex===hist.length-1?4:0,pointHoverRadius:5,pointBackgroundColor:'#38bdf8',pointBorderColor:'#38bdf8',backgroundColor:c=>{const a=c.chart.chartArea;if(!a)return'rgba(56,189,248,.12)';const g=c.chart.ctx.createLinearGradient(0,a.top,0,a.bottom);g.addColorStop(0,'rgba(56,189,248,.30)');g.addColorStop(.55,'rgba(56,189,248,.07)');g.addColorStop(1,'rgba(56,189,248,0)');return g;}}]},plugins:[{id:'nwGlow',beforeDatasetDraw(c){const x=c.ctx;x.save();x.shadowColor='rgba(56,189,248,.85)';x.shadowBlur=14;},afterDatasetDraw(c){c.ctx.restore();}}],options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:6,right:8,bottom:4,left:4}},interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{displayColors:false,callbacks:{label:c=>'฿'+Math.round(c.parsed.y).toLocaleString('en-US')}}},scales:{x:{display:false},y:{display:false}}}});
+  // derived geometry for the decorations below
+  const __d=hist.map(e=>e.net),__last=__d.length-1;
+  const __dmin=Math.min(...__d),__dmax=Math.max(...__d),__rng=(__dmax-__dmin)||(__dmax*0.01)||1;
+  const __start=__d[0],__maxIdx=__d.indexOf(__dmax),__minIdx=__d.indexOf(__dmin);
+  // tight y-scale so the line fills the frame — peak hugs the top (label sits in the layout padding above)
+  const __ymin=__dmin-__rng*0.12,__ymax=__dmax+__rng*0.04;
+  const __nf=v=>'฿'+Math.round(v).toLocaleString('en-US');
+  // faint gridlines + dashed baseline at the starting value, drawn UNDER the line
+  const nwGrid={id:'nwGrid',beforeDatasetsDraw(c){const a=c.chartArea,x=c.ctx;if(!a)return;x.save();
+    x.strokeStyle='rgba(255,255,255,.045)';x.lineWidth=1;
+    for(let k=1;k<=3;k++){const yy=a.top+(a.bottom-a.top)*k/4;x.beginPath();x.moveTo(a.left,yy);x.lineTo(a.right,yy);x.stroke();}
+    const ys=c.scales.y.getPixelForValue(__start);
+    x.strokeStyle='rgba(56,189,248,.28)';x.setLineDash([4,4]);x.beginPath();x.moveTo(a.left,ys);x.lineTo(a.right,ys);x.stroke();
+    x.restore();}};
+  // high / low value tags on the curve, drawn ON TOP (edge-aware so they never clip)
+  const nwLabels={id:'nwLabels',afterDatasetsDraw(c){const a=c.chartArea,x=c.ctx,xs=c.scales.x,ysc=c.scales.y;if(!a)return;
+    const rs=getComputedStyle(document.documentElement),fd=(rs.getPropertyValue('--fd')||'sans-serif').trim();x.save();x.font='600 10px '+fd;
+    const tag=(val,idx,dy,fill)=>{const px=xs.getPixelForValue(idx),py=ysc.getPixelForValue(val);x.fillStyle=fill;
+      if(idx===0){x.textAlign='left';x.fillText(__nf(val),a.left,py+dy);}
+      else if(idx===__last){x.textAlign='right';x.fillText(__nf(val),a.right,py+dy);}
+      else{x.textAlign='center';x.fillText(__nf(val),px,py+dy);}};
+    if(__dmax>__dmin){tag(__dmax,__maxIdx,-9,'rgba(220,235,255,.85)');tag(__dmin,__minIdx,16,'rgba(150,170,195,.7)');}
+    x.restore();}};
+  chartNW=new Chart(document.getElementById('cNW'),{type:'line',data:{labels:hist.map(e=>e.date),datasets:[{label:'Net Worth',data:__d,borderColor:'#38bdf8',borderWidth:2.5,fill:true,tension:.35,pointRadius:c=>c.dataIndex===__last?4:c.dataIndex===0?3:0,pointHoverRadius:5,pointBackgroundColor:c=>c.dataIndex===__last?'#38bdf8':'rgba(56,189,248,.55)',pointBorderColor:c=>c.dataIndex===__last?'#38bdf8':'rgba(56,189,248,.55)',backgroundColor:c=>{const a=c.chart.chartArea;if(!a)return'rgba(56,189,248,.12)';const g=c.chart.ctx.createLinearGradient(0,a.top,0,a.bottom);g.addColorStop(0,'rgba(56,189,248,.30)');g.addColorStop(.55,'rgba(56,189,248,.07)');g.addColorStop(1,'rgba(56,189,248,0)');return g;}}]},plugins:[nwGrid,{id:'nwGlow',beforeDatasetDraw(c){const x=c.ctx;x.save();x.shadowColor='rgba(56,189,248,.85)';x.shadowBlur=14;},afterDatasetDraw(c){c.ctx.restore();}},nwLabels],options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:13,right:10,bottom:16,left:6}},interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{displayColors:false,callbacks:{label:c=>'฿'+Math.round(c.parsed.y).toLocaleString('en-US')}}},scales:{x:{display:false},y:{display:false,min:__ymin,max:__ymax}}}});
 }
 
 // HOLDINGS
