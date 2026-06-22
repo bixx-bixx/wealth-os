@@ -2216,34 +2216,37 @@ if (typeof window !== 'undefined') window.PortfolioProvider = PortfolioProvider;
 // so no separate rate-at-purchase field is needed.
 // ============================================================
 
-function _num(n) { return (typeof n === 'number' && Number.isFinite(n)) ? n : 0; }
+// module-unique name: the bundle concatenates every engine into one global scope,
+// so a bare `_num` would collide with the identical helper in other engines. See
+// memory bfos-bundle-global-scope; the build guard (checkBundleScope) enforces this.
+function _usNum(n) { return (typeof n === 'number' && Number.isFinite(n)) ? n : 0; }
 
 // Resolve priceUSD for a holding, falling back to the legacy THB value when
 // the explicit field is absent (value = units*priceUSD*fx  =>  price = value/units/fx).
 function priceUSDof(h, fx) {
-  const explicit = _num(h && h.priceUSD);
+  const explicit = _usNum(h && h.priceUSD);
   if (explicit > 0) return explicit;
-  const units = _num(h && h.units), value = _num(h && h.value), f = _num(fx);
+  const units = _usNum(h && h.units), value = _usNum(h && h.value), f = _usNum(fx);
   return (units > 0 && f > 0) ? value / units / f : 0;
 }
 
 // Resolve costUSD, falling back to the THB cost converted at the given fx
 // (this makes avgBuyFx == fx, i.e. FX P&L starts at 0 for un-migrated data).
 function costUSDof(h, fx) {
-  const explicit = _num(h && h.costUSD);
+  const explicit = _usNum(h && h.costUSD);
   if (explicit > 0) return explicit;
-  const invested = _num(h && h.invested), f = _num(fx);
+  const invested = _usNum(h && h.invested), f = _usNum(fx);
   return f > 0 ? invested / f : 0;
 }
 
 // Full P&L breakdown for one US holding at the current fx. Pure / safe on
 // missing fields. Non-US callers should not use this.
 function pnl(h, fx) {
-  const f = _num(fx);
-  const units = _num(h && h.units);
+  const f = _usNum(fx);
+  const units = _usNum(h && h.units);
   const priceUSD = priceUSDof(h, f);
   const costUSD = costUSDof(h, f);
-  const investedTHB = _num(h && h.invested);
+  const investedTHB = _usNum(h && h.invested);
   const valueUSD = units * priceUSD;
   const stockGainUSD = valueUSD - costUSD;
   const stockGainPct = costUSD > 0 ? (stockGainUSD / costUSD) * 100 : 0;
@@ -2266,8 +2269,8 @@ function pnl(h, fx) {
 // callers should derive THB value through this instead of trusting h.value (which
 // can freeze at an old price/rate). Pure / safe on missing fields.
 function valueTHB(h, fx) {
-  const f = _num(fx);
-  return Math.round(_num(h && h.units) * priceUSDof(h, f) * f);
+  const f = _usNum(fx);
+  return Math.round(_usNum(h && h.units) * priceUSDof(h, f) * f);
 }
 
 // Back-fill the USD source-of-truth fields for a legacy US holding that
@@ -2280,24 +2283,24 @@ function backfill(h, fx) {
 // Apply a buy to a US holding. Cost basis grows in USD by shares*price (fees
 // stay in the THB `invested` only). Returns the fields to merge onto the holding.
 function buyUS(h, opts) {
-  const f = _num(opts.fx);
-  const price = _num(opts.priceUSD);
-  const amtTHB = _num(opts.amtTHB);
-  const feeTHB = _num(opts.feeTHB);
+  const f = _usNum(opts.fx);
+  const price = _usNum(opts.priceUSD);
+  const amtTHB = _usNum(opts.amtTHB);
+  const feeTHB = _usNum(opts.feeTHB);
   const denom = price * f;
   const addedUnits = denom > 0 ? (amtTHB - feeTHB) / denom : 0;
-  const units = _num(h && h.units) + addedUnits;
+  const units = _usNum(h && h.units) + addedUnits;
   const costUSD = costUSDof(h, f) + addedUnits * price;
-  const invested = _num(h && h.invested) + amtTHB;
+  const invested = _usNum(h && h.invested) + amtTHB;
   return { addedUnits, units, costUSD, invested, priceUSD: price, value: Math.round(units * price * f) };
 }
 
 // Apply a manual reprice/units-correction to a US holding (NOT a buy):
 // priceUSD + units change, cost basis (costUSD/invested) is untouched.
 function repriceUS(h, opts) {
-  const f = _num(opts.fx);
-  const price = _num(opts.priceUSD);
-  const units = _num(opts.units);
+  const f = _usNum(opts.fx);
+  const price = _usNum(opts.priceUSD);
+  const units = _usNum(opts.units);
   return { units, priceUSD: price, value: Math.round(units * price * f) };
 }
 
@@ -2970,18 +2973,20 @@ if (typeof window !== 'undefined') window.NWHistoryEngine = __NWHistoryEngine;  
 // Dual-export (node tests + window.DrawdownEngine).
 // ============================================================
 
-function _num(n) { return (typeof n === 'number' && Number.isFinite(n)) ? n : 0; }
+// module-unique name (see memory bfos-bundle-global-scope): the bundle shares one
+// global scope, so a bare `_num` collides with the identical helper in usFxEngine.
+function _ddNum(n) { return (typeof n === 'number' && Number.isFinite(n)) ? n : 0; }
 
 // Drawdown from peak as a fraction (e.g. -0.07 = 7% below ATH). 0 if no peak.
 function drawdownPct(price, peak) {
-  const p = _num(price), pk = _num(peak);
+  const p = _ddNum(price), pk = _ddNum(peak);
   if (pk <= 0) return 0;
   return (p - pk) / pk;
 }
 
 // Auto high-water mark: peak never decreases. Use on every price refresh.
 function updatePeak(peak, price) {
-  return Math.max(_num(peak), _num(price));
+  return Math.max(_ddNum(peak), _ddNum(price));
 }
 
 // Active tier for the current drawdown. `ddPctNum` is a percent NUMBER
@@ -3000,10 +3005,10 @@ function activeTier(ddPctNum, tiers) {
 // Recommended monthly DCA given the normal amount and the active tier.
 // tier.amount (absolute) wins; else normal * (1 + boostPct/100); null -> normal.
 function recommendedDca(normalDca, tier) {
-  const base = _num(normalDca);
+  const base = _ddNum(normalDca);
   if (!tier) return base;
-  if (tier.amount != null) return _num(tier.amount);
-  return Math.round(base * (1 + _num(tier.boostPct) / 100));
+  if (tier.amount != null) return _ddNum(tier.amount);
+  return Math.round(base * (1 + _ddNum(tier.boostPct) / 100));
 }
 
 // Default boost ladder. boostPct is a percent (25 => +25%). The deepest tier
