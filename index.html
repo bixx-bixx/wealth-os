@@ -3053,10 +3053,14 @@ async function pushCloud(){
   }catch(e){_ss('• offline','var(--red)');}
   _syncing=false;
 }
+// Returns 'ok' (pulled cloud / kept newer local), 'empty' (cloud had no data),
+// or 'fail' (network/Supabase error). boot() MUST NOT proceed to initApp on 'fail':
+// a fresh/empty origin would otherwise run migrate-on-load -> markDirty -> push blank
+// defaults UP and clobber real cloud data (same data-loss class as the def-seed bug).
 async function pullCloud(){
   try{
     const {data,error}=await sb.from('wealth_data').select('data,updated_at').eq('user_id',CURRENT_USER.id).maybeSingle();
-    if(error){console.warn('pull error',error);return;}
+    if(error){console.warn('pull error',error);return 'fail';}
     if(data&&data.data&&Object.keys(data.data).length){
       const cloudMt=Date.parse(data.updated_at)||0;
       const localMt=parseInt(localStorage.getItem('wos_mtime'))||0;
@@ -3066,10 +3070,12 @@ async function pullCloud(){
         Object.entries(data.data).forEach(([k,v])=>_setItem(k,typeof v==='string'?v:JSON.stringify(v)));
         _setItem('wos_mtime',String(cloudMt)); // local now matches cloud
       }
+      return 'ok';
     }else{
       await pushCloud(); // cloud empty -> seed from this device's local data
+      return 'empty';
     }
-  }catch(e){console.warn('pull failed',e);}
+  }catch(e){console.warn('pull failed',e);return 'fail';}
 }
 function authMsg(t,c){const m=document.getElementById('auth-msg');if(m){m.textContent=t;m.style.color=c||'var(--t2)';}}
 async function doLogin(){
@@ -3094,10 +3100,33 @@ async function boot(){
   const {data:{session}}=await sb.auth.getSession();
   if(!session){document.getElementById('auth-gate').style.display='flex';return;}
   CURRENT_USER=session.user;
-  await pullCloud();
+  const pull=await pullCloud();
+  if(pull==='fail'){ // pull ล้ม -> หยุดก่อน initApp: ไม่งั้น migrate-on-load จะ markDirty + push blank ทับ cloud
+    showPullError();
+    return;
+  }
   if(localStorage.getItem('w_synctest')!==null){localStorage.removeItem('w_synctest');markDirty();} // purge stray debug test key from local + cloud
   document.getElementById('auth-gate').style.display='none';
   initApp();
+}
+// Full-screen blocker shown when the initial cloud pull fails. Built in JS (no HTML dep).
+// Critically: we return from boot() WITHOUT writing anything, so no push can clobber cloud.
+function showPullError(){
+  const ag=document.getElementById('auth-gate');if(ag)ag.style.display='none';
+  let g=document.getElementById('pull-error-gate');
+  if(!g){
+    g=document.createElement('div');
+    g.id='pull-error-gate';
+    g.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:var(--bg,#0b0f17);color:var(--t1,#e6edf3);text-align:center;padding:24px;line-height:1.5';
+    g.innerHTML='<div style="font-size:17px">โหลดข้อมูลจาก cloud ไม่สำเร็จ</div><div style="font-size:14px;color:var(--t2,#9aa4b2);max-width:360px">เพื่อกันข้อมูลหาย แอปจะไม่เขียนทับ cloud จนกว่าจะโหลดได้ — เช็กเน็ตแล้วลองใหม่</div>';
+    const b=document.createElement('button');
+    b.textContent='ลองใหม่';
+    b.style.cssText='padding:10px 28px;font-size:16px;border-radius:8px;border:none;background:var(--green,#2ea043);color:#fff;cursor:pointer';
+    b.onclick=()=>location.reload();
+    g.appendChild(b);
+    document.body.appendChild(g);
+  }
+  g.style.display='flex';
 }
 
 const DB={
@@ -3187,9 +3216,13 @@ function inferTrackingMode(h){
   if(type==='stock')return (h.units>0)?'unit':'simple';
   return 'simple'; // fund, cash, pvd, other
 }
+// migrate*: back-fill missing fields on legacy data. Write back ONLY when something
+// actually changed — an unconditional DB.set markDirty()s every page-load, which bumps
+// wos_mtime and pushes identical data up (chatty, and makes two open devices ping-pong
+// push at each other). Guarding on a deep-equal check keeps mtime stable when nothing migrated.
 function migrateHoldings(){
   const hs=DB.get('holdings')||[],fx=fxRate();
-  DB.set('holdings',hs.map(h=>{
+  const next=hs.map(h=>{
     const m={
       ...h,
       bucket:h.bucket||Allocation.inferBucket(h),
@@ -3201,10 +3234,12 @@ function migrateHoldings(){
     // purchase rate of legacy buys was never recorded. See usFxEngine.
     if(m.type==='us'&&(m.costUSD==null||m.priceUSD==null)){Object.assign(m,UsFxEngine.backfill(m,fx));}
     return m;
-  }));
+  });
+  if(JSON.stringify(next)!==JSON.stringify(hs))DB.set('holdings',next);
 }
 function migrateGoals(){
-  DB.set('goals',(DB.get('goals')||[]).map(GoalsEngine.withGoalDefaults));
+  const gs=DB.get('goals')||[],next=gs.map(GoalsEngine.withGoalDefaults);
+  if(JSON.stringify(next)!==JSON.stringify(gs))DB.set('goals',next);
 }
 
 // ----- Portfolio decision helpers -----
