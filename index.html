@@ -3597,8 +3597,11 @@ function renderDash(){
       const av=+x.value||0,inv=+x.invested||0;
       const pctB=row.value>0?av/row.value*100:0;            // % ของถัง
       const pctP=review.rebalanceBase>0?av/review.rebalanceBase*100:0; // % ของพอร์ต (ใช้กับกฎหุ้นเดี่ยว 5%)
-      const gp=inv>0?(av-inv)/inv*100:0;
-      const isUS=x.type==='us',usd=isUS?Math.round(UsFxEngine.pnl(x,__fxA).valueUSD):0;
+      const isUS=x.type==='us',p=isUS?UsFxEngine.pnl(x,__fxA):null;
+      // กำไร %: US โชว์ stock-only % (USD, ไม่รวม FX) ให้ตรงกับหน้า holdings (ที่โชว์ stockGainPct);
+      // อื่นๆ (กองทุน/หุ้นไทย) ใช้ % รวม THB — ตรงกับหน้า holdings อยู่แล้ว
+      const gp=isUS?p.stockGainPct:(inv>0?(av-inv)/inv*100:0);
+      const usd=isUS?Math.round(p.valueUSD):0;
       const trim=isSingle&&pctP>=5;
       sr+=`<div class="asub"><span class="asub-n">${x.name}${trim?'<span class="trimb">trim →3–4%</span>':''}</span>`
         +`<span class="asub-val">${fmt(av)}</span>`
