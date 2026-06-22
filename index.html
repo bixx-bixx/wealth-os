@@ -44,10 +44,10 @@
   --shadow-sm:0 1px 2px rgba(0,0,0,.35);
   --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.25);
 }
-body{background:var(--bg);color:var(--t1);font-family:var(--fm);font-size:13px;min-height:100vh}
+body{background:var(--bg);color:var(--t1);font-family:var(--fm);font-size:13px;min-height:100vh;min-height:100dvh}
 table,.mv,.cfv,.metric,.gp,.ap{font-variant-numeric:tabular-nums}
 input,select,textarea,button{font-family:var(--fm);font-size:13px}
-.app{display:grid;grid-template-columns:220px 1fr;grid-template-rows:56px 1fr;height:100vh}
+.app{display:grid;grid-template-columns:220px 1fr;grid-template-rows:56px 1fr;height:100vh;height:100dvh}
 .topbar{grid-column:1/-1;background:var(--s1);border-bottom:1px solid var(--b1);display:flex;align-items:center;padding:0 24px;gap:16px;z-index:100;box-shadow:var(--shadow-sm)}
 .logo{font-family:var(--fd);font-weight:800;font-size:16px;letter-spacing:-.5px}
 .logo em{color:var(--green);font-style:normal}
@@ -196,7 +196,7 @@ textarea{resize:vertical;min-height:72px}
 .cfv{font-family:var(--fd);font-size:13px;font-weight:600}
 .mbg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 .mbg.open{display:flex}
-.modal{background:var(--s2);border:1px solid var(--b2);border-radius:var(--radius-lg);padding:24px;width:520px;max-width:95vw;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow)}
+.modal{background:var(--s2);border:1px solid var(--b2);border-radius:var(--radius-lg);padding:24px;width:520px;max-width:95vw;max-height:88vh;max-height:88dvh;overflow-y:auto;box-shadow:var(--shadow)}
 .mbg.open .modal{animation:mpop .18s ease}
 @keyframes mpop{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:none}}
 .mhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
@@ -225,11 +225,15 @@ textarea{resize:vertical;min-height:72px}
 .nw-change{font-size:13px;font-weight:600;margin-bottom:10px}
 @media(max-width:760px){
   html,body{overflow-x:hidden;max-width:100%}
+  /* iOS Safari auto-zooms when focusing an input whose font-size < 16px — bump every
+     field (incl. the class-overridden ones) to 16px on mobile so tapping a form input
+     never triggers a zoom. Desktop keeps the compact 13px. */
+  input,select,textarea,.ddinp,.ffire-grid input{font-size:16px}
   .nw-big{font-size:26px}
   .alloc-wrap{flex-direction:column;align-items:stretch;gap:18px}
   .alloc-donut{align-self:center}
   .main,.page,.card,.g2,.metrics{min-width:0}
-  .app{grid-template-columns:1fr;grid-template-rows:52px auto 1fr;height:100vh}
+  .app{grid-template-columns:1fr;grid-template-rows:52px auto 1fr;height:100vh;height:100dvh}
   .topbar{padding:0 12px;gap:10px}
   .topbar .live-pill,.topbar .spill,.topbar #price-updated,.topbar #td{display:none}
   .topbar-right{gap:8px}
