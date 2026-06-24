@@ -26,7 +26,7 @@
 :root{
   --bg:#0c0c0e;--s1:#131316;--s2:#1a1a1e;--s3:#222228;
   --b1:#2e2e36;--b2:#3e3e48;--b3:#52525e;
-  --t1:#f2f0f8;--t2:#9896a8;--t3:#5a5868;
+  --t1:#f2f0f8;--t2:#a5a3b3;--t3:#7b798c;
   --green:#3ecf8e;--green-d:#0d2e1e;--green-m:#27a36e;
   --amber:#f5a623;--amber-d:#2c1e08;
   --blue:#4f9cf9;--blue-d:#0d1e38;
@@ -59,13 +59,17 @@ input,select,textarea,button{font-family:var(--fm);font-size:13px}
 .tbtn:hover{background:var(--s3);color:var(--t1)}
 .tbtn:active{transform:translateY(1px)}
 .sidebar{background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow-y:auto;padding:8px 0 16px}
-.pf{display:flex;flex-direction:column;align-items:center;gap:7px;padding:16px 16px 12px;cursor:pointer;user-select:none}
-.pf-av{width:176px;height:176px;border-radius:18px;border:none;background:var(--s3);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 0 18px rgba(167,139,250,.32),0 0 0 1px rgba(167,139,250,.35);transition:box-shadow .18s}
+.pf-card{margin:14px 12px 4px;padding:14px 12px 15px;background:linear-gradient(180deg,rgba(167,139,250,.07),transparent 64%),var(--s2);border:1px solid var(--b1);border-radius:var(--radius-lg);box-shadow:0 0 20px rgba(167,139,250,.13),inset 0 0 0 1px rgba(167,139,250,.05);display:flex;flex-direction:column;align-items:center;gap:5px}
+.pf{display:flex;flex-direction:column;align-items:center;gap:7px;padding:2px;cursor:pointer;user-select:none}
+.pf-av{width:150px;height:150px;border-radius:16px;border:none;background:var(--s3);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 0 18px rgba(167,139,250,.32),0 0 0 1px rgba(167,139,250,.35);transition:box-shadow .18s}
 .pf:hover .pf-av{box-shadow:0 0 26px rgba(167,139,250,.55),0 0 0 1px rgba(167,139,250,.6)}
 .pf-av img{width:100%;height:100%;object-fit:cover;image-rendering:pixelated;image-rendering:crisp-edges}
 .pf-ph{font-size:28px;color:var(--t3);font-weight:300;line-height:1}
-.pf-name{font-family:var(--fd);font-size:14px;font-weight:600;color:var(--t1);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ns{padding:16px 18px 5px;font-size:10px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase}
+.pf-name{font-family:var(--fd);font-size:15px;font-weight:700;letter-spacing:.04em;color:var(--t1);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+.pf-class{font-family:var(--fd);font-size:11px;font-weight:600;color:var(--purple);letter-spacing:.02em;text-align:center;text-shadow:0 0 12px rgba(167,139,250,.35)}
+.pf-lvl{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t2);letter-spacing:.03em}
+.pf-badge{font-size:9px;font-weight:600;color:var(--purple);background:var(--purple-d);border:1px solid rgba(167,139,250,.28);border-radius:999px;padding:1px 7px;letter-spacing:.05em}
+.ns{padding:16px 18px 5px;font-size:10px;font-weight:600;color:var(--t3);letter-spacing:.1em;text-transform:uppercase}
 .ni{display:flex;align-items:center;gap:9px;padding:9px 18px;cursor:pointer;color:var(--t2);font-size:12px;border-left:2px solid transparent;transition:.12s;user-select:none}
 .ni:hover{background:rgba(255,255,255,.04);color:var(--t1);border-left-color:var(--b2)}
 .ni.active{color:var(--green);border-left-color:var(--green);background:linear-gradient(90deg,var(--accent-soft),transparent 86%);font-weight:600;text-shadow:0 0 14px rgba(62,207,142,.45)}
@@ -80,15 +84,16 @@ input,select,textarea,button{font-family:var(--fm);font-size:13px}
 .pt{font-family:var(--fd);font-size:20px;font-weight:700}
 .ps{font-size:11px;color:var(--t2);margin-top:3px}
 .card{background:linear-gradient(180deg,rgba(255,255,255,.022),transparent 96px),var(--s2);border:1px solid var(--b1);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow-sm)}
-.ct{font-size:10px;font-weight:500;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px}
+.ct{font-size:10px;font-weight:600;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px}
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .metric{background:linear-gradient(180deg,rgba(255,255,255,.03),transparent 70px),var(--s2);border:1px solid var(--b1);border-radius:var(--radius);padding:16px;position:relative;overflow:hidden;box-shadow:var(--shadow-sm);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
 .metric:hover{border-color:var(--b2);transform:translateY(-2px);box-shadow:0 6px 22px rgba(0,0,0,.32)}
 .metric::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--mc,var(--b2)) 16%,var(--mc,var(--b2)) 84%,transparent)}
+.micon{position:absolute;top:13px;right:14px;font-size:15px;line-height:1;color:var(--mc,var(--t3));opacity:.5}
 .ml{font-size:10px;color:var(--t3);margin-bottom:8px}
 .mv{font-family:var(--fd);font-size:22px;font-weight:700;line-height:1;letter-spacing:-.5px}
 .ms{font-size:11px;color:var(--t2);margin-top:6px}
-.up{color:var(--green)}.dn{color:var(--red)}.mu{color:var(--t3)}
+.up{color:var(--green)}.dn{color:var(--red)}.warn{color:var(--amber)}.mu{color:var(--t3)}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .alist{display:flex;flex-direction:column;gap:10px}
 .arow{display:flex;flex-direction:column;gap:4px}
@@ -124,17 +129,34 @@ input,select,textarea,button{font-family:var(--fm);font-size:13px}
 .chip-warn{color:var(--amber);background:var(--amber-d)}
 .chip-bad{color:var(--red);background:rgba(240,96,96,.14)}
 .chip-mut{color:var(--t3);background:rgba(255,255,255,.05)}
+.sevb{font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px;margin-left:6px;letter-spacing:.02em;white-space:nowrap}
+.sev-c{color:var(--red);background:rgba(240,96,96,.14)}
+.sev-w{color:var(--amber);background:var(--amber-d)}
+.sev-i{color:var(--blue);background:var(--blue-d)}
 .tw{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th{text-align:left;color:var(--t3);font-weight:400;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--b1)}
 td{padding:10px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:rgba(255,255,255,.03)}
+.htable .gsep{border-left:1px solid var(--b1)}
+#htbody td:nth-child(5),#htbody td:nth-child(10){border-left:1px solid var(--b1)}
+.hdr-grp th{border-bottom:none;padding:8px 10px 2px;font-size:9px;color:var(--t3);letter-spacing:.14em}
+.hstrip{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:2px}
+.hkebab{color:var(--t2)}
+.hmenu{position:fixed;z-index:300;display:none;min-width:156px;background:var(--s2);border:1px solid var(--b2);border-radius:10px;padding:5px;box-shadow:var(--shadow)}
+.hmenu.open{display:block;animation:mpop .14s ease}
+.hmenu button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--t1);font-size:12px;padding:8px 10px;border-radius:7px;cursor:pointer;font-family:var(--fm)}
+.hmenu button:hover{background:var(--s3)}
+.hmenu button.danger{color:var(--red)}
+.hmenu button.danger:hover{background:var(--red-d)}
+.hmenu .hmsep{height:1px;background:var(--b1);margin:4px 2px}
 .tag{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:500;border:1px solid transparent}
 .tf{background:var(--blue-d);color:var(--blue);border-color:rgba(79,156,249,.2)}
 .ts{background:var(--purple-d);color:var(--purple);border-color:rgba(167,139,250,.2)}
 .tp{background:var(--amber-d);color:var(--amber);border-color:rgba(245,166,35,.2)}
 .tc{background:var(--green-d);color:var(--green-m);border-color:rgba(62,207,142,.2)}
+.tn{background:rgba(255,255,255,.05);color:var(--t2);border-color:var(--b2)}
 .gain{color:var(--green)}.loss{color:var(--red)}
 /* FIRE inputs grid (DCA/FIRE page) */
 .ffire-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
@@ -184,6 +206,8 @@ textarea{resize:vertical;min-height:72px}
 .gi{margin-bottom:16px}
 .gh{display:flex;justify-content:space-between;margin-bottom:5px}
 .gn{font-size:12px;color:var(--t1)}
+.qbadge{font-size:8.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--t3);background:rgba(255,255,255,.05);border:1px solid var(--b1);border-radius:999px;padding:1px 7px;margin-right:7px;vertical-align:middle}
+.qbadge.qmain{color:var(--purple);background:var(--purple-d);border-color:rgba(167,139,250,.3)}
 .gp{font-size:11px;color:var(--t2)}
 .gtrack{height:6px;background:var(--b1);border-radius:3px;overflow:hidden}
 .gfill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--green-m),var(--green));box-shadow:inset 0 1px 0 rgba(255,255,255,.22)}
@@ -202,6 +226,8 @@ textarea{resize:vertical;min-height:72px}
 .cfrow:last-child{border-bottom:none}
 .cfl{font-size:12px;color:var(--t2)}
 .cfv{font-family:var(--fd);font-size:13px;font-weight:600}
+.dca-sec{font-size:10px;font-weight:600;color:var(--t2);letter-spacing:.1em;text-transform:uppercase;margin:14px 0 7px;padding-left:9px;border-left:2px solid var(--blue)}
+.dca-sec:first-child{margin-top:0}
 .mbg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 .mbg.open{display:flex}
 .modal{background:var(--s2);border:1px solid var(--b2);border-radius:var(--radius-lg);padding:24px;width:520px;max-width:95vw;max-height:88vh;max-height:88dvh;overflow-y:auto;box-shadow:var(--shadow)}
@@ -222,6 +248,10 @@ textarea{resize:vertical;min-height:72px}
 .sdot{width:5px;height:5px;border-radius:50%;background:var(--t3);flex-shrink:0}
 .sdot.on{background:var(--green)}.sdot.off{background:var(--red)}
 /* ===== Mobile responsive ===== */
+.vtog{display:inline-flex;background:var(--s3);border:1px solid var(--b1);border-radius:999px;padding:2px}
+.vtog button{background:none;border:none;color:var(--t2);font-size:10px;font-weight:600;padding:3px 11px;border-radius:999px;cursor:pointer;transition:.12s;font-family:var(--fm);letter-spacing:.02em}
+.vtog button:hover{color:var(--t1)}
+.vtog button.on{background:var(--blue-d);color:var(--blue);box-shadow:0 0 8px rgba(79,156,249,.18)}
 .alloc-wrap{display:flex;align-items:center;gap:28px}
 .alloc-donut{position:relative;width:200px;height:200px;flex-shrink:0}
 .alloc-donut canvas{filter:drop-shadow(0 0 6px rgba(255,255,255,.13))}
@@ -231,7 +261,10 @@ textarea{resize:vertical;min-height:72px}
 .lg-name{color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lg-pct{margin-left:auto;color:var(--t2);font-weight:600;font-variant-numeric:tabular-nums}
 .nw-big{font-family:var(--fd);font-size:34px;font-weight:700;letter-spacing:-1px;color:var(--t1);line-height:1.15;margin:8px 0 2px;font-variant-numeric:tabular-nums}
-.nw-change{font-size:13px;font-weight:600;margin-bottom:10px}
+.nw-chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
+.nw-chip{display:flex;flex-direction:column;gap:1px;background:var(--s3);border:1px solid var(--b1);border-radius:10px;padding:6px 12px}
+.nw-chip .k{font-size:9px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase}
+.nw-chip .v{font-family:var(--fd);font-size:13px;font-weight:600;color:var(--t1);font-variant-numeric:tabular-nums}
 @media(max-width:760px){
   html,body{overflow-x:hidden;max-width:100%}
   /* iOS Safari auto-zooms when focusing an input whose font-size < 16px — bump every
@@ -247,7 +280,7 @@ textarea{resize:vertical;min-height:72px}
   .topbar .live-pill,.topbar .spill,.topbar #price-updated,.topbar #td{display:none}
   .topbar-right{gap:8px}
   .sidebar{grid-column:1/-1;flex-direction:row;overflow-x:auto;overflow-y:hidden;padding:6px 8px;border-right:none;border-bottom:1px solid var(--b1);gap:4px}
-  .sidebar .ns,.sidebar .ndiv,.sidebar .pf{display:none}
+  .sidebar .ns,.sidebar .ndiv,.sidebar .pf,.sidebar .pf-card{display:none}
   .ni{border-left:none;border-bottom:2px solid transparent;padding:8px 12px;white-space:nowrap;border-radius:8px 8px 0 0}
   .ni.active{border-left:none;border-bottom-color:var(--green)}
   .page{padding:14px;gap:16px}
@@ -300,9 +333,13 @@ textarea{resize:vertical;min-height:72px}
 </header>
 
 <nav class="sidebar">
-  <div class="pf" onclick="pickAvatar()" title="แตะเพื่อเปลี่ยนรูป">
-    <div class="pf-av" id="pf-av"><span class="pf-ph">+</span></div>
+  <div class="pf-card">
+    <div class="pf" onclick="pickAvatar()" title="แตะเพื่อเปลี่ยนรูป">
+      <div class="pf-av" id="pf-av"><span class="pf-ph">+</span></div>
+    </div>
     <div class="pf-name" id="pf-name"></div>
+    <div class="pf-class" id="pf-class"></div>
+    <div class="pf-lvl" id="pf-lvl"></div>
   </div>
   <input type="file" id="pf-file" accept="image/png,image/jpeg,image/gif,image/webp" onchange="uploadAvatar(this)" style="display:none">
   <div class="ndiv"></div>
@@ -333,20 +370,23 @@ textarea{resize:vertical;min-height:72px}
   </div>
   <div class="metrics" id="dmetrics"></div>
   <div id="dsyserr"></div>
-  <div id="dalert-bar" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-    <div class="ct" style="margin:0">Risk alerts <span id="dalert-count" style="color:var(--t3);text-transform:none"></span></div>
+  <div id="dalert-bar" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
+      <span class="ct" style="margin:0">Risk Alerts <span id="dalert-count" style="color:var(--t3);text-transform:none"></span></span>
+      <span id="dalert-sev" style="display:inline-flex;flex-wrap:wrap;align-items:center"></span>
+    </div>
     <button class="btn" style="padding:3px 12px;font-size:11px" id="dalert-toggle" onclick="toggleAlerts()">ซ่อน</button>
   </div>
   <div id="dalerts"></div>
   <div class="card">
     <div class="ct">Net Worth Trend <span id="nw-sub" style="color:var(--t3);text-transform:none"></span></div>
     <div id="nw-big" class="nw-big"></div>
-    <div id="nw-change" class="nw-change"></div>
+    <div id="nw-chips" class="nw-chips"></div>
     <div id="nw-trend"></div>
   </div>
   <div class="g2">
     <div class="card">
-      <div class="ct">DCA เดือนนี้ <span style="color:var(--t3);text-transform:none">· ควรซื้ออะไร (จาก drift)</span></div>
+      <div class="ct">DCA This Month <span style="color:var(--t3);text-transform:none">· ควรซื้ออะไร (จาก drift)</span></div>
       <div id="ddca"></div>
     </div>
     <div class="card">
@@ -361,13 +401,18 @@ textarea{resize:vertical;min-height:72px}
         <span id="asset-toggle" onclick="toggleAssets()" style="cursor:pointer;font-size:11px;color:var(--t3);text-transform:none;white-space:nowrap;user-select:none">แสดงรายตัว</span>
       </div>
       <div class="alist" id="dalloc"></div>
-      <div style="margin-top:12px;font-size:11px;color:var(--t3)">เส้นขาว = target % · ตัวเลขขวา = drift · ใต้ถัง = สัดส่วนรายตัว (% ของถัง · กำไร/ขาดทุน)</div>
-      <div style="border-top:1px solid rgba(255,255,255,.08);margin:12px 0 10px"></div>
-      <div style="font-size:11px;color:var(--t3);text-transform:none;margin-bottom:6px">นโยบาย Rebalance <span style="color:var(--t3)">· ตั้งครั้งเดียว ใช้ตลอด (สถานะ live)</span></div>
+      <div style="border-top:1px solid rgba(255,255,255,.08);margin:14px 0 10px"></div>
+      <div style="font-size:11px;color:var(--t3);text-transform:none;margin-bottom:6px"><span style="color:var(--blue);margin-right:5px" title="investment constitution">§</span>Portfolio Policy <span style="color:var(--t3)">· นโยบาย Rebalance — ตั้งครั้งเดียว ใช้ตลอด (สถานะ live)</span></div>
       <div id="dRebalPolicy"></div>
     </div>
     <div class="card">
-      <div class="ct">Portfolio breakdown</div>
+      <div class="ct" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span>Portfolio breakdown</span>
+        <span class="vtog" id="alloc-view">
+          <button data-v="networth" onclick="setAllocView('networth')">Net Worth</button>
+          <button data-v="investable" onclick="setAllocView('investable')">Investable</button>
+        </span>
+      </div>
       <div class="alloc-wrap">
         <div class="alloc-donut"><canvas id="cAlloc" role="img" aria-label="Asset allocation donut chart"></canvas></div>
         <div class="alloc-legend" id="allocLegend"></div>
@@ -397,14 +442,20 @@ textarea{resize:vertical;min-height:72px}
     </div>
   </div>
   <div id="halerts"></div>
+  <div id="hsummary" class="hstrip"></div>
   <div class="card">
     <div class="tw">
-      <table>
-        <thead><tr>
-          <th style="width:28px" title="ลากเพื่อจัดลำดับ"></th><th>Asset</th><th>Type</th><th>Theme</th>
-          <th>ลงทุน</th><th>Price/NAV</th><th>มูลค่า</th><th>Gain/Loss</th>
-          <th>Alloc</th><th>Bucket</th><th>Thesis</th><th></th>
-        </tr></thead>
+      <table class="htable">
+        <thead>
+          <tr class="hdr-grp">
+            <th></th><th colspan="3">Asset</th><th colspan="5" class="gsep">Position</th><th colspan="3" class="gsep">Strategy</th>
+          </tr>
+          <tr class="hdr-detail">
+            <th style="width:28px" title="ลากเพื่อจัดลำดับ"></th><th>Asset</th><th>Type</th><th>Theme</th>
+            <th class="gsep">ลงทุน</th><th>Price/NAV</th><th>มูลค่า</th><th>Gain/Loss</th><th>Alloc</th>
+            <th class="gsep">Bucket</th><th>Thesis</th><th></th>
+          </tr>
+        </thead>
         <tbody id="htbody"></tbody>
       </table>
     </div>
@@ -418,7 +469,7 @@ textarea{resize:vertical;min-height:72px}
   </div>
   <div class="g2">
     <div class="card">
-      <div class="ct">รายรับ / รายจ่าย</div>
+      <div class="ct">Income / Expense <span style="color:var(--t3);text-transform:none">· รายรับ-รายจ่าย</span></div>
       <div id="cfbd"></div>
     </div>
     <div class="card">
@@ -427,11 +478,11 @@ textarea{resize:vertical;min-height:72px}
     </div>
   </div>
   <div class="card">
-    <div class="ct">ค่าใช้จ่าย by category</div>
+    <div class="ct">Expenses by Category <span style="color:var(--t3);text-transform:none">· ค่าใช้จ่ายแยกหมวด</span></div>
     <div style="position:relative;height:220px;"><canvas id="cCF" role="img" aria-label="Expense by category"></canvas></div>
   </div>
   <div class="card">
-    <div class="ct">ประวัติ Cashflow</div>
+    <div class="ct">Cashflow History <span style="color:var(--t3);text-transform:none">· ประวัติย้อนหลัง</span></div>
     <div id="cfhist"></div>
   </div>
 </div>
@@ -454,18 +505,18 @@ textarea{resize:vertical;min-height:72px}
 
 <div id="page-goals" class="page">
   <div class="ph">
-    <div><div class="pt">Goals</div><div class="ps">เป้าหมายและ DCA projection</div></div>
+    <div><div class="pt">Goals</div><div class="ps">Quests · เป้าหมายระยะยาว และ DCA projection</div></div>
     <button class="btn btn-p" onclick="newGoal()">+ เป้าหมาย</button>
   </div>
   <div class="card">
-    <div class="ct">DCA Projection — ฿<span id="pdcalbl">15,000</span>/เดือน</div>
+    <div class="ct">DCA Projection — ฿<span id="pdcalbl">15,000</span> / month</div>
     <input type="range" min="5000" max="60000" step="1000" value="15000" id="pdca"
       oninput="document.getElementById('pdcalbl').textContent=parseInt(this.value).toLocaleString();buildProjChart(parseInt(this.value))"
       style="width:100%;margin-bottom:16px">
     <div style="position:relative;height:240px"><canvas id="cProj" role="img" aria-label="DCA projection"></canvas></div>
   </div>
   <div class="card">
-    <div class="ct">เป้าหมายของฉัน</div>
+    <div class="ct">My Quests <span style="color:var(--t3);text-transform:none">· เป้าหมายระยะยาว</span></div>
     <div id="glist"></div>
   </div>
 </div>
@@ -481,38 +532,38 @@ textarea{resize:vertical;min-height:72px}
   <div id="dfempty"></div>
   <div class="metrics" id="dfmetrics"></div>
   <div class="card">
-    <div class="ct">DCA รายเดือน — ปี <span id="dfyearlbl"></span></div>
+    <div class="ct">Monthly DCA — <span style="text-transform:none">ปี</span> <span id="dfyearlbl"></span></div>
     <div class="tw"><table>
-      <thead><tr><th>เดือน</th><th>ลงทุน</th><th>เงินสดสิ้นเดือน</th><th>Month Type</th><th>Status</th><th>Gap vs เป้า</th></tr></thead>
+      <thead><tr><th>Month</th><th>Invested</th><th>Cash (EOM)</th><th>Month Type</th><th>Status</th><th>Gap vs target</th></tr></thead>
       <tbody id="dftbody"></tbody>
     </table></div>
   </div>
   <div class="g2">
     <div class="card">
-      <div class="ct">ลงทุนรายเดือน vs เป้า</div>
+      <div class="ct">Monthly vs Target <span style="color:var(--t3);text-transform:none">· ลงทุนรายเดือน</span></div>
       <div style="position:relative;height:220px"><canvas id="cDcaBar" role="img" aria-label="Monthly DCA vs target"></canvas></div>
     </div>
     <div class="card">
-      <div class="ct">สะสมทั้งปี vs เป้าปีนี้</div>
+      <div class="ct">Cumulative vs Year Target <span style="color:var(--t3);text-transform:none">· สะสมทั้งปี</span></div>
       <div style="position:relative;height:220px"><canvas id="cDcaCum" role="img" aria-label="Cumulative vs year target"></canvas></div>
     </div>
   </div>
   <div class="card">
-    <div class="ct">เงินสดปลายเดือน</div>
+    <div class="ct">Cash at Month-End <span style="color:var(--t3);text-transform:none">· เงินสดปลายเดือน</span></div>
     <div style="position:relative;height:200px"><canvas id="cDcaCash" role="img" aria-label="Cash at month end"></canvas></div>
   </div>
   <div class="card">
-    <div class="ct">FIRE inputs — แก้ได้เอง <span style="color:var(--t3);text-transform:none;font-weight:400">· Sleeve + PVD แยกกันทบต้น แล้วรวม</span></div>
+    <div class="ct">FIRE Inputs <span style="color:var(--t3);text-transform:none;font-weight:400">· แก้ได้เอง · Sleeve + PVD แยกกันทบต้น แล้วรวม</span></div>
     <div class="ffire-grid" id="dffire-edit"></div>
   </div>
   <div class="card" id="dffire-status"></div>
   <div class="card">
-    <div class="ct">ปีที่ถึงเป้า <span style="color:var(--t3);text-transform:none;font-weight:400">· รวม Sleeve + PVD (นับ vested)</span></div>
+    <div class="ct">Years to Target <span style="color:var(--t3);text-transform:none;font-weight:400">· รวม Sleeve + PVD (นับ vested)</span></div>
     <div class="tw"><table id="dffire-results"></table></div>
     <div style="margin-top:10px;font-size:10px;color:var(--t3);line-height:1.6" id="dffire-resultnote"></div>
   </div>
   <div class="card">
-    <div class="ct">Milestone รายปี <span style="color:var(--t3);text-transform:none;font-weight:400">· scenario Base · เงินที่ได้จริง (accessible)</span></div>
+    <div class="ct">Milestones <span style="color:var(--t3);text-transform:none;font-weight:400">· Level checkpoints · scenario Base · เงินที่ได้จริง (accessible)</span></div>
     <div class="tw"><table id="dffire-milestone"></table></div>
   </div>
   <div class="card">
@@ -522,7 +573,7 @@ textarea{resize:vertical;min-height:72px}
   </div>
   <div class="g2">
     <div class="card">
-      <div class="ct">DCA สะสม — Actual vs Plan <span style="color:var(--t3);text-transform:none;font-weight:400">· เทียบเส้นแผน/เดือน</span></div>
+      <div class="ct">Cumulative DCA — Actual vs Plan <span style="color:var(--t3);text-transform:none;font-weight:400">· เทียบเส้นแผน/เดือน</span></div>
       <div style="position:relative;height:220px"><canvas id="cFireDca" role="img" aria-label="Cumulative DCA actual vs plan"></canvas></div>
     </div>
     <div class="card">
@@ -830,6 +881,8 @@ textarea{resize:vertical;min-height:72px}
   </div>
 </div>
 </div>
+
+<div class="hmenu" id="hold-menu"></div>
 
 <script>// ============================================================
 // WealthOS — Portfolio Risk Module (v4)  [canonical, user-provided]
@@ -3548,7 +3601,7 @@ function toggleAlerts(){
   const d=document.getElementById('dalerts'),btn=document.getElementById('dalert-toggle');
   const willHide=d.style.display!=='none';
   d.style.display=willHide?'none':'';
-  btn.textContent=willHide?'แสดง':'ซ่อน';
+  btn.textContent=willHide?'Show':'Hide';
   localStorage.setItem('w_hideAlerts',willHide?'1':'0');markDirty();
 }
 // show/hide the per-asset breakdown under each bucket (default hidden — keeps the card clean)
@@ -3560,7 +3613,9 @@ function toggleAssets(){
   localStorage.setItem('w_showAssets',willShow?'1':'0');markDirty();
 }
 // rebalance trim-plan mode: 'target' = ขายกลับเป้า · 'buffer' = ขายแค่หลุดเส้นเตือน (friction ต่ำกว่า)
-function setTrimMode(m){localStorage.setItem('w_trimMode',m==='buffer'?'buffer':'target');renderDash();}
+function setTrimMode(m){localStorage.setItem('w_trimMode',m==='buffer'?'buffer':'target');markDirty();renderDash();}
+// portfolio-breakdown donut view: 'networth' = ทุกอย่าง (รวม PVD+cash) · 'investable' = เฉพาะที่ rebalance เองได้
+function setAllocView(v){localStorage.setItem('w_allocView',v==='investable'?'investable':'networth');markDirty();renderDash();}
 function renderDash(){
   const h=liveHoldings(),g=DB.get('goals'),s=DB.get('settings');
   const cf=DB.get('cashflows').sort((a,b)=>b.month.localeCompare(a.month))[0]||{};
@@ -3575,10 +3630,10 @@ function renderDash(){
   document.getElementById('td').textContent=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
   document.getElementById('dsub').textContent='อัปเดต: '+new Date().toLocaleDateString('th-TH');
   document.getElementById('dmetrics').innerHTML=`
-    <div class="metric" style="--mc:var(--green)"><div class="ml">Net Worth</div><div class="mv">${fmt(V)}</div><div class="ms ${gain>=0?'up':'dn'}">${gain>=0?'↑':'↓'} ${fmt(Math.abs(gain))} (${fmtP(gp)})</div></div>
-    <div class="metric" style="--mc:var(--blue)"><div class="ml">Total Invested</div><div class="mv">${fmt(I)}</div><div class="ms mu">${h.length} assets</div></div>
-    <div class="metric" style="--mc:var(--amber)"><div class="ml">Emergency Fund</div><div class="mv">${fmt(emg.cash)}</div><div class="ms ${emg.ok?'up':'dn'}">${emg.coverage.toFixed(1)}/${emg.months} เดือน ${emg.ok?'✓':'⚠ ต่ำกว่าเป้า'}</div></div>
-    <div class="metric" style="--mc:var(--purple)"><div class="ml">DCA เดือนนี้</div><div class="mv">${fmt(dca)}</div><div class="ms ${dca>=dcat?'up':'dn'}">${dca>=dcat?'✓ On plan':'⚠ ต่ำกว่าแผน'}</div></div>`;
+    <div class="metric" style="--mc:var(--green)"><span class="micon">◈</span><div class="ml">Net Worth</div><div class="mv">${fmt(V)}</div><div class="ms ${gain>=0?'up':'dn'}">${gain>=0?'↑':'↓'} ${fmt(Math.abs(gain))} (${fmtP(gp)})</div></div>
+    <div class="metric" style="--mc:var(--blue)"><span class="micon">▲</span><div class="ml">Total Invested</div><div class="mv">${fmt(I)}</div><div class="ms mu">${h.length} assets</div></div>
+    <div class="metric" style="--mc:var(--amber)"><span class="micon">◆</span><div class="ml">Emergency Fund</div><div class="mv">${fmt(emg.cash)}</div><div class="ms ${emg.ok?'up':'warn'}">${emg.coverage.toFixed(1)}/${emg.months} เดือน ${emg.ok?'✓':'⚠ ต่ำกว่าเป้า'}</div></div>
+    <div class="metric" style="--mc:var(--purple)"><span class="micon">↻</span><div class="ml">DCA เดือนนี้</div><div class="mv">${fmt(dca)}</div><div class="ms ${dca>=dcat?'up':'warn'}">${dca>=dcat?'✓ On plan':'⚠ ต่ำกว่าแผน'}</div></div>`;
   const bcolors=['var(--blue)','var(--purple)','var(--amber)','var(--green)','var(--coral)','var(--red)','var(--t3)','var(--b3)'];
   // parallel glow colors (rgba) — var() can't take an alpha suffix, so map each bucket color to a soft glow
   const bglows=['rgba(79,156,249,.5)','rgba(167,139,250,.5)','rgba(245,166,35,.5)','rgba(62,207,142,.5)','rgba(249,123,90,.5)','rgba(240,96,96,.5)','rgba(90,88,104,.45)','rgba(82,82,94,.45)'];
@@ -3602,7 +3657,9 @@ function renderDash(){
     return '';};
   __drows.forEach((row,i)=>{
     const driftTxt=fmtP(row.driftPct);
-    const dcol=Math.abs(row.driftPct)<=RiskV4.RISK_CONFIG.DRIFT_TOLERANCE?'var(--t3)':row.driftPct>0?'var(--amber)':'var(--blue)';
+    const __inBand=Math.abs(row.driftPct)<=RiskV4.RISK_CONFIG.DRIFT_TOLERANCE;
+    const dcol=__inBand?'var(--green)':row.driftPct>0?'var(--amber)':'var(--blue)';
+    const __dtag=__inBand?'':row.driftPct>0?' <span style="font-size:9px;color:var(--amber)">over</span>':' <span style="font-size:9px;color:var(--blue)">under</span>';
     const tgtVal=Math.round(row.targetPct/100*review.rebalanceBase);
     // sub-rows: each asset in this bucket, sorted by value desc
     const subs=(__bbh[row.bucket]||[]).slice().sort((a,b)=>(+b.value||0)-(+a.value||0));
@@ -3628,7 +3685,7 @@ function renderDash(){
         +`<span class="asub-num ${gp>=0?'up':'dn'}">${gp>=0?'+':''}${gp.toFixed(1)}%</span></div>`;
     });
     ab+=`<div class="arow">
-      <div class="ameta"><span class="an">${row.bucket}${__nasFlag(row)}</span><span class="ap">${row.currentPct.toFixed(1)}% / ${row.targetPct.toFixed(0)}% <span style="color:${dcol}">${driftTxt}</span></span></div>
+      <div class="ameta"><span class="an">${row.bucket}${__nasFlag(row)}</span><span class="ap">${row.currentPct.toFixed(1)}% / ${row.targetPct.toFixed(0)}% <span style="color:${dcol}">${driftTxt}</span>${__dtag}</span></div>
       <div class="btrack"><div class="bfill" style="width:${Math.min(100,row.currentPct)}%;background:${bcolors[i%bcolors.length]};box-shadow:0 0 8px ${bglows[i%bglows.length]}"></div>
       <div style="position:absolute;top:0;bottom:0;left:${Math.min(100,row.targetPct)}%;width:2px;background:rgba(255,255,255,.45)"></div></div>
       <div style="display:flex;justify-content:flex-end;font-size:10.5px;color:var(--t3);margin-top:3px;font-variant-numeric:tabular-nums">${fmt(row.value)} / ${fmt(tgtVal)}</div>
@@ -3683,20 +3740,38 @@ function renderDash(){
   });
   document.getElementById('dalerts').innerHTML=alertHtml||'<div class="co co-g" style="margin-bottom:8px">No major alerts ✓</div>';
   document.getElementById('dalert-count').textContent=review.alerts.length?`(${review.alerts.length})`:'';
+  // severity-count badges in the strip: HIGH→Critical · MEDIUM→Warning · INFO→Info
+  const __sevHi=review.alerts.filter(a=>a.level==='HIGH').length;
+  const __sevMd=review.alerts.filter(a=>a.level==='MEDIUM').length;
+  const __sevIn=review.alerts.filter(a=>a.level==='INFO').length;
+  let __sevHtml='';
+  if(__sevHi)__sevHtml+=`<span class="sevb sev-c">${__sevHi} Critical</span>`;
+  if(__sevMd)__sevHtml+=`<span class="sevb sev-w">${__sevMd} Warning</span>`;
+  if(__sevIn)__sevHtml+=`<span class="sevb sev-i">${__sevIn} Info</span>`;
+  if(!review.alerts.length)__sevHtml=`<span class="sevb" style="color:var(--green);background:rgba(62,207,142,.12)">Portfolio OK</span>`;
+  const __sevEl=document.getElementById('dalert-sev');if(__sevEl)__sevEl.innerHTML=__sevHtml;
   const alertsHidden=localStorage.getItem('w_hideAlerts')==='1';
   document.getElementById('dalerts').style.display=alertsHidden?'none':'';
-  document.getElementById('dalert-toggle').textContent=alertsHidden?'แสดง':'ซ่อน';
+  document.getElementById('dalert-toggle').textContent=alertsHidden?'Show':'Hide';
   // DCA This Month card — amount from DCA/FIRE sheet (not hardcoded)
   const __now=new Date(),__mi=__now.getFullYear()*12+__now.getMonth(); // monthly rotation pointer
   const dcaSrc=resolveMonthlyDca(),plan=DcaEngine.buildDcaPlan(review,dcaSrc.amount,undefined,h,__mi);
-  let dcaHtml=`<div style="font-size:13px;margin-bottom:2px">DCA: <b>${fmt(dcaSrc.amount)}</b> <span style="color:var(--t3);font-size:10px">· fixed split 75/25</span></div>`;
-  dcaHtml+=`<div style="font-size:10px;color:${dcaSrc.fallback?'var(--amber)':'var(--t3)'};margin-bottom:10px">Source: ${dcaSrc.source}</div>`;
+  // DCA Progress — actual invested this month vs target (display only)
+  const __dcaAct=cf.invest||0,__dcaTgt=dcaSrc.amount||dcat||0;
+  const __dcaPct=__dcaTgt>0?Math.min(100,Math.round(__dcaAct/__dcaTgt*100)):0;
+  const __dcaOn=__dcaTgt>0&&__dcaAct>=__dcaTgt;
+  let dcaHtml=`<div class="dca-sec">DCA Progress</div>`;
+  dcaHtml+=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px"><span class="cfv">${fmt(__dcaAct)} <span style="color:var(--t3);font-size:11px;font-weight:400">/ ${fmt(__dcaTgt)} target</span></span><span style="font-size:13px;font-weight:700;font-family:var(--fd);color:${__dcaOn?'var(--green)':'var(--amber)'}">${__dcaPct}%</span></div>`;
+  dcaHtml+=`<div class="gtrack" style="margin-bottom:6px"><div class="gfill" style="width:${__dcaPct}%${__dcaOn?'':';background:linear-gradient(90deg,var(--amber),#f7b84a)'}"></div></div>`;
+  dcaHtml+=`<div style="font-size:10px;color:var(--t3);margin-bottom:2px">Plan <b style="color:var(--t2)">${fmt(dcaSrc.amount)}</b> · fixed split 75/25 · <span style="color:${dcaSrc.fallback?'var(--amber)':'var(--t3)'}">${dcaSrc.source}</span></div>`;
+  dcaHtml+=`<div class="dca-sec" style="border-left-color:var(--green)">Buy Plan</div>`;
   if(!plan.valid)dcaHtml+=`<div class="co co-a" style="font-size:11px">${plan.error} — แก้ Bucket Target ใน Settings</div>`;
   else if(plan.zero)dcaHtml+=`<div class="co co-b" style="font-size:11px">No DCA recommendation this month (฿0)</div>`;
   else{
+    const __rots=[];
     plan.recommended.forEach(x=>{
-      dcaHtml+=`<div class="cfrow"><span class="cfl">→ ${x.bucket}${x.role?` <span style="color:var(--t3)">[${x.role}]</span>`:''}</span><span class="cfv" style="color:var(--green)">${fmt(x.amount)}</span></div>`;
-      (x.subAllocations||[]).forEach(s=>{dcaHtml+=`<div class="cfrow" style="padding-left:14px"><span class="cfl" style="color:var(--t3);font-size:11px">· ${s.name} <span style="font-size:9px">ซื้อเดือนนี้ (rotation)</span></span><span class="cfv" style="color:var(--t3);font-size:11px">${fmt(s.amount)}</span></div>`;});
+      dcaHtml+=`<div class="cfrow"><span class="cfl">${x.bucket}${x.role?` <span style="color:var(--t3)">[${x.role}]</span>`:''}</span><span class="cfv" style="color:var(--green)">${fmt(x.amount)}</span></div>`;
+      (x.subAllocations||[]).forEach(s=>__rots.push(s));
     });
     if(plan.usIndividualPaused)dcaHtml+=`<div class="co co-a" style="font-size:11px;margin-top:6px">US Individual ≥17% — พัก DCA หุ้นเดี่ยว โยกเข้า Index</div>`;
     if(plan.usIndividualRedirected)dcaHtml+=`<div class="co co-a" style="font-size:11px;margin-top:6px">US Individual โยกเข้า Index — ทุกตัวติด review/paused/drawdown/≥7%</div>`;
@@ -3704,7 +3779,11 @@ function renderDash(){
     if((plan.reviewStocks||[]).length)dcaHtml+=`<div style="font-size:10px;color:var(--red,#f06060);margin-top:4px">รอ review (ไม่ auto-buy): ${plan.reviewStocks.map(s=>s.name+' ['+s.reason+(s.ret!=null?' '+s.ret+'%':'')+']').join(', ')}</div>`;
     if((plan.pausedStocks||[]).length)dcaHtml+=`<div style="font-size:10px;color:var(--amber);margin-top:4px">พักหุ้น ≥7% ของพอร์ต: ${plan.pausedStocks.join(', ')}</div>`;
     if(plan.usIndividualReview)dcaHtml+=`<div class="co co-a" style="font-size:11px;margin-top:4px">US Individual &gt;20% — trigger review</div>`;
-    dcaHtml+=`<div style="font-size:10px;color:var(--t3);margin-top:8px">Skip: ${plan.skip.join(', ')}</div>`;
+    if(plan.skip&&plan.skip.length)dcaHtml+=`<div style="font-size:10px;color:var(--t3);margin-top:8px">Skip: ${plan.skip.join(', ')}</div>`;
+    if(__rots.length){
+      dcaHtml+=`<div class="dca-sec" style="border-left-color:var(--purple)">Rotation</div>`;
+      __rots.forEach(s=>{dcaHtml+=`<div class="cfrow"><span class="cfl">${s.name} <span style="color:var(--t3);font-size:9px">ซื้อเดือนนี้</span></span><span class="cfv" style="color:var(--green)">${fmt(s.amount)}</span></div>`;});
+    }
   }
   // --- เกลี่ยพอร์ต (sell-side lever) — completes the policy's 2nd lever with baht amounts.
   // Shows ONLY when a bucket breaches its trim line (Nasdaq ≥25 / US Indiv·Thai ≥20), not on small drift.
@@ -3720,8 +3799,7 @@ function renderDash(){
     if(amt>500)__overs.push({bk,cur:r.currentPct,toPct,amt});
   }});
   const __trMod=`<span onclick="setTrimMode('${__trimMode==='buffer'?'target':'buffer'}')" style="cursor:pointer;font-size:10px;color:var(--t3);user-select:none;white-space:nowrap" title="สลับวิธีคิดจำนวนที่ขาย">วิธี: <b style="color:var(--t1)">${__trimMode==='buffer'?'buffer':'กลับเป้า'}</b> ⇄</span>`;
-  dcaHtml+=`<div style="border-top:1px solid rgba(255,255,255,.08);margin:12px 0 8px"></div>`;
-  dcaHtml+=`<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px"><span style="font-size:11px;color:var(--t3)">เกลี่ยพอร์ต <span style="color:var(--t3)">· ขายส่วนเกิน</span></span>${__overs.length?__trMod:''}</div>`;
+  dcaHtml+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:14px 0 7px"><span class="dca-sec" style="margin:0;border-left-color:var(--amber)">Rebalance Note <span style="color:var(--t3);font-weight:400;text-transform:none;letter-spacing:0">· เกลี่ยพอร์ต</span></span>${__overs.length?__trMod:''}</div>`;
   if(!__overs.length){
     dcaHtml+=`<div class="co co-g" style="font-size:11px">✓ ทุกถังอยู่ในกรอบ — เทเงินใหม่ตามแผน ไม่ต้องขาย</div>`;
   }else{
@@ -3760,11 +3838,11 @@ function renderDash(){
     const r=a.length===1?'4px':k===0?'4px 0 0 4px':k===a.length-1?'0 4px 4px 0':'0';
     return `<div style="width:${s[0]}%;background:${s[1]};border-radius:${r};box-shadow:0 0 7px ${__segGlow[s[1]]||s[1]}"></div>`;
   }).join('');
-  const __leg=(c,label,p)=>`<span><b style="color:${c}">●</b> ${label} ${p.toFixed(1)}%</span>`;
+  const __legRow=(c,label,p,val)=>`<div style="display:flex;align-items:center;gap:9px;font-size:12px;padding:4px 0"><span style="width:9px;height:9px;border-radius:50%;background:${c};flex-shrink:0;box-shadow:0 0 6px ${__segGlow[c]||c}"></span><span style="color:var(--t1)">${label}</span><span style="margin-left:auto;color:var(--t2);font-variant-numeric:tabular-nums">${p.toFixed(1)}%</span><span style="width:104px;text-align:right;color:var(--t1);font-weight:500;font-variant-numeric:tabular-nums">${fmt(val)}</span></div>`;
   document.getElementById('dsnap').innerHTML=`
     <div class="cfrow"><span class="cfl">Net Worth</span><span class="cfv">${fmt(V)}</span></div>
-    <div style="display:flex;height:8px;border-radius:4px;margin:9px 0 6px;background:var(--b1)">${__segBar}</div>
-    <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:10px;color:var(--t3);margin-bottom:8px">${__leg('var(--blue)','เงินลงทุน',__pInv)}${__leg('var(--purple)','PVD',__pPvd)}${__leg('var(--amber)','เงินสด',__pCash)}${__pOther>0.5?__leg('var(--t3)','อื่น ๆ',__pOther):''}</div>
+    <div style="display:flex;height:8px;border-radius:4px;margin:9px 0 8px;background:var(--b1)">${__segBar}</div>
+    <div style="margin-bottom:6px">${__legRow('var(--blue)','เงินลงทุน',__pInv,__inv)}${__legRow('var(--purple)','PVD',__pPvd,__pvd)}${__legRow('var(--amber)','เงินสด',__pCash,__cash)}${__pOther>0.5?__legRow('var(--t3)','อื่น ๆ',__pOther,__other):''}</div>
     <div class="cfrow"><span class="cfl">เงินลงทุน <span style="color:var(--t3);font-size:10px">ex-cash, ex-PVD</span></span><span class="cfv">${fmt(review.rebalanceBase)}</span></div>
     <div class="cfrow"><span class="cfl">Gain/Loss (เงินลงทุน) <span id="invfx-c" onclick="toggleInvFx()" style="cursor:pointer;color:var(--t3);font-size:10px;user-select:none" title="แยกค่าเงินหุ้น US">▾</span></span><span class="cfv ${invGain>=0?'up':'dn'}">${invGain>=0?'+':''}${fmt(invGain)} (${fmtP(invGp)})</span></div>
     <div id="invfx-d" style="display:none">
@@ -3774,24 +3852,34 @@ function renderDash(){
     <div style="border-top:1px solid rgba(255,255,255,.06);margin:9px 0 7px"></div>
     <div class="cfrow"><span class="cfl">สภาพคล่อง <span style="color:var(--t3);font-size:10px">ใช้ได้เลย</span></span><span class="cfv">${fmt(__liquid)} <span style="color:var(--t3);font-size:10px">(${__pLiquid.toFixed(1)}%)</span></span></div>
     <div class="cfrow"><span class="cfl">ล็อกใน PVD <span style="color:var(--t3);font-size:10px">จนเกษียณ</span></span><span class="cfv">${fmt(__pvd)} <span style="color:var(--t3);font-size:10px">(${__pLocked.toFixed(1)}%)</span></span></div>
-    <div class="cfrow"><span class="cfl">Emergency <span style="color:var(--t3);font-size:10px">${emg.months} เดือน = ${fmt(emg.target)}</span></span><span class="cfv ${emg.ok?'up':'dn'}">${fmt(emg.cash)} · ${emg.coverage.toFixed(1)} ด. ${emg.ok?'✓':'⚠'}</span></div>`;
+    <div class="cfrow"><span class="cfl">Emergency <span style="color:var(--t3);font-size:10px">${emg.months} เดือน = ${fmt(emg.target)}</span></span><span class="cfv ${emg.ok?'up':'warn'}">${fmt(emg.cash)} · ${emg.coverage.toFixed(1)} ด. ${emg.ok?'✓':'⚠'}</span></div>`;
   // (removed) "Policy & DCA status · 70/15/15" — superseded by the live นโยบาย Rebalance block above
-  // US-situs card
+  // US-situs card — distance-to-threshold bar (warn = USD 50k, cap = USD 60k)
   const us=getUSSitusExposure();
-  const usStat={CAP:{t:'CAP — เกิน USD 60k',c:'co-a'},WARN:{t:'WARN — ใกล้ USD 60k',c:'co-a'},OK:{t:'OK',c:'co-g'}}[EstateTaxEngine.estateTaxStatus(us.usd)];
+  const __warnU=EstateTaxEngine.WARN_USD,__capU=EstateTaxEngine.CAP_USD;
+  const __usSt=EstateTaxEngine.estateTaxStatus(us.usd); // OK / WARN / CAP
+  const __usPct=__warnU>0?Math.min(100,us.usd/__warnU*100):0; // % of the 50k warn line
+  const __usBarCol=__usSt==='CAP'?'var(--red)':__usSt==='WARN'?'var(--amber)':__usPct>=70?'var(--amber)':'var(--green)';
+  const __usBarGlow=__usSt==='CAP'?'rgba(240,96,96,.5)':__usBarCol==='var(--amber)'?'rgba(245,166,35,.5)':'rgba(62,207,142,.5)';
+  const __usStat={CAP:{t:'เกิน USD 60k — เสี่ยงภาษีมรดก',c:'co-a',cls:'chip-bad'},WARN:{t:'ใกล้เพดาน USD 50k',c:'co-a',cls:'chip-warn'},OK:{t:'OK',c:'co-g',cls:'chip-ok'}}[__usSt];
   document.getElementById('dussitus').innerHTML=`
     <div class="cfrow"><span class="cfl">Exposure</span><span class="cfv">${fmt(us.thb)} <span style="color:var(--t3);font-size:10px">~USD ${Math.round(us.usd).toLocaleString()}</span></span></div>
-    <div class="cfrow"><span class="cfl">Warn USD 50,000</span><span class="cfv mu">${fmt(EstateTaxEngine.WARN_USD*us.fx)}</span></div>
-    <div class="cfrow"><span class="cfl">Cap USD 60,000</span><span class="cfv mu">${fmt(EstateTaxEngine.CAP_USD*us.fx)}</span></div>
-    <div class="co ${usStat.c}" style="margin-top:10px;font-size:12px">Status: ${usStat.t} <span style="color:var(--t3)">@ FX ${us.fx}</span></div>`;
+    <div class="btrack" style="height:7px;margin:8px 0 5px"><div class="bfill" style="width:${__usPct}%;background:${__usBarCol};box-shadow:0 0 8px ${__usBarGlow}"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:10px"><span>${__usPct.toFixed(0)}% ของเพดาน Warn</span><span>Warn ${fmt(__warnU*us.fx)} · Cap ${fmt(__capU*us.fx)}</span></div>
+    <div class="co ${__usStat.c}" style="font-size:12px">Status: ${__usStat.t} <span style="color:var(--t3)">@ FX ${us.fx}</span></div>`;
   // Drawdown / DCA-boost tracker (replaces the old Goal-progress card on the dashboard)
   renderDrawdown();
   if(chartA)chartA.destroy();
+  // view toggle: Net Worth (all) vs Investable (ex-PVD, ex-cash — only what we can actively rebalance)
+  const __aview=localStorage.getItem('w_allocView')==='investable'?'investable':'networth';
+  const __vt=document.getElementById('alloc-view');
+  if(__vt)__vt.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===__aview));
+  const __ah=__aview==='investable'?h.filter(x=>x.type!=='pvd'&&x.type!=='cash'):h;
   const lb=[],da=[],co=['#4f9cf9','#a78bfa','#f5a623','#3ecf8e','#f97b5a','#f06060','#38bdf8','#34d399','#fbbf24','#c084fc','#fb7185','#22d3ee','#a3e635','#f472b6'];
-  h.forEach(x=>{if(x.value>0){lb.push(x.name);da.push(x.value);}});
+  __ah.forEach(x=>{if(x.value>0){lb.push(x.name);da.push(x.value);}});
   const cAt=i=>co[i%co.length];
   const allocTot=da.reduce((a,b)=>a+b,0);
-  const allocCenter={id:'allocCenter',afterDraw(c){const a=c.chartArea;if(!a)return;const rs=getComputedStyle(document.documentElement),fd=(rs.getPropertyValue('--fd')||'sans-serif').trim();const cx=(a.left+a.right)/2,cy=(a.top+a.bottom)/2;const num=V>=1e6?(V/1e6).toFixed(2)+'M':V>=1e3?(V/1e3).toFixed(0)+'K':''+Math.round(V);const x=c.ctx;x.save();x.textBaseline='middle';x.textAlign='left';
+  const allocCenter={id:'allocCenter',afterDraw(c){const a=c.chartArea;if(!a)return;const rs=getComputedStyle(document.documentElement),fd=(rs.getPropertyValue('--fd')||'sans-serif').trim();const cx=(a.left+a.right)/2,cy=(a.top+a.bottom)/2;const num=allocTot>=1e6?(allocTot/1e6).toFixed(2)+'M':allocTot>=1e3?(allocTot/1e3).toFixed(0)+'K':''+Math.round(allocTot);const x=c.ctx;x.save();x.textBaseline='middle';x.textAlign='left';
     // Draw "฿" and the number in SEPARATE fillText calls and centre the pair manually.
     // The number uses Sora (--fd, Latin-only); "฿" has no Sora glyph so it falls back.
     // Mixing both in one fillText makes Safari mis-measure the run → "฿" overlaps the
@@ -3803,7 +3891,7 @@ function renderDash(){
     x.fillStyle=(rs.getPropertyValue('--t1')||'#f2f0f8').trim();
     x.font=bahtFont;x.fillText('฿',startX,cy-8);
     x.font=numFont;x.fillText(num,startX+wB+gap,cy-8);
-    x.textAlign='center';x.fillStyle=(rs.getPropertyValue('--t3')||'#5a5868').trim();x.font='400 11px '+fd;x.fillText('มูลค่ารวม',cx,cy+15);x.restore();}};
+    x.textAlign='center';x.fillStyle=(rs.getPropertyValue('--t3')||'#5a5868').trim();x.font='400 11px '+fd;x.fillText(__aview==='investable'?'มูลค่าลงทุน':'มูลค่ารวม',cx,cy+15);x.restore();}};
   chartA=new Chart(document.getElementById('cAlloc'),{type:'doughnut',data:{labels:lb,datasets:[{data:da,backgroundColor:da.map((_,i)=>cAt(i)),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{displayColors:false,callbacks:{label:c=>c.label+': '+(allocTot?Math.round(c.parsed/allocTot*100):0)+'% · '+fmt(c.parsed)}}}},plugins:[allocCenter]});
   const lgEl=document.getElementById('allocLegend');
   if(lgEl){let lh='';lb.forEach((nm,i)=>{const pct=allocTot?Math.round(da[i]/allocTot*100):0;lh+='<div class="lg-row"><span class="lg-dot" style="background:'+cAt(i)+'"></span><span class="lg-name">'+nm+'</span><span class="lg-pct">'+pct+'%</span></div>';});lgEl.innerHTML=lh;}
@@ -3816,25 +3904,33 @@ let chartNW=null;
 function renderNWTrend(net,invested){
   const E=window.NWHistoryEngine;
   const el=document.getElementById('nw-trend'); if(!el||!E)return;
-  const bigEl=document.getElementById('nw-big'),chgEl=document.getElementById('nw-change');
+  const bigEl=document.getElementById('nw-big');
   if(bigEl)bigEl.textContent=fmt(net);
   const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'}); // Thai calendar day (UTC+7), not UTC — so the day rolls at เที่ยงคืนไทย, not 07:00
   const snap={date:today,net:net,invested:invested};
   let hist=DB.get('nwHistory')||[];
   // write at most once/day and only when value actually moved -> no sync churn on idle re-renders
   if(E.needsUpdate(hist,snap)){hist=E.recordSnapshot(hist,snap);DB.set('nwHistory',hist);}
-  const sub=document.getElementById('nw-sub');
+  const sub=document.getElementById('nw-sub'),chips=document.getElementById('nw-chips');
   if(hist.length<2){
     if(chartNW){chartNW.destroy();chartNW=null;}
     el.innerHTML='<div class="empty">กำลังเก็บข้อมูล net worth — กลับมาดูแนวโน้มพรุ่งนี้ (เก็บวันละ 1 จุด)</div>';
     if(sub)sub.textContent='';
-    if(chgEl)chgEl.textContent='';
+    if(chips)chips.innerHTML='';
     return;
   }
-  const s=E.summarize(hist),up=s.changeAbs>=0;
+  const s=E.summarize(hist);
   if(sub)sub.innerHTML='· '+s.periodDays+' วันล่าสุด · '+s.count+' จุด';
-  if(chgEl)chgEl.innerHTML='<span style="color:'+(up?'var(--green)':'var(--red)')+'">'+(up?'▲':'▼')+' '+fmt(Math.abs(s.changeAbs))+' ('+fmtP(s.changePct)+')</span> <span style="color:var(--t3)">ตั้งแต่เริ่มบันทึก</span>';
-  el.innerHTML='<div style="position:relative;height:200px"><canvas id="cNW" role="img" aria-label="Net worth trend line chart"></canvas></div>';
+  // summary chips — Current / ATH / From Start (display only)
+  if(chips){
+    const __chip=(k,v,c)=>`<div class="nw-chip"><span class="k">${k}</span><span class="v"${c?` style="color:${c}"`:''}>${v}</span></div>`;
+    const __ath=Math.max(...hist.map(e=>+e.net||0)),__st=+hist[0].net||0,__fa=net-__st,__fp=__st>0?__fa/__st*100:0;
+    chips.innerHTML=__chip('From Start',(__fa>=0?'+':'')+fmt(__fa)+' ('+fmtP(__fp)+')',__fa>=0?'var(--green)':'var(--red)')+__chip('ATH',fmt(__ath))+__chip('Current',fmt(net),'var(--blue)');
+  }
+  // x-axis is hidden on the chart for a clean line, so surface the date range as corner labels
+  const __dlab=d=>{try{return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short'});}catch(e){return d;}};
+  el.innerHTML='<div style="position:relative;height:200px"><canvas id="cNW" role="img" aria-label="Net worth trend line chart"></canvas></div>'
+    +`<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t3);margin-top:3px;padding:0 4px;font-variant-numeric:tabular-nums"><span>${__dlab(hist[0].date)}</span><span>${__dlab(hist[hist.length-1].date)}</span></div>`;
   if(chartNW){chartNW.destroy();chartNW=null;}
   // derived geometry for the decorations below
   const __d=hist.map(e=>e.net),__last=__d.length-1;
@@ -3866,7 +3962,7 @@ function renderNWTrend(net,invested){
 const ALERT_CLASS={HIGH:'co-a',MEDIUM:'co-a',WATCH:'co-a',INFO:'co-b'};
 function renderHoldings(){
   const h=DB.get('holdings'),V=tv();
-  let rows='',alerts='';
+  let rows='',alerts='',invVal=0,invCost=0;  // investable totals (ex-PVD, ex-cash) for the summary strip
   // risk alerts ย้ายไปอยู่ Dashboard อย่างเดียว (กันซ้ำ) — holdings โชว์แค่เตือนรายตัว gp<-15
   h.forEach(x=>{
     const isUS=x.type==='us',fx=fxRate();
@@ -3875,8 +3971,9 @@ function renderHoldings(){
     const gain=valTHB-x.invested,gp=x.invested>0?(gain/x.invested)*100:0;
     const gpAlert=isUS?p.stockGainPct:gp;          // review-thesis alert tracks the STOCK move, not FX noise
     const al=V>0?(valTHB/V*100):0;
-    const tc={fund:'tf',stock:'ts',pvd:'tp',cash:'tc',us:'tf'}[x.type]||'tc';
-    const tl={fund:'Fund',stock:'หุ้นไทย',pvd:'PVD',cash:'Cash',us:'US'}[x.type]||x.type;
+    if(x.type!=='pvd'&&x.type!=='cash'){invVal+=valTHB;invCost+=(+x.invested||0);}
+    const tc={fund:'tp',stock:'tc',pvd:'ts',cash:'tn',us:'tf'}[x.type]||'tn';  // Fund=amber, TH Stock=green, PVD=purple, Cash=grey, US=blue — all distinct
+    const tl={fund:'Fund',stock:'TH Stock',pvd:'PVD',cash:'Cash',us:'US'}[x.type]||x.type;
     // kill-conditions reference (display-only): traffic-light from brief recheck, else 📋
     const _kc=(window.KillConditions&&KillConditions.get(x.ticker||x.name))||null;
     let killBadge='',killPanel='';
@@ -3919,23 +4016,48 @@ function renderHoldings(){
     const bucket=x.bucket||Allocation.inferBucket(x);
     rows+=`<tr draggable="true" data-id="${x.id}" ondragstart="holdDragStart(event,${x.id})" ondragover="holdDragOver(event)" ondrop="holdDrop(event,${x.id})" ondragend="holdDragEnd(event)" ondragleave="holdDragLeave(event)">
       <td style="cursor:grab;color:var(--t3);text-align:center;font-size:14px;user-select:none" title="ลากเพื่อจัดลำดับ">≡</td>
-      <td style="font-weight:500">${x.name}${killBadge}${x.isUSSitus?' <span style="font-size:9px;color:var(--coral)" title="US-situs asset">◆US</span>':''}${killPanel}</td>
+      <td style="font-weight:600;font-size:13.5px">${x.name}${killBadge}${x.isUSSitus?' <span style="font-size:9px;color:var(--coral)" title="US-situs asset">◆US</span>':''}${killPanel}</td>
       <td><span class="tag ${tc}">${tl}</span></td>
       <td style="color:var(--t2)">${x.theme||'-'}</td>
       <td>${fmt(x.invested)}${usdSubInv}</td>${priceCell}<td>${fmt(valTHB)}${usdSubVal}</td>
       ${gainCell}
       <td>${al.toFixed(1)}%</td><td style="color:var(--t2);font-size:10px">${bucket}</td>
       <td style="color:var(--t2);font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${gpAlert<-10?'⚠ ':''}${x.thesis||'-'}</td>
-      <td style="white-space:nowrap">
-        <button class="btn" style="padding:3px 7px;font-size:10px" onclick="openUpdate(${x.id})">Update</button>
-        <button class="btn" style="padding:3px 7px;font-size:10px;margin-left:3px" onclick="openBuy(${x.id})">Buy</button>
-        <button class="btn" style="padding:3px 7px;font-size:10px;margin-left:3px" onclick="editH(${x.id})">Edit</button>
-        <button class="btn btn-d" style="padding:3px 7px;font-size:10px;margin-left:3px" onclick="delH(${x.id})">Del</button>
+      <td style="white-space:nowrap;text-align:right">
+        <button class="btn btn-p" style="padding:3px 9px;font-size:10px" onclick="openBuy(${x.id})">Buy</button>
+        <button class="btn hkebab" style="padding:3px 8px;font-size:13px;line-height:1;margin-left:4px" onclick="openHoldMenu(event,${x.id})" title="เพิ่มเติม" aria-label="more actions">⋯</button>
       </td></tr>`;
   });
   document.getElementById('halerts').innerHTML=alerts;
   document.getElementById('htbody').innerHTML=rows||`<tr><td colspan="12"><div class="empty">ยังไม่มี holdings</div></td></tr>`;
+  // summary strip — quick context before the dense table (investable = ex-PVD, ex-cash)
+  const hs=document.getElementById('hsummary');
+  if(hs){
+    const invGain=invVal-invCost,invGp=invCost>0?invGain/invCost*100:0;
+    const usx=(typeof getUSSitusExposure==='function')?getUSSitusExposure():{usd:0};
+    const chip=(k,v,c)=>`<div class="nw-chip"><span class="k">${k}</span><span class="v"${c?` style="color:${c}"`:''}>${v}</span></div>`;
+    hs.innerHTML=chip('Investable Assets',fmt(invVal),'var(--blue)')
+      +chip('Gain / Loss',(invGain>=0?'+':'')+fmt(invGain)+' ('+fmtP(invGp)+')',invGain>=0?'var(--green)':'var(--red)')
+      +chip('US-situs',`~$${Math.round(usx.usd).toLocaleString()}`)
+      +chip('Holdings',`${h.length} assets`);
+  }
 }
+// Holdings row overflow menu — floating (table cells clip, so position fixed against the trigger)
+function openHoldMenu(ev,id){
+  ev.stopPropagation();
+  const m=document.getElementById('hold-menu');if(!m)return;
+  m.innerHTML=`<button onclick="closeHoldMenu();openUpdate(${id})">↻ Update price</button>`
+    +`<button onclick="closeHoldMenu();editH(${id})">✎ Edit</button>`
+    +`<div class="hmsep"></div>`
+    +`<button class="danger" onclick="closeHoldMenu();delH(${id})">🗑 Delete</button>`;
+  m.classList.add('open');
+  const r=ev.currentTarget.getBoundingClientRect(),mw=m.offsetWidth||156,mh=m.offsetHeight||130;
+  let left=r.right-mw,top=r.bottom+4;
+  if(top+mh>window.innerHeight)top=Math.max(6,r.top-mh-4);
+  if(left<6)left=6;
+  m.style.left=left+'px';m.style.top=top+'px';
+}
+function closeHoldMenu(){const m=document.getElementById('hold-menu');if(m)m.classList.remove('open');}
 
 // tap-to-expand the US stock/FX gain breakdown (mobile-friendly: no hover needed)
 function toggleGainDetail(id){
@@ -4432,19 +4554,25 @@ function renderDashDecisions(){
   const all=DB.get('majorDecisions')||[];
   const s=MDE().summarizeDecisions(all,new Date().toISOString().slice(0,10));
   el.innerHTML=`
-    <div class="cfrow"><span class="cfl">Active</span><span class="cfv">${s.active}</span></div>
-    <div class="cfrow"><span class="cfl">ถึงรอบ review</span><span class="cfv ${s.due>0?'dn':'up'}">${s.due}${s.due>0?' ⏰':''}</span></div>
-    <div class="cfrow"><span class="cfl">ล่าสุด</span><span class="cfv" style="font-weight:500">${s.latestTitle?s.latestTitle:'<span style="color:var(--t3)">—</span>'}</span></div>`;
+    <div class="cfrow"><span class="cfl">Active</span><span class="rpol-s ${s.active>0?'chip-ok':'chip-mut'}">${s.active}</span></div>
+    <div class="cfrow"><span class="cfl">Pending review <span style="color:var(--t3);font-size:10px">ถึงรอบทบทวน</span></span><span class="rpol-s ${s.due>0?'chip-warn':'chip-mut'}">${s.due}${s.due>0?' ⏰':''}</span></div>
+    <div class="cfrow"><span class="cfl">Latest</span><span class="cfv" style="font-weight:500">${s.latestTitle?s.latestTitle:'<span style="color:var(--t3)">—</span>'}</span></div>
+    <button class="btn" style="width:100%;margin-top:12px;font-size:11px" onclick="gotoDecisions()">View Decision Log →</button>`;
 }
+// jump to the Major Decisions page from the dashboard card (nav() needs the matching sidebar item)
+function gotoDecisions(){const el=document.querySelector(".ni[onclick*='decisions']");if(el)nav('decisions',el);}
 
 // GOALS
 let chartP=null;
 function renderGoals(){
   const g=DB.get('goals');let html='';
+  // RPG framing (cosmetic): the largest target = "Main Quest", the rest are "Quests"
+  const __mainId=g.length?g.reduce((m,x)=>(+x.target||0)>(+m.target||0)?x:m).id:null;
   g.forEach(x=>{
     const cur=getGoalCurrentValue(x),p=GoalsEngine.goalProgressPct(cur,x.target);
     const note=x.cat==='wealth'?` <span style="color:var(--t3)">(${GoalsEngine.goalInclusionNote(x)})</span>`:'';
-    html+=`<div class="gi"><div class="gh"><span class="gn">${x.name}</span><span style="display:flex;gap:8px;align-items:center"><span class="gp">${p}% — ${fmt(cur)}/${fmt(x.target)}</span><button class="btn btn-d" style="padding:2px 8px;font-size:10px" onclick="delG(${x.id})">ลบ</button></span></div><div class="gtrack"><div class="gfill" style="width:${p}%"></div></div><div style="font-size:10px;color:var(--t3);margin-top:3px">เป้าปี ${x.year} — เหลือ ${fmt(Math.max(x.target-cur,0))}${note}</div></div>`;
+    const q=x.id===__mainId?'<span class="qbadge qmain">◆ Main Quest</span>':'<span class="qbadge">Quest</span>';
+    html+=`<div class="gi"><div class="gh"><span class="gn">${q}${x.name}</span><span style="display:flex;gap:8px;align-items:center"><span class="gp">${p}% — ${fmt(cur)}/${fmt(x.target)}</span><button class="btn btn-d" style="padding:2px 8px;font-size:10px" onclick="delG(${x.id})">ลบ</button></span></div><div class="gtrack"><div class="gfill" style="width:${p}%"></div></div><div style="font-size:10px;color:var(--t3);margin-top:3px">เป้าปี ${x.year} — เหลือ ${fmt(Math.max(x.target-cur,0))}${note}</div></div>`;
   });
   document.getElementById('glist').innerHTML=html||'<div class="empty">ยังไม่มีเป้าหมาย</div>';
   buildProjChart(parseInt(document.getElementById('pdca').value)||15000);
@@ -4507,6 +4635,12 @@ function renderDrawdown(){
       <span class="ddamt">${amtTxt}</span>
       <span class="ddmark">${isActive?'◀ อยู่ตรงนี้':reached?'✓':''}</span></div>`;
   }).join('');
+  // calm status chip beside the big number — green normal · amber when a boost tier is live · red on special-cash signal
+  let __ddChip='';
+  if(c.price>0){
+    const __c=!tier?{t:'ปกติ',k:'chip-ok'}:tier.special?{t:'ใช้เงินสดพิเศษ',k:'chip-bad'}:(+tier.boostPct||0)>0?{t:'เพิ่ม DCA',k:'chip-warn'}:{t:'ปกติ',k:'chip-ok'};
+    __ddChip=`<span class="rpol-s ${__c.k}">${__c.t}</span>`;
+  }
   const peakField=c.peakAuto
     ? `<input class="ddinp" placeholder="${c.peak>0?Math.round(c.peak).toLocaleString()+' (auto)':'auto'}" onchange="saveDrawField('peak',this.value)">`
     : `<input class="ddinp" value="${Math.round(c.peak)}" onchange="saveDrawField('peak',this.value)"> <button class="btn" style="padding:2px 8px;font-size:10px" onclick="resetDrawPeak()">auto</button>`;
@@ -4518,6 +4652,7 @@ function renderDrawdown(){
     </div>
     <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:2px 0 8px">
       <div style="font-size:30px;font-weight:700;color:${ddCol}">${ddShown<=0?ddShown.toFixed(1):'0.0'}%</div>
+      ${__ddChip}
       <div style="font-size:11px;color:var(--t3)">ราคา ${c.price>0?c.price.toLocaleString('en-US',{maximumFractionDigits:2}):'—'} · พีค ${c.peak>0?Math.round(c.peak).toLocaleString():'—'}${stale}</div>
     </div>
     <div style="font-size:12px;margin-bottom:10px">${status}</div>
@@ -5087,6 +5222,13 @@ function renderProfile(){
   const av=DB.get('avatar'),nm=(DB.get('settings')||{}).name||'';
   el.innerHTML=av?`<img src="${av}" alt="avatar">`:'<span class="pf-ph">+</span>';
   if(ne)ne.textContent=nm||'ตั้งชื่อใน Settings';
+  // RPG character identity (cosmetic). Level = owner age, self-updating from birthdate; class/title static.
+  const now=new Date(),bd=new Date(1990,10,23); // 23 Nov 1990 (month 0-indexed)
+  let lvl=now.getFullYear()-bd.getFullYear();
+  if(now.getMonth()<bd.getMonth()||(now.getMonth()===bd.getMonth()&&now.getDate()<bd.getDate()))lvl--;
+  const cls=document.getElementById('pf-class'),lv=document.getElementById('pf-lvl');
+  if(cls)cls.textContent='Arcane Wealth Engineer';
+  if(lv)lv.innerHTML=`<span class="pf-badge">Lv. ${lvl}</span> Climber Strategist`;
 }
 function pickAvatar(){const f=document.getElementById('pf-file');if(f)f.click();}
 function uploadAvatar(input){
@@ -5111,6 +5253,10 @@ function uploadAvatar(input){
 
 function initApp(){
   migrateHoldings();migrateGoals();
+  // close the holdings overflow menu on outside-click / scroll / resize (it's a fixed-position floater)
+  document.addEventListener('click',e=>{const m=document.getElementById('hold-menu');if(m&&m.classList.contains('open')&&!m.contains(e.target))closeHoldMenu();});
+  window.addEventListener('scroll',closeHoldMenu,true);
+  window.addEventListener('resize',closeHoldMenu);
   renderProfile();
   renderDash();
   checkServer(false);
