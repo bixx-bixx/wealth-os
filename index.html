@@ -290,6 +290,9 @@ textarea{resize:vertical;min-height:72px}
   .mv{font-size:19px}
   .g2,.fgrid{grid-template-columns:1fr}
   .card{padding:16px}
+  /* rebalance rows: bucket name + % / drift collide on a narrow flex row -> stack them */
+  .ameta{flex-direction:column;align-items:flex-start;gap:1px}
+  .ameta .ap{font-size:11.5px}
   .modal{padding:18px;border-radius:18px}
   .brow{flex-wrap:wrap}
   /* per-asset breakdown: shrink columns + drop the USD column so the grid fits a narrow card */
