@@ -3666,10 +3666,12 @@ function toggleAssets(){
 // One DCA cycle = the 20th → the 19th of next month (the owner DCAs ~20th).
 // Anchors quest reset + rotation pointer + progress month to the same cycle.
 function dcaCycle(){
-  const d=new Date(),y=d.getFullYear(),m=d.getMonth();
-  const cm=d.getDate()>=20?m:m-1;            // before the 20th → previous month's cycle
-  const dt=new Date(y,cm,1),ky=dt.getFullYear(),kk=dt.getMonth();
-  return {key:ky+'-'+String(kk+1).padStart(2,'0'),mi:ky*12+kk,
+  // today in Thai time (roll at เที่ยงคืนไทย, not the device tz) — payday is the 25th
+  const p=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'}).split('-'); // YYYY-MM-DD
+  let y=+p[0],m=+p[1]-1,day=+p[2];           // m = 0-indexed month
+  if(day<25){m--;if(m<0){m=11;y--;}}         // before the 25th → previous month's cycle
+  const dt=new Date(y,m,1);
+  return {key:y+'-'+String(m+1).padStart(2,'0'),mi:y*12+m,
           label:dt.toLocaleDateString('th-TH',{year:'numeric',month:'long'})};
 }
 // render-time context so toggleDcaQuest can judge completion without re-running the engine
