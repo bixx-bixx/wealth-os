@@ -690,6 +690,8 @@ textarea{resize:vertical;min-height:72px}
     <div class="ff"><label>เดือน/ปี</label><input type="month" id="cfmon"></div>
     <div class="ff"><label>รายได้ (บาท)</label><input type="number" id="cfin" placeholder="58000"></div>
     <div class="ff"><label>ส่งแม่/ครอบครัว</label><input type="number" id="cffam" placeholder="15000"></div>
+    <div class="ff"><label>ค่ากินอยู่</label><input type="number" id="cffood" placeholder="12000"></div>
+    <div class="ff"><label>บัตรเครดิต</label><input type="number" id="cfcard" placeholder="8000"></div>
     <div class="ff"><label>ลงทุน DCA</label><input type="number" id="cfinv" placeholder="15000"></div>
     <div class="ff"><label>เที่ยว / Climbing</label><input type="number" id="cftv" placeholder="5000"></div>
     <div class="ff"><label>ประกัน</label><input type="number" id="cfins" placeholder="2500"></div>
@@ -1594,7 +1596,7 @@ if (typeof window !== 'undefined') window.GoalsEngine = __GoalsEngine;          
 function cashflowMetrics(cf, fallbackIncome) {
   cf = cf || {};
   const income = cf.income || fallbackIncome || 0;
-  const spend = (cf.family || 0) + (cf.invest || 0) + (cf.travel || 0) + (cf.insurance || 0) + (cf.other || 0);
+  const spend = (cf.family || 0) + (cf.food || 0) + (cf.card || 0) + (cf.invest || 0) + (cf.travel || 0) + (cf.insurance || 0) + (cf.other || 0);
   const surplus = income - spend;
   const investmentRate = income > 0 ? (cf.invest || 0) / income * 100 : 0;
   const cashSurplusRate = income > 0 ? surplus / income * 100 : 0;
@@ -1892,10 +1894,10 @@ if (typeof window !== 'undefined') window.DemoPortfolio = __DemoPortfolio;      
       "recheckText": null
     },
     "BRK.B": {
-      "asOf": "2026-06-05",
+      "asOf": "2026-06-23",
       "recheckAsOf": null,
       "indicator": null,
-      "killText": "- **PacifiCorp wildfire (หรือคดีไฟป่าใหม่) ตัดสินเป็นเงินก้อนใหญ่เกินสำรองมาก** — claim ~$50B ถ้าแพ้ใหญ่ + คูณตามกฎหมาย = กระทบ book value จริง (จับตา appeal + คำพิพากษาใหม่)\n- **operating earnings (ตัดกำไรหุ้น) หดต่อเนื่องหลายไตรมาสจากหลาย segment พร้อมกัน** — ถ้าทั้งประกัน + BNSF + BHE + manufacturing แผ่วพร้อมกัน = เศรษฐกิจจริงที่ Berkshire พึ่งกำลังอ่อน ไม่ใช่แค่รอบ\n- **Abel deploy เงินสดก้อนใหญ่แล้วผลตอบแทนแย่ (ซื้อแพง/ดีลพัง)** — เงินสด $391B เป็นทั้งโอกาสและกับดัก ถ้า capital allocation หลัง Buffett เริ่มพลาด = เหตุผลหลักของการถือ (ความเก่งจัดสรรทุน) หายไป",
+      "killText": "- **Operating earnings (ไม่ใช่ GAAP) หดตัว YoY ติดกัน 3-4 ไตรมาส** ในหลายกลุ่มพร้อมกัน (โดยเฉพาะ insurance underwriting + BNSF + manufacturing พร้อมกัน) = สัญญาณว่าเครื่องจักรหลักเสื่อม ไม่ใช่แค่ noise ของพอร์ตลงทุน\n- **Float เริ่มหดตัวต่อเนื่อง หรือ underwriting ขาดทุนเรื้อรัง** (เก็บเบี้ยน้อยกว่าจ่ายเคลมหลายไตรมาส) = แต้มต่อหลัก \"เงินทุนต้นทุนติดลบ\" หายไป\n- **PacifiCorp wildfire บานเกิน accrual อย่างมีนัย** (เช่น คำตัดสิน appeal เสียหายหนัก หรือ accrual กระโดดจาก $2.85B ไปหลักหลายหมื่นล้าน) จนกระทบงบ BHE — ติดตามผล oral argument (4 ก.พ. 2026) และ trial ปี 2026-2028 (cutoff FY2025)\n- **Capital allocation เพี้ยนหลัง Buffett:** ถ้า Abel เริ่มจ่ายปันผลใหญ่/ซื้อกิจการแพงเกินวินัย/ก่อหนี้ผิดสไตล์ = thesis เรื่อง \"ผู้จัดสรรทุนระดับโลก\" สั่นคลอน\n\n---",
       "recheckText": null
     },
     "CEG": {
@@ -1917,6 +1919,20 @@ if (typeof window !== 'undefined') window.DemoPortfolio = __DemoPortfolio;      
       "recheckAsOf": null,
       "indicator": null,
       "killText": "- **renewal rate หลุดลงต่อเนื่อง (จาก 92%) หรือ membership fee income หยุดโต** — ค่าสมาชิกคือกำไรจริง ถ้า renewal ลง = value proposition เริ่มเสื่อม/การแข่งขันกดดัน = thesis หลักสั่น\n- **comparable sales (ex-gas/FX) ชะลอเป็นเลขหลักเดียวต่ำๆ หรือติดลบต่อเนื่อง** — comps คือตัววัดว่าลูกค้ายังมาบ่อย/ใช้จ่ายเพิ่มไหม ถ้าแผ่วโดยไม่ใช่เหตุชั่วคราว = traffic engine เริ่มหมดแรง\n- **gross margin หดแรงต่อเนื่อง (จากการแข่งราคา/ต้นทุน) จน operating income โตช้ากว่ายอดขายหลายไตรมาส** — โมเดลพึ่ง margin บางแต่ปริมาณมหาศาล ถ้า margin ถูกบีบจน operating leverage หาย = เครื่องยนต์เริ่มฝืด",
+      "recheckText": null
+    },
+    "CVX": {
+      "asOf": "2026-06-23",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **ราคาน้ำมันลงยาวจนต้องลด/หยุด buyback หรือกู้มาจ่ายปันผล** — สัญญาณว่า cash-return story (เหตุผลหลักที่ถือ) เริ่มไม่ยั่งยืน ดู FCF เทียบกับเงินที่คืนผู้ถือหุ้นแต่ละไตรมาส\n- **คดี Louisiana/climate พลิกเป็นลบหนัก** — เช่น Plaquemines verdict $744.6M ถูกยืนหลังอุทธรณ์ หรือคดี climate คดีแรกถึง trial แล้วแพ้ จนต้องตั้งสำรองก้อนใหญ่กระทบงบ (ติดตามผล SCOTUS + คดี California/Hawaii)\n- **Hess/Guyana production สะดุด หรือ debottlenecking ที่ TCO ล่าช้า** — เพราะ growth 7-10% พึ่งสองแหล่งนี้เป็นหลัก ถ้า production growth หลุดเป้าหลายไตรมาส = thesis เรื่องการเติบโตหายไป เหลือแต่ commodity play\n- **Net debt ratio ไต่เกิน ~25% โดยราคาน้ำมันยังไม่ฟื้น** — งบดุลเริ่มเสี่ยง ลด optionality ในการช้อนดีล/ทนวัฏจักร\n\n---",
+      "recheckText": null
+    },
+    "DHR": {
+      "asOf": "2026-06-22",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **ออเดอร์เครื่อง bioprocessing กลับมาติดลบ YoY อีกครั้ง** — สัญญาณบวกหลักของ thesis ตอนนี้คือออเดอร์ +30% ถ้าไตรมาสถัดๆ ไปกลับมาหดตัว แปลว่ารอบฟื้นตัวยังไม่จริง thesis สะดุดทันที\n- **core revenue โตต่ำกว่า 3% ติดกัน 2-3 ไตรมาสในครึ่งปีหลัง** — บริษัทสัญญาว่าจะเร่งใน H2 ถ้า exit Q4 ไม่ถึง mid-single-digit ตามที่พูดไว้ แปลว่าการฟื้นตัวที่ขายไว้ไม่เกิด\n- **Masimo กลายเป็นภาระ** — ถ้าหลังปิดดีล margin รวมหรือ ROIC ของ Diagnostics แย่ลงต่อเนื่อง หรือต้องตัดมูลค่า (impairment) Masimo ภายใน 2-3 ปี = สัญญาณว่าสูตร DBS ใช้ไม่ได้กับดีลนี้ และ capital allocation พลาด",
       "recheckText": null
     },
     "FICO": {
@@ -1959,6 +1975,13 @@ if (typeof window !== 'undefined') window.DemoPortfolio = __DemoPortfolio;      
       "recheckAsOf": null,
       "indicator": null,
       "killText": "- **วัฏจักรเครดิตพลิก — card NCO เกิน ~3.4% มาก, NPAs เพิ่มต่อเนื่อง, reserve build หลายไตรมาสติด** ตอนนี้ guide card NCO 3.4% ถ้าทะลุชัดเจน + provision เร่งขึ้น = วัฏจักรเครดิตกำลังเปลี่ยน กำไรจะถูกกดแรง (เป็นจุดที่ Dimon เตือนเอง)\n\n- **NII-ex-Markets หดต่อเนื่องจากดอกเบี้ยลด + การแข่งเงินฝาก โดย NIR ไม่ชดเชย** NII คือหัวใจกำไร ถ้าหดโดยไม่มี fee มาชดเชย = thesis รายได้นิ่งพัง\n\n- **ROTCE ลงต่ำกว่า ~15% ต่อเนื่อง (จาก 20%+)** = ผลตอบแทนของแฟรนไชส์ normalize เข้าหา cost of capital — ความได้เปรียบที่ทำให้เทรด premium หายไป justify valuation ไม่ได้",
+      "recheckText": null
+    },
+    "KO": {
+      "asOf": "2026-06-23",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **แพ้คดี IRS appeal แบบเต็ม** (11th Circuit ยืนตาม Tax Court) จนต้องตั้งสำรองก้อนใหญ่จาก $512M ไปหลักหมื่นล้าน + effective tax rate กระโดดถาวร — ติดตามผล oral arguments 25 มิ.ย. 2026 (คำตัดสินอาจออกหลายเดือนหลังจากนั้น)\n- **organic revenue growth หลุดต่ำกว่า ~3-4% หลายไตรมาสติด** พร้อม unit case volume ติดลบทั่วโลก = สัญญาณว่าอำนาจตั้งราคา + ความต้องการแบรนด์เริ่มเสื่อม (ไม่ใช่แค่ FX noise)\n- **Gross margin หดตัวต่อเนื่องหลายไตรมาส** จากต้นทุน commodity หรือต้องลดราคาสู้คู่แข่ง = pricing power (แกนของ thesis) หายไป\n- **ตัด/ลดการขึ้นปันผล** — ทำลายสถานะ Dividend King 64 ปี = สัญญาณว่ากระแสเงินสดหรือ confidence ของฝ่ายบริหารมีปัญหาจริง\n\n---",
       "recheckText": null
     },
     "LIN": {
@@ -2011,11 +2034,11 @@ if (typeof window !== 'undefined') window.DemoPortfolio = __DemoPortfolio;      
       "recheckText": null
     },
     "MU": {
-      "asOf": "2026-05-27",
-      "recheckAsOf": null,
-      "indicator": null,
-      "killText": "- **DRAM ASP ลด QoQ ติด 2 ไตรมาส** — ราคา DRAM = early signal ของ cycle turn; ถ้าราคาเริ่มลง = supply เริ่มแซง demand → margin จะ erode เร็วกว่า revenue\n- **HBM market share เสียให้ SK Hynix หรือ Samsung** — ตอนนี้ Micron มี Vera Rubin + sold-out; ถ้าคู่แข่ง qualify ใน gen ใหม่และได้ allocation NVIDIA = thesis สำคัญที่สุดพัง\n- **Capex overspend without revenue catch-up** — ถ้า FY27 capex >$35B แต่ revenue หรือ FCF ไม่ตามทัน + ROIC ลดต่ำกว่า cost of capital → bear case classic memory cycle\n- **CHIPS Act funding ถูก clawback หรือ tariff/policy เปลี่ยน** — funding $6.4B + 35% ITC พึ่งโครงสร้างนโยบาย; ถ้าเปลี่ยน = cash position หาย + fab construction delay\n\n---",
-      "recheckText": null
+      "asOf": "2026-06-25",
+      "recheckAsOf": "2026-06-25",
+      "indicator": "🟡",
+      "killText": "- **DRAM ASP ลด QoQ ติด 2 ไตรมาส** — ราคา DRAM = สัญญาณเร็วที่สุดของ cycle turn; ถ้าราคาเริ่มลง = supply เริ่มแซง demand → margin จะ erode เร็วกว่า revenue\n- **HBM market share เสียให้ SK Hynix หรือ Samsung** — ตอนนี้ Micron อยู่ใน Vera Rubin + จองเต็ม; ถ้าคู่แข่ง qualify gen ใหม่แล้วแย่ง allocation NVIDIA = thesis ที่สำคัญสุดพัง\n- **Capex overspend without revenue catch-up** — ถ้า FY27 capex >$35B แต่ revenue/FCF ไม่ตามทัน + ROIC (ผลตอบแทนจากเงินลงทุน) ต่ำกว่า cost of capital → bear case classic memory cycle\n- **CHIPS Act funding ถูก clawback หรือ tariff/policy เปลี่ยน** — funding $6.4B + 35% ITC พึ่งโครงสร้างนโยบาย; ถ้าเปลี่ยน = cash position หาย + fab construction delay",
+      "recheckText": "🟢 **DRAM ASP ลด QoQ ติด 2 ไตรมาส** — ตรงข้ามเลย: Q3 DRAM ASP **+60%ต้นๆ QoQ** ต่อจาก Q2 +60%กลางๆ QoQ = ขึ้นแรง 2 ไตรมาสติด (ยืนยันจาก archive Q2 + brief นี้ = 2 จุด) ห่างเงื่อนไขมาก ราคายังขาขึ้น\n⚪ **HBM share เสียให้คู่แข่ง** — ตรวจอัตโนมัติไม่ได้ (ไม่มีตัวเลข share ในงบ) — context: HBM4 ยัง high-volume ให้ Vera Rubin + จองเต็มถึง 2027 (สัญญาณดี) แต่ Jensen ยืนยันทั้ง Samsung/SK Hynix/Micron เป็น supplier HBM4 ด้วย → เช็คตัวเลข share เอง\n🟡 **Capex overspend without revenue catch-up** — capex FY27 \">mid-$40B\" **ทะลุเส้น $35B ที่เขียนไว้แล้ว** (ขาที่ 1 ติด) แต่ขาที่ 2 \"revenue ไม่ตามทัน\" ยังไม่ติด — revenue/FCF กำลังโตตาม (Q3 FCF $18.3B, guide Q4 $50B) → จับตาว่า revenue จะตามทันไหมตอน cycle turn\n⚪ **CHIPS Act clawback / policy เปลี่ยน** — regulatory ตรวจอัตโนมัติไม่ได้ เช็คข่าวนโยบายเอง\n\n⚠️ อย่าเชื่อ tag อย่างเดียว — เปิด section 3 + 5 + archive (briefs/archive/MU-2026-05-27.md) ยืนยันด้วยตา\n\n---"
     },
     "NBIS": {
       "asOf": "2026-06-20",
@@ -2078,6 +2101,13 @@ if (typeof window !== 'undefined') window.DemoPortfolio = __DemoPortfolio;      
       "recheckAsOf": null,
       "indicator": null,
       "killText": "- **issuance/transaction revenue หดแรงต่อเนื่อง (ตลาดเครดิตแข็งตัว/ดอกเบี้ยพุ่ง) โดย subscription ไม่ชดเชย** — Ratings transactional คือก้อน margin สูงที่ผันผวน ถ้าหายนานๆ = กำไรกระทบ\n- **Market Intelligence ถูก AI disrupt — subscription churn เพิ่ม / รายได้ MI หด** — ถ้าลูกค้าเลิกจ่าย MI เพราะใช้ LLM แทน = thesis \"data toll-road\" ของก้อนนี้พัง (จับตา MI organic growth + retention)\n- **Ratings เสีย market share หรือถูก regulator แทรกแซงโครงสร้างค่าธรรมเนียม** — duopoly กับ Moody's คือหัวใจ ถ้าโดนกฎเปลี่ยน/คู่แข่งใหม่ = pricing power หาย",
+      "recheckText": null
+    },
+    "TMO": {
+      "asOf": "2026-06-22",
+      "recheckAsOf": null,
+      "indicator": null,
+      "killText": "- **organic growth ติดลบ 2 ไตรมาสติด** — แปลว่าธุรกิจเดิมหดจริง ไม่ใช่แค่โตช้า thesis เรื่อง \"รายได้ทนทาน\" จะพัง (Q1 2026 organic อยู่ที่ +1% แล้ว ถือว่าบางมาก)\n- **adjusted operating margin ลดลง 3 ไตรมาสติด** — แปลว่า tariff/ค่าเงิน/mix กดได้ต่อเนื่องและบริษัทรีดต้นทุน (PPI) ไม่ทัน เป้าขยาย margin +70 bps/ปีจะไม่เป็นจริง\n- **leverage ขึ้นเกิน ~4x โดยไม่มีแผนลดชัด หรือ ROIC ร่วงต่ำกว่า 10%** — สัญญาณว่าการไล่ซื้อกิจการเริ่มทำลายมูลค่าแทนที่จะสร้าง โดยเฉพาะถ้า Clario integrate ไม่ได้ตามเป้า\n\n---",
       "recheckText": null
     },
     "TSLA": {
@@ -4350,6 +4380,8 @@ function renderCF(){
   document.getElementById('cfbd').innerHTML=`
     <div class="cfrow"><span class="cfl">รายได้</span><span class="cfv up">${fmt(inc)}</span></div>
     <div class="cfrow"><span class="cfl">ส่งแม่/ครอบครัว</span><span class="cfv dn">-${fmt(cf.family||0)}</span></div>
+    <div class="cfrow"><span class="cfl">ค่ากินอยู่</span><span class="cfv dn">-${fmt(cf.food||0)}</span></div>
+    <div class="cfrow"><span class="cfl">บัตรเครดิต</span><span class="cfv dn">-${fmt(cf.card||0)}</span></div>
     <div class="cfrow"><span class="cfl">ลงทุน DCA</span><span class="cfv" style="color:var(--blue)">-${fmt(cf.invest||0)}</span></div>
     <div class="cfrow"><span class="cfl">เที่ยว / Climbing</span><span class="cfv" style="color:var(--amber)">-${fmt(cf.travel||0)}</span></div>
     <div class="cfrow"><span class="cfl">ประกัน</span><span class="cfv mu">-${fmt(cf.insurance||0)}</span></div>
@@ -4365,7 +4397,7 @@ function renderCF(){
     <div class="cfrow"><span class="cfl" style="color:var(--t1);font-weight:500">Potential Saving Rate</span><span class="cfv up">${potentialSavingRate.toFixed(1)}%</span></div>
     <div class="arow" style="margin-top:12px"><div class="ameta"><span class="an">ลงทุน</span><span class="ap">${investmentRate.toFixed(1)}%</span></div><div class="btrack"><div class="bfill" style="width:${Math.min(100,Math.max(0,investmentRate))}%;background:var(--blue)"></div></div></div>`;
   if(chartCF)chartCF.destroy();
-  chartCF=new Chart(document.getElementById('cCF'),{type:'bar',data:{labels:['ครอบครัว','ลงทุน','เที่ยว','ประกัน','อื่นๆ'],datasets:[{data:[cf.family||0,cf.invest||0,cf.travel||0,cf.insurance||0,cf.other||0],backgroundColor:['#f06060','#4f9cf9','#f5a623','#9896a8','#a78bfa'],borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9896a8',font:{size:10},autoSkip:false},grid:{display:false}},y:{ticks:{color:'#9896a8',font:{size:10},crossAlign:'far',callback:v=>'฿'+(Math.abs(v)>=1000?(v/1000).toFixed(0)+'K':v)},grid:{color:'rgba(255,255,255,.05)'}}}}});  document.getElementById('cfhist').innerHTML=cfs.length?cfs.map(x=>{
+  chartCF=new Chart(document.getElementById('cCF'),{type:'bar',data:{labels:['ครอบครัว','กินอยู่','บัตร','ลงทุน','เที่ยว','ประกัน','อื่นๆ'],datasets:[{data:[cf.family||0,cf.food||0,cf.card||0,cf.invest||0,cf.travel||0,cf.insurance||0,cf.other||0],backgroundColor:['#f06060','#f97b5a','#f472b6','#4f9cf9','#f5a623','#9896a8','#a78bfa'],borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9896a8',font:{size:10},autoSkip:false},grid:{display:false}},y:{ticks:{color:'#9896a8',font:{size:10},crossAlign:'far',callback:v=>'฿'+(Math.abs(v)>=1000?(v/1000).toFixed(0)+'K':v)},grid:{color:'rgba(255,255,255,.05)'}}}}});  document.getElementById('cfhist').innerHTML=cfs.length?cfs.map(x=>{
     const __xm=CashflowEngine.cashflowMetrics(x,0),xout=__xm.spend,xrem=__xm.surplus;
     const xmonth=new Date(x.month+'-01').toLocaleDateString('th-TH',{year:'numeric',month:'long'});
     return`<div class="cfrow"><div><span class="an">${xmonth}</span>${x.note?`<span style="font-size:10px;color:var(--t3);margin-left:8px">${x.note}</span>`:''}</div><div style="display:flex;align-items:center;gap:12px"><span class="cfv up">${fmt(x.income||0)}</span><span class="cfv ${xrem>=0?'up':'dn'}" style="font-size:11px">สุทธิ ${xrem>=0?'+':''}${fmt(xrem)}</span><button class="btn" style="padding:2px 8px;font-size:10px" onclick="editCF('${x.month}')">แก้ไข</button><button class="btn btn-d" style="padding:2px 8px;font-size:10px" onclick="delCF('${x.month}')">ลบ</button></div></div>`;
@@ -4373,13 +4405,13 @@ function renderCF(){
 }
 function newCF(){
   // reset so an edit left open can't overwrite the wrong month
-  ['cfin','cffam','cfinv','cftv','cfins','cfoth','cfnote'].forEach(id=>document.getElementById(id).value='');
+  ['cfin','cffam','cffood','cfcard','cfinv','cftv','cfins','cfoth','cfnote'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('cfmon').value=new Date().toISOString().slice(0,7);
   openM('mcf');
 }
 function saveCF(){
   const month=document.getElementById('cfmon').value;if(!month){alert('กรุณาเลือกเดือน');return;}
-  const obj={id:uid(),month,income:parseFloat(document.getElementById('cfin').value)||0,family:parseFloat(document.getElementById('cffam').value)||0,invest:parseFloat(document.getElementById('cfinv').value)||0,travel:parseFloat(document.getElementById('cftv').value)||0,insurance:parseFloat(document.getElementById('cfins').value)||0,other:parseFloat(document.getElementById('cfoth').value)||0,note:document.getElementById('cfnote').value};
+  const obj={id:uid(),month,income:parseFloat(document.getElementById('cfin').value)||0,family:parseFloat(document.getElementById('cffam').value)||0,food:parseFloat(document.getElementById('cffood').value)||0,card:parseFloat(document.getElementById('cfcard').value)||0,invest:parseFloat(document.getElementById('cfinv').value)||0,travel:parseFloat(document.getElementById('cftv').value)||0,insurance:parseFloat(document.getElementById('cfins').value)||0,other:parseFloat(document.getElementById('cfoth').value)||0,note:document.getElementById('cfnote').value};
   let cfs=DB.get('cashflows').filter(c=>c.month!==month);cfs.push(obj);DB.set('cashflows',cfs);closeM('mcf');renderCF();
 }
 function editCF(month){
@@ -4387,6 +4419,8 @@ function editCF(month){
   document.getElementById('cfmon').value=x.month;
   document.getElementById('cfin').value=x.income||'';
   document.getElementById('cffam').value=x.family||'';
+  document.getElementById('cffood').value=x.food||'';
+  document.getElementById('cfcard').value=x.card||'';
   document.getElementById('cfinv').value=x.invest||'';
   document.getElementById('cftv').value=x.travel||'';
   document.getElementById('cfins').value=x.insurance||'';
