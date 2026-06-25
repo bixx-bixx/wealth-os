@@ -233,11 +233,10 @@ textarea{resize:vertical;min-height:72px}
 .qchk{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-right:8px;border:1px solid var(--b2);border-radius:6px;background:var(--s3);color:var(--green);font-size:11px;font-weight:700;line-height:1;cursor:pointer;flex:0 0 auto;vertical-align:-3px;transition:background .12s,border-color .12s}
 .qchk:hover{border-color:var(--green-d,var(--green))}
 .qchk.on{background:var(--green);border-color:var(--green);color:var(--bg)}
-.qbanner{margin:10px 0 4px;padding:11px 14px;border-radius:var(--radius);font-family:var(--fd);font-size:13px;font-weight:600;color:var(--t1);background:linear-gradient(100deg,rgba(62,207,142,.12),rgba(167,139,250,.12));border:1px solid rgba(62,207,142,.35);box-shadow:0 0 16px rgba(62,207,142,.14);animation:qpop .3s ease}
+.qbanner{margin:10px 0 4px;padding:11px 14px;border-radius:var(--radius);font-family:var(--fd);font-size:13px;font-weight:600;color:var(--t1);background:linear-gradient(100deg,rgba(62,207,142,.12),rgba(167,139,250,.12));border:1px solid rgba(62,207,142,.35);box-shadow:0 0 16px rgba(62,207,142,.14);animation:qpop .3s ease;cursor:pointer;transition:border-color .12s,box-shadow .12s}
+.qbanner:hover{border-color:rgba(62,207,142,.55);box-shadow:0 0 20px rgba(62,207,142,.22)}
 @keyframes qpop{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
 .qstreak{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;color:var(--amber);background:rgba(245,176,74,.14);vertical-align:1px}
-.qedit{font-size:10px;font-weight:500;color:var(--t3);cursor:pointer;user-select:none;text-transform:none;letter-spacing:0;white-space:nowrap}
-.qedit:hover{color:var(--t1)}
 .qlog{margin:8px 0 4px}
 .qlog-h{font-size:9px;font-weight:600;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
 .qrow{display:flex;align-items:baseline;gap:8px;font-size:11px;padding:3px 0;border-top:1px solid var(--b1);font-variant-numeric:tabular-nums}
@@ -3678,8 +3677,7 @@ function dcaCycle(){
 let __dcaQuestCtx=null;
 // transient (non-persisted) edit flag: which completed cycle to re-expand for editing/untick
 let __dcaQuestEdit=null;
-function reopenDcaQuest(key){__dcaQuestEdit=key;renderDash();}      // expand a completed quest
-function collapseDcaQuest(){__dcaQuestEdit=null;renderDash();}      // collapse back to the banner
+function reopenDcaQuest(key){__dcaQuestEdit=key;renderDash();}      // expand a completed quest for editing
 // tick/untick one buy-plan bucket for the current cycle; records completion when all are done
 function toggleDcaQuest(bucket){
   const c=__dcaQuestCtx;if(!c)return;
@@ -3689,6 +3687,7 @@ function toggleDcaQuest(bucket){
   const done=c.need.length>0&&c.need.every(b=>q.done.includes(b));
   if(done&&!q.completedAt){q.completedAt=Date.now();q.rotation=c.rotation;q.total=c.total;}
   if(!done){delete q.completedAt;delete q.rotation;delete q.total;} // un-tick reverts completion
+  if(done&&__dcaQuestEdit===c.key)__dcaQuestEdit=null;             // re-completed while editing → auto-collapse to banner
   all[c.key]=q;DB.set('dcaQuests',all);      // DB.set already markDirty()s
   renderDash();
 }
@@ -3866,7 +3865,7 @@ function renderDash(){
     if(__allDone&&!__editing){
       // collapsed → achievement banner + streak + quest log (rotation history)
       const __sk=dcaQuestStreak(__quests,__cyc.key);
-      dcaHtml+=`<div class="qbanner">🏆 ภารกิจ DCA ${__cyc.label} สำเร็จ!${__sk>1?` <span class="qstreak">🔥 ${__sk} เดือนติด</span>`:''} <span class="qedit" onclick="reopenDcaQuest('${__cyc.key}')">↩ แก้ไข</span></div>`;
+      dcaHtml+=`<div class="qbanner" onclick="reopenDcaQuest('${__cyc.key}')" title="แตะเพื่อแก้ไข">🏆 ภารกิจ DCA ${__cyc.label} สำเร็จ!${__sk>1?` <span class="qstreak">🔥 ${__sk} เดือนติด</span>`:''}</div>`;
       const __hist=Object.keys(__quests).filter(k=>__quests[k]&&__quests[k].completedAt).sort().reverse().slice(0,6);
       if(__hist.length){
         dcaHtml+=`<div class="qlog"><div class="qlog-h">Quest Log · ประวัติ rotation</div>`;
@@ -3876,7 +3875,7 @@ function renderDash(){
       }
     }else{
       // active (or editing a completed quest) → per-line checklist (tap to mark each buy done)
-      dcaHtml+=`<div class="dca-sec" style="border-left-color:var(--green)">Buy Plan${__allDone&&__editing?` <span class="qedit" onclick="collapseDcaQuest()">✓ เสร็จแล้ว · ซ่อน</span>`:''}</div>`;
+      dcaHtml+=`<div class="dca-sec" style="border-left-color:var(--green)">Buy Plan</div>`;
       plan.recommended.forEach(x=>{const on=__qd.includes(x.bucket),bk=x.bucket.replace(/'/g,"\\'");
         dcaHtml+=`<div class="cfrow"><span class="cfl"><span class="qchk${on?' on':''}" onclick="toggleDcaQuest('${bk}')">${on?'✓':''}</span>${x.bucket}${x.role?` <span style="color:var(--t3)">[${x.role}]</span>`:''}</span><span class="cfv" style="color:${on?'var(--t3)':'var(--green)'}">${fmt(x.amount)}</span></div>`;});
       if(plan.usIndividualPaused)dcaHtml+=`<div class="co co-a" style="font-size:11px;margin-top:6px">US Individual ≥17% — พัก DCA หุ้นเดี่ยว โยกเข้า Index</div>`;
