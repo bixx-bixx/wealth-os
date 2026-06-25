@@ -1296,7 +1296,7 @@ const DCA_POLICY={
   perStockPausePct:7,
   // US Individual rotation
   usRotationOrder:['GOOGL','LLY','META','TSM','LIN'],     // monthly schedule order
-  usBasketTargets:{ GOOGL:25, LLY:25, META:20, TSM:15, LIN:15 }, // target % INSIDE the basket
+  usBasketTargets:{ TSM:25, LLY:25, LIN:20, GOOGL:15, META:15 }, // target % INSIDE the basket
   materialOverweightPct:5,  // basket weight > target + this → materially overweight → skip
   drawdownWarnPct:-15,      // -15%..-20% from cost: warn but still buyable
   drawdownBlockPct:-20,     // ≤ -20% from cost: block auto-buy, review_required
