@@ -2666,6 +2666,8 @@ function __rpGenerateReport(opts) {
   if (cf.month) {
     r += `Income               : ${f2(inc)}\n`;
     r += `Family support       : ${f2(cf.family || 0)}\n`;
+    r += `Food/Living          : ${f2(cf.food || 0)}\n`;
+    r += `Credit card          : ${f2(cf.card || 0)}\n`;
     r += `DCA Invest           : ${f2(cf.invest || 0)}\n`;
     r += `Travel/Climbing      : ${f2(cf.travel || 0)}\n`;
     r += `Insurance            : ${f2(cf.insurance || 0)}\n`;
