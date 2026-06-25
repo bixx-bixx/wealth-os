@@ -3722,7 +3722,7 @@ function renderDash(){
   document.getElementById('dsub').textContent='อัปเดต: '+new Date().toLocaleDateString('th-TH');
   document.getElementById('dmetrics').innerHTML=`
     <div class="metric" style="--mc:var(--green);--mcb:rgba(62,207,142,.13)"><span class="micon">💰</span><div class="ml">Net Worth</div><div class="mv">${fmt(V)}</div><div class="ms ${gain>=0?'up':'dn'}">${gain>=0?'↑':'↓'} ${fmt(Math.abs(gain))} (${fmtP(gp)})</div></div>
-    <div class="metric" style="--mc:var(--blue);--mcb:rgba(79,156,249,.13)"><span class="micon">🚀</span><div class="ml">Total Invested</div><div class="mv">${fmt(I)}</div><div class="ms mu">${h.length} assets</div></div>
+    <div class="metric" style="--mc:var(--blue);--mcb:rgba(79,156,249,.13)"><span class="micon">🌱</span><div class="ml">Total Invested</div><div class="mv">${fmt(I)}</div><div class="ms mu">${h.length} assets</div></div>
     <div class="metric" style="--mc:var(--amber);--mcb:rgba(245,166,35,.13)"><span class="micon">🛡️</span><div class="ml">Emergency Fund</div><div class="mv">${fmt(emg.cash)}</div><div class="ms ${emg.ok?'up':'warn'}">${emg.coverage.toFixed(1)}/${emg.months} เดือน ${emg.ok?'✓':'⚠ ต่ำกว่าเป้า'}</div></div>
     <div class="metric" style="--mc:var(--purple);--mcb:rgba(167,139,250,.13)"><span class="micon">🔥</span><div class="ml">DCA เดือนนี้</div><div class="mv">${fmt(dca)}</div><div class="ms ${dca>=dcat?'up':'warn'}">${dca>=dcat?'✓ On plan':'⚠ ต่ำกว่าแผน'}</div></div>`;
   const bcolors=['var(--blue)','var(--purple)','var(--amber)','var(--green)','var(--coral)','var(--red)','var(--t3)','var(--b3)'];
