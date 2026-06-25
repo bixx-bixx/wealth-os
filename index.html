@@ -3659,7 +3659,7 @@ function renderDash(){
   const invI=invH.reduce((a,x)=>a+(+x.invested||0),0);
   const invV=invH.reduce((a,x)=>a+(+x.value||0),0);
   const invGain=invV-invI,invGp=invI>0?invGain/invI*100:0;
-  const dca=cf.invest||0,dcat=s.dca||15000;
+  const dca=resolveMonthlyDca().amount,dcat=s.dca||15000;  // actual DCA = DCA/FIRE sheet (single source); target = Settings
   const emg=getEmergencyStatus();
   document.getElementById('td').textContent=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
   document.getElementById('dsub').textContent='อัปเดต: '+new Date().toLocaleDateString('th-TH');
@@ -3791,13 +3791,13 @@ function renderDash(){
   const __now=new Date(),__mi=__now.getFullYear()*12+__now.getMonth(); // monthly rotation pointer
   const dcaSrc=resolveMonthlyDca(),plan=DcaEngine.buildDcaPlan(review,dcaSrc.amount,undefined,h,__mi);
   // DCA Progress — actual invested this month vs target (display only)
-  const __dcaAct=cf.invest||0,__dcaTgt=dcaSrc.amount||dcat||0;
+  const __dcaAct=dcaSrc.amount||0,__dcaTgt=dcat||0;  // actual = sheet · target = Settings DCA
   const __dcaPct=__dcaTgt>0?Math.min(100,Math.round(__dcaAct/__dcaTgt*100)):0;
   const __dcaOn=__dcaTgt>0&&__dcaAct>=__dcaTgt;
   let dcaHtml=`<div class="dca-sec">DCA Progress</div>`;
   dcaHtml+=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px"><span class="cfv">${fmt(__dcaAct)} <span style="color:var(--t3);font-size:11px;font-weight:400">/ ${fmt(__dcaTgt)} target</span></span><span style="font-size:13px;font-weight:700;font-family:var(--fd);color:${__dcaOn?'var(--green)':'var(--amber)'}">${__dcaPct}%</span></div>`;
   dcaHtml+=`<div class="gtrack" style="margin-bottom:6px"><div class="gfill" style="width:${__dcaPct}%${__dcaOn?'':';background:linear-gradient(90deg,var(--amber),#f7b84a)'}"></div></div>`;
-  dcaHtml+=`<div style="font-size:10px;color:var(--t3);margin-bottom:2px">Plan <b style="color:var(--t2)">${fmt(dcaSrc.amount)}</b> · fixed split 75/25 · <span style="color:${dcaSrc.fallback?'var(--amber)':'var(--t3)'}">${dcaSrc.source}</span></div>`;
+  dcaHtml+=`<div style="font-size:10px;color:var(--t3);margin-bottom:2px">เป้า ฿${dcat.toLocaleString()} (Settings) · แบ่ง 75/25 · actual <span style="color:${dcaSrc.fallback?'var(--amber)':'var(--t3)'}">${dcaSrc.source}</span></div>`;
   dcaHtml+=`<div class="dca-sec" style="border-left-color:var(--green)">Buy Plan</div>`;
   if(!plan.valid)dcaHtml+=`<div class="co co-a" style="font-size:11px">${plan.error} — แก้ Bucket Target ใน Settings</div>`;
   else if(plan.zero)dcaHtml+=`<div class="co co-b" style="font-size:11px">No DCA recommendation this month (฿0)</div>`;
