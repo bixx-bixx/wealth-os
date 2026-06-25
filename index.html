@@ -693,7 +693,7 @@ textarea{resize:vertical;min-height:72px}
     <div class="ff"><label>ส่งแม่/ครอบครัว</label><input type="number" id="cffam" placeholder="15000"></div>
     <div class="ff"><label>ค่ากินอยู่</label><input type="number" id="cffood" placeholder="12000"></div>
     <div class="ff"><label>บัตรเครดิต</label><input type="number" id="cfcard" placeholder="8000"></div>
-    <div class="ff"><label>ลงทุน DCA</label><input type="number" id="cfinv" placeholder="15000"></div>
+    <div class="ff full"><label>ลงทุน DCA</label><div style="font-size:11px;color:var(--t3);background:var(--s3);border:1px solid var(--b2);border-radius:var(--radius-sm);padding:8px 11px">⟳ ดึงจาก DCA/FIRE sheet อัตโนมัติ (ตามเดือน) — ไม่ต้องกรอก</div></div>
     <div class="ff"><label>เที่ยว / Climbing</label><input type="number" id="cftv" placeholder="5000"></div>
     <div class="ff"><label>ประกัน</label><input type="number" id="cfins" placeholder="2500"></div>
     <div class="ff"><label>ค่าใช้จ่ายอื่น</label><input type="number" id="cfoth" placeholder="10000"></div>
@@ -4371,14 +4371,23 @@ async function refreshPrices(){
 
 // CASHFLOW
 let chartCF=null;
+// DCA for a given month = the DCA/FIRE sheet (single source); falls back to the record's
+// stored invest only for months the sheet doesn't cover. Returns null when neither exists.
+function dcaForMonth(month){
+  const hit=(DB.get('dcaLog')||[]).find(d=>d&&d.month===month&&typeof d.invested==='number'&&isFinite(d.invested));
+  return hit?hit.invested:null;
+}
 function renderCF(){
   const cfs=DB.get('cashflows').sort((a,b)=>b.month.localeCompare(a.month));
   const cf=cfs[0]||{},s=DB.get('settings');
-  const __cm=CashflowEngine.cashflowMetrics(cf,s.income),inc=__cm.income,out=__cm.spend,rem=__cm.surplus,investmentRate=__cm.investmentRate,cashSurplusRate=__cm.cashSurplusRate,potentialSavingRate=__cm.potentialSavingRate;
+  const __sd=cf.month?dcaForMonth(cf.month):null;
+  const __dca=__sd!=null?__sd:(cf.invest||0);          // sheet wins; stored invest = fallback for uncovered months
+  const cfE=Object.assign({},cf,{invest:__dca});       // feed sheet DCA into the metrics + display
+  const __cm=CashflowEngine.cashflowMetrics(cfE,s.income),inc=__cm.income,out=__cm.spend,rem=__cm.surplus,investmentRate=__cm.investmentRate,cashSurplusRate=__cm.cashSurplusRate,potentialSavingRate=__cm.potentialSavingRate;
   const sr=Math.round(potentialSavingRate);
   const monthLabel=cf.month?new Date(cf.month+'-01').toLocaleDateString('th-TH',{year:'numeric',month:'long'}):'ยังไม่มีข้อมูล';
   document.getElementById('cfsub').textContent='เดือน: '+monthLabel;
-  const realExp=out-(cf.invest||0);   // real expenses — DCA is saving, not a cost, so it's split out below
+  const realExp=out-__dca;   // real expenses — DCA is saving, not a cost, so it's split out below
   const __pc=v=>inc>0?` <span style="color:var(--t2);font-size:12px;font-weight:400;font-variant-numeric:tabular-nums">${(v/inc*100).toFixed(0)}%</span>`:'';
   const __exp=[
     {l:'ส่งแม่/ครอบครัว',v:cf.family||0,c:'var(--red)'},
@@ -4397,7 +4406,7 @@ function renderCF(){
     ${__expRows}
     <div class="cfrow" style="border-top:1px solid var(--b1);margin-top:2px;padding-top:9px"><span class="cfl" style="color:var(--t1);font-weight:600">รายจ่ายรวม${__pc(realExp)}</span><span class="cfv dn">-${fmt(realExp)}</span></div>
     <div class="cfsec" style="border-left-color:var(--blue)">การออม</div>
-    <div class="cfrow"><span class="cfl">ลงทุน DCA${__pc(cf.invest||0)}</span><span class="cfv" style="color:var(--blue)">-${fmt(cf.invest||0)}</span></div>
+    <div class="cfrow"><span class="cfl">ลงทุน DCA${__pc(__dca)} <span style="color:var(--t3);font-size:9px">· จาก sheet</span></span><span class="cfv" style="color:var(--blue)">-${fmt(__dca)}</span></div>
     <div class="divider" style="margin:8px 0"></div>
     <div class="cfrow"><span class="cfl" style="color:var(--t1);font-weight:700">เหลือสุทธิ${__pc(rem)}</span><span class="cfv ${rem>=0?'up':'dn'}" style="font-size:15px">${rem>=0?'+':''}${fmt(rem)}</span></div>
     ${cf.month?`<div class="brow" style="margin-top:10px"><button class="btn" onclick="editCF('${cf.month}')">แก้ไขเดือนนี้</button></div>`:''}`;
@@ -4410,20 +4419,21 @@ function renderCF(){
     <div class="arow" style="margin-top:12px"><div class="ameta"><span class="an">ลงทุน</span><span class="ap">${investmentRate.toFixed(1)}%</span></div><div class="btrack"><div class="bfill" style="width:${Math.min(100,Math.max(0,investmentRate))}%;background:var(--blue)"></div></div></div>`;
   if(chartCF)chartCF.destroy();
   chartCF=new Chart(document.getElementById('cCF'),{type:'bar',data:{labels:['ครอบครัว','กินอยู่','บัตร','ลงทุน','เที่ยว','ประกัน','อื่นๆ'],datasets:[{data:[cf.family||0,cf.food||0,cf.card||0,cf.invest||0,cf.travel||0,cf.insurance||0,cf.other||0],backgroundColor:['#f06060','#f97b5a','#f472b6','#4f9cf9','#f5a623','#9896a8','#a78bfa'],borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9896a8',font:{size:10},autoSkip:false},grid:{display:false}},y:{ticks:{color:'#9896a8',font:{size:10},crossAlign:'far',callback:v=>'฿'+(Math.abs(v)>=1000?(v/1000).toFixed(0)+'K':v)},grid:{color:'rgba(255,255,255,.05)'}}}}});  document.getElementById('cfhist').innerHTML=cfs.length?cfs.map(x=>{
-    const __xm=CashflowEngine.cashflowMetrics(x,0),xout=__xm.spend,xrem=__xm.surplus;
+    const __xsd=dcaForMonth(x.month),__xe=Object.assign({},x,{invest:__xsd!=null?__xsd:(x.invest||0)});
+    const __xm=CashflowEngine.cashflowMetrics(__xe,0),xout=__xm.spend,xrem=__xm.surplus;
     const xmonth=new Date(x.month+'-01').toLocaleDateString('th-TH',{year:'numeric',month:'long'});
     return`<div class="cfrow"><div><span class="an">${xmonth}</span>${x.note?`<span style="font-size:10px;color:var(--t3);margin-left:8px">${x.note}</span>`:''}</div><div style="display:flex;align-items:center;gap:12px"><span class="cfv up">${fmt(x.income||0)}</span><span class="cfv ${xrem>=0?'up':'dn'}" style="font-size:11px">สุทธิ ${xrem>=0?'+':''}${fmt(xrem)}</span><button class="btn hkebab" style="padding:2px 9px;font-size:13px;line-height:1" onclick="openCfMenu(event,'${x.month}')" title="เพิ่มเติม" aria-label="more">⋯</button></div></div>`;
   }).join(''):'<div class="empty">ยังไม่มีข้อมูล</div>';
 }
 function newCF(){
   // reset so an edit left open can't overwrite the wrong month
-  ['cfin','cffam','cffood','cfcard','cfinv','cftv','cfins','cfoth','cfnote'].forEach(id=>document.getElementById(id).value='');
+  ['cfin','cffam','cffood','cfcard','cftv','cfins','cfoth','cfnote'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('cfmon').value=new Date().toISOString().slice(0,7);
   openM('mcf');
 }
 function saveCF(){
   const month=document.getElementById('cfmon').value;if(!month){alert('กรุณาเลือกเดือน');return;}
-  const obj={id:uid(),month,income:parseFloat(document.getElementById('cfin').value)||0,family:parseFloat(document.getElementById('cffam').value)||0,food:parseFloat(document.getElementById('cffood').value)||0,card:parseFloat(document.getElementById('cfcard').value)||0,invest:parseFloat(document.getElementById('cfinv').value)||0,travel:parseFloat(document.getElementById('cftv').value)||0,insurance:parseFloat(document.getElementById('cfins').value)||0,other:parseFloat(document.getElementById('cfoth').value)||0,note:document.getElementById('cfnote').value};
+  const obj={id:uid(),month,income:parseFloat(document.getElementById('cfin').value)||0,family:parseFloat(document.getElementById('cffam').value)||0,food:parseFloat(document.getElementById('cffood').value)||0,card:parseFloat(document.getElementById('cfcard').value)||0,invest:(DB.get('cashflows').find(c=>c.month===month)||{}).invest||0,travel:parseFloat(document.getElementById('cftv').value)||0,insurance:parseFloat(document.getElementById('cfins').value)||0,other:parseFloat(document.getElementById('cfoth').value)||0,note:document.getElementById('cfnote').value};
   let cfs=DB.get('cashflows').filter(c=>c.month!==month);cfs.push(obj);DB.set('cashflows',cfs);closeM('mcf');renderCF();
 }
 function editCF(month){
@@ -4433,7 +4443,6 @@ function editCF(month){
   document.getElementById('cffam').value=x.family||'';
   document.getElementById('cffood').value=x.food||'';
   document.getElementById('cfcard').value=x.card||'';
-  document.getElementById('cfinv').value=x.invest||'';
   document.getElementById('cftv').value=x.travel||'';
   document.getElementById('cfins').value=x.insurance||'';
   document.getElementById('cfoth').value=x.other||'';
