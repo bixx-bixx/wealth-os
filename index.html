@@ -229,6 +229,21 @@ textarea{resize:vertical;min-height:72px}
 .cfv{font-family:var(--fd);font-size:13px;font-weight:600}
 .dca-sec{font-size:10px;font-weight:600;color:var(--t2);letter-spacing:.1em;text-transform:uppercase;margin:14px 0 7px;padding-left:9px;border-left:2px solid var(--blue)}
 .dca-sec:first-child{margin-top:0}
+/* DCA Quest — buy-plan checklist + achievement */
+.qchk{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-right:8px;border:1px solid var(--b2);border-radius:6px;background:var(--s3);color:var(--green);font-size:11px;font-weight:700;line-height:1;cursor:pointer;flex:0 0 auto;vertical-align:-3px;transition:background .12s,border-color .12s}
+.qchk:hover{border-color:var(--green-d,var(--green))}
+.qchk.on{background:var(--green);border-color:var(--green);color:var(--bg)}
+.qbanner{margin:10px 0 4px;padding:11px 14px;border-radius:var(--radius);font-family:var(--fd);font-size:13px;font-weight:600;color:var(--t1);background:linear-gradient(100deg,rgba(62,207,142,.12),rgba(167,139,250,.12));border:1px solid rgba(62,207,142,.35);box-shadow:0 0 16px rgba(62,207,142,.14);animation:qpop .3s ease}
+@keyframes qpop{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+.qstreak{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;color:var(--amber);background:rgba(245,176,74,.14);vertical-align:1px}
+.qlog{margin:8px 0 4px}
+.qlog-h{font-size:9px;font-weight:600;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.qrow{display:flex;align-items:baseline;gap:8px;font-size:11px;padding:3px 0;border-top:1px solid var(--b1);font-variant-numeric:tabular-nums}
+.qrow:first-of-type{border-top:0}
+.qrow-m{color:var(--t2);width:54px;flex:0 0 auto}
+.qrow-r{color:var(--purple);font-weight:600;flex:1 1 auto}
+.qrow-t{color:var(--t3);flex:0 0 auto}
+.qrow-c{color:var(--green);flex:0 0 auto}
 .mbg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 .mbg.open{display:flex}
 .modal{background:var(--s2);border:1px solid var(--b2);border-radius:var(--radius-lg);padding:24px;width:520px;max-width:95vw;max-height:88vh;max-height:88dvh;overflow-y:auto;box-shadow:var(--shadow)}
@@ -3646,6 +3661,39 @@ function toggleAssets(){
   if(btn)btn.textContent=willShow?'ซ่อนรายตัว':'แสดงรายตัว';
   localStorage.setItem('w_showAssets',willShow?'1':'0');markDirty();
 }
+// --- DCA Quest (monthly buy-plan to-do) ---------------------------------
+// One DCA cycle = the 20th → the 19th of next month (the owner DCAs ~20th).
+// Anchors quest reset + rotation pointer + progress month to the same cycle.
+function dcaCycle(){
+  const d=new Date(),y=d.getFullYear(),m=d.getMonth();
+  const cm=d.getDate()>=20?m:m-1;            // before the 20th → previous month's cycle
+  const dt=new Date(y,cm,1),ky=dt.getFullYear(),kk=dt.getMonth();
+  return {key:ky+'-'+String(kk+1).padStart(2,'0'),mi:ky*12+kk,
+          label:dt.toLocaleDateString('th-TH',{year:'numeric',month:'long'})};
+}
+// render-time context so toggleDcaQuest can judge completion without re-running the engine
+// (renderDash must NOT DB.set — that would markDirty() on every page load).
+let __dcaQuestCtx=null;
+// tick/untick one buy-plan bucket for the current cycle; records completion when all are done
+function toggleDcaQuest(bucket){
+  const c=__dcaQuestCtx;if(!c)return;
+  const all=DB.get('dcaQuests')||{},q=all[c.key]||{done:[]};
+  const i=q.done.indexOf(bucket);
+  if(i>=0)q.done.splice(i,1);else q.done.push(bucket);
+  const done=c.need.length>0&&c.need.every(b=>q.done.includes(b));
+  if(done&&!q.completedAt){q.completedAt=Date.now();q.rotation=c.rotation;q.total=c.total;}
+  if(!done){delete q.completedAt;delete q.rotation;delete q.total;} // un-tick reverts completion
+  all[c.key]=q;DB.set('dcaQuests',all);      // DB.set already markDirty()s
+  renderDash();
+}
+// consecutive completed cycles ending at (or just before) `key`
+function dcaQuestStreak(quests,key){
+  let n=0,p=key.split('-').map(Number),y=p[0],m=p[1]-1;
+  if(!(quests[key]&&quests[key].completedAt)){m--;if(m<0){m=11;y--;}} // current not done → start at prev
+  while(true){const k=y+'-'+String(m+1).padStart(2,'0');
+    if(quests[k]&&quests[k].completedAt){n++;m--;if(m<0){m=11;y--;}}else break;}
+  return n;
+}
 // rebalance trim-plan mode: 'target' = ขายกลับเป้า · 'buffer' = ขายแค่หลุดเส้นเตือน (friction ต่ำกว่า)
 function setTrimMode(m){localStorage.setItem('w_trimMode',m==='buffer'?'buffer':'target');markDirty();renderDash();}
 // portfolio-breakdown donut view: 'networth' = ทุกอย่าง (รวม PVD+cash) · 'investable' = เฉพาะที่ rebalance เองได้
@@ -3788,35 +3836,54 @@ function renderDash(){
   document.getElementById('dalerts').style.display=alertsHidden?'none':'';
   document.getElementById('dalert-toggle').textContent=alertsHidden?'Show':'Hide';
   // DCA This Month card — amount from DCA/FIRE sheet (not hardcoded)
-  const __now=new Date(),__mi=__now.getFullYear()*12+__now.getMonth(); // monthly rotation pointer
+  const __cyc=dcaCycle(),__mi=__cyc.mi; // 20th-anchored cycle drives rotation + quest reset
+  __dcaQuestCtx=null;                   // reset; set below only when the plan is valid
   const dcaSrc=resolveMonthlyDca(),plan=DcaEngine.buildDcaPlan(review,dcaSrc.amount,undefined,h,__mi);
-  // DCA Progress — actual invested this month vs target (display only)
-  const __dcaAct=dcaSrc.amount||0,__dcaTgt=dcat||0;  // actual = sheet · target = Settings DCA
+  // DCA Progress — actual invested this cycle vs target (display only)
+  const __cycSheet=dcaForMonth(__cyc.key);            // sheet-logged DCA for the cycle month
+  const __dcaAct=(__cycSheet!=null?__cycSheet:(dcaSrc.amount||0)),__dcaTgt=dcat||0;  // actual = sheet · target = Settings DCA
   const __dcaPct=__dcaTgt>0?Math.min(100,Math.round(__dcaAct/__dcaTgt*100)):0;
   const __dcaOn=__dcaTgt>0&&__dcaAct>=__dcaTgt;
   let dcaHtml=`<div class="dca-sec">DCA Progress</div>`;
   dcaHtml+=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px"><span class="cfv">${fmt(__dcaAct)} <span style="color:var(--t3);font-size:11px;font-weight:400">/ ${fmt(__dcaTgt)} target</span></span><span style="font-size:13px;font-weight:700;font-family:var(--fd);color:${__dcaOn?'var(--green)':'var(--amber)'}">${__dcaPct}%</span></div>`;
   dcaHtml+=`<div class="gtrack" style="margin-bottom:6px"><div class="gfill" style="width:${__dcaPct}%${__dcaOn?'':';background:linear-gradient(90deg,var(--amber),#f7b84a)'}"></div></div>`;
   dcaHtml+=`<div style="font-size:10px;color:var(--t3);margin-bottom:2px">เป้า ฿${dcat.toLocaleString()} (Settings) · แบ่ง 75/25 · actual <span style="color:${dcaSrc.fallback?'var(--amber)':'var(--t3)'}">${dcaSrc.source}</span></div>`;
-  dcaHtml+=`<div class="dca-sec" style="border-left-color:var(--green)">Buy Plan</div>`;
-  if(!plan.valid)dcaHtml+=`<div class="co co-a" style="font-size:11px">${plan.error} — แก้ Bucket Target ใน Settings</div>`;
-  else if(plan.zero)dcaHtml+=`<div class="co co-b" style="font-size:11px">No DCA recommendation this month (฿0)</div>`;
+  if(!plan.valid){dcaHtml+=`<div class="dca-sec" style="border-left-color:var(--green)">Buy Plan</div>`;dcaHtml+=`<div class="co co-a" style="font-size:11px">${plan.error} — แก้ Bucket Target ใน Settings</div>`;}
+  else if(plan.zero){dcaHtml+=`<div class="dca-sec" style="border-left-color:var(--green)">Buy Plan</div>`;dcaHtml+=`<div class="co co-b" style="font-size:11px">No DCA recommendation this cycle (฿0)</div>`;}
   else{
-    const __rots=[];
-    plan.recommended.forEach(x=>{
-      dcaHtml+=`<div class="cfrow"><span class="cfl">${x.bucket}${x.role?` <span style="color:var(--t3)">[${x.role}]</span>`:''}</span><span class="cfv" style="color:var(--green)">${fmt(x.amount)}</span></div>`;
-      (x.subAllocations||[]).forEach(s=>__rots.push(s));
-    });
-    if(plan.usIndividualPaused)dcaHtml+=`<div class="co co-a" style="font-size:11px;margin-top:6px">US Individual ≥17% — พัก DCA หุ้นเดี่ยว โยกเข้า Index</div>`;
-    if(plan.usIndividualRedirected)dcaHtml+=`<div class="co co-a" style="font-size:11px;margin-top:6px">US Individual โยกเข้า Index — ทุกตัวติด review/paused/drawdown/≥7%</div>`;
-    if((plan.warnStocks||[]).length)dcaHtml+=`<div style="font-size:10px;color:var(--amber);margin-top:4px">เตือน (ราคาลง 15–20%): ${plan.warnStocks.map(s=>s.name+' '+s.ret+'%').join(', ')}</div>`;
-    if((plan.reviewStocks||[]).length)dcaHtml+=`<div style="font-size:10px;color:var(--red,#f06060);margin-top:4px">รอ review (ไม่ auto-buy): ${plan.reviewStocks.map(s=>s.name+' ['+s.reason+(s.ret!=null?' '+s.ret+'%':'')+']').join(', ')}</div>`;
-    if((plan.pausedStocks||[]).length)dcaHtml+=`<div style="font-size:10px;color:var(--amber);margin-top:4px">พักหุ้น ≥7% ของพอร์ต: ${plan.pausedStocks.join(', ')}</div>`;
-    if(plan.usIndividualReview)dcaHtml+=`<div class="co co-a" style="font-size:11px;margin-top:4px">US Individual &gt;20% — trigger review</div>`;
-    if(plan.skip&&plan.skip.length)dcaHtml+=`<div style="font-size:10px;color:var(--t3);margin-top:8px">Skip: ${plan.skip.join(', ')}</div>`;
-    if(__rots.length){
-      dcaHtml+=`<div class="dca-sec" style="border-left-color:var(--purple)">Rotation</div>`;
-      __rots.forEach(s=>{dcaHtml+=`<div class="cfrow"><span class="cfl">${s.name} <span style="color:var(--t3);font-size:9px">ซื้อเดือนนี้</span></span><span class="cfv" style="color:var(--green)">${fmt(s.amount)}</span></div>`;});
+    const __rots=[],__satBk=(plan.recommended.find(x=>x.role==='satellite')||{}).bucket||null;
+    plan.recommended.forEach(x=>{(x.subAllocations||[]).forEach(s=>__rots.push(s));});
+    const __quests=DB.get('dcaQuests')||{},__qd=(__quests[__cyc.key]||{done:[]}).done||[];
+    __dcaQuestCtx={key:__cyc.key,need:plan.recommended.map(x=>x.bucket),rotation:(__rots[0]&&__rots[0].name)||null,total:dcaSrc.amount||0,label:__cyc.label};
+    const __allDone=__dcaQuestCtx.need.length>0&&__dcaQuestCtx.need.every(b=>__qd.includes(b));
+    if(__allDone){
+      // collapsed → achievement banner + streak + quest log (rotation history)
+      const __sk=dcaQuestStreak(__quests,__cyc.key);
+      dcaHtml+=`<div class="qbanner">🏆 ภารกิจ DCA ${__cyc.label} สำเร็จ!${__sk>1?` <span class="qstreak">🔥 ${__sk} เดือนติด</span>`:''}</div>`;
+      const __hist=Object.keys(__quests).filter(k=>__quests[k]&&__quests[k].completedAt).sort().reverse().slice(0,6);
+      if(__hist.length){
+        dcaHtml+=`<div class="qlog"><div class="qlog-h">Quest Log · ประวัติ rotation</div>`;
+        __hist.forEach(k=>{const e=__quests[k],lbl=new Date(k+'-01').toLocaleDateString('th-TH',{year:'2-digit',month:'short'});
+          dcaHtml+=`<div class="qrow"><span class="qrow-m">${lbl}</span><span class="qrow-r">${e.rotation||'—'}</span><span class="qrow-t">${e.total?fmt(e.total):''}</span><span class="qrow-c">✓</span></div>`;});
+        dcaHtml+=`</div>`;
+      }
+    }else{
+      // active → per-line checklist (tap to mark each buy done)
+      dcaHtml+=`<div class="dca-sec" style="border-left-color:var(--green)">Buy Plan <span style="color:var(--t3);font-weight:400;text-transform:none;letter-spacing:0">· แตะเมื่อซื้อแล้ว</span></div>`;
+      plan.recommended.forEach(x=>{const on=__qd.includes(x.bucket),bk=x.bucket.replace(/'/g,"\\'");
+        dcaHtml+=`<div class="cfrow"><span class="cfl"><span class="qchk${on?' on':''}" onclick="toggleDcaQuest('${bk}')">${on?'✓':''}</span>${x.bucket}${x.role?` <span style="color:var(--t3)">[${x.role}]</span>`:''}</span><span class="cfv" style="color:${on?'var(--t3)':'var(--green)'}">${fmt(x.amount)}</span></div>`;});
+      if(plan.usIndividualPaused)dcaHtml+=`<div class="co co-a" style="font-size:11px;margin-top:6px">US Individual ≥17% — พัก DCA หุ้นเดี่ยว โยกเข้า Index</div>`;
+      if(plan.usIndividualRedirected)dcaHtml+=`<div class="co co-a" style="font-size:11px;margin-top:6px">US Individual โยกเข้า Index — ทุกตัวติด review/paused/drawdown/≥7%</div>`;
+      if((plan.warnStocks||[]).length)dcaHtml+=`<div style="font-size:10px;color:var(--amber);margin-top:4px">เตือน (ราคาลง 15–20%): ${plan.warnStocks.map(s=>s.name+' '+s.ret+'%').join(', ')}</div>`;
+      if((plan.reviewStocks||[]).length)dcaHtml+=`<div style="font-size:10px;color:var(--red,#f06060);margin-top:4px">รอ review (ไม่ auto-buy): ${plan.reviewStocks.map(s=>s.name+' ['+s.reason+(s.ret!=null?' '+s.ret+'%':'')+']').join(', ')}</div>`;
+      if((plan.pausedStocks||[]).length)dcaHtml+=`<div style="font-size:10px;color:var(--amber);margin-top:4px">พักหุ้น ≥7% ของพอร์ต: ${plan.pausedStocks.join(', ')}</div>`;
+      if(plan.usIndividualReview)dcaHtml+=`<div class="co co-a" style="font-size:11px;margin-top:4px">US Individual &gt;20% — trigger review</div>`;
+      if(plan.skip&&plan.skip.length)dcaHtml+=`<div style="font-size:10px;color:var(--t3);margin-top:8px">Skip: ${plan.skip.join(', ')}</div>`;
+      if(__rots.length){
+        const __rotOn=__satBk&&__qd.includes(__satBk);
+        dcaHtml+=`<div class="dca-sec" style="border-left-color:var(--purple)">Rotation</div>`;
+        __rots.forEach(s=>{dcaHtml+=`<div class="cfrow"><span class="cfl">${__rotOn?'<span style="color:var(--green)">✓</span> ':''}${s.name} <span style="color:var(--t3);font-size:9px">ซื้อรอบนี้</span></span><span class="cfv" style="color:${__rotOn?'var(--t3)':'var(--green)'}">${fmt(s.amount)}</span></div>`;});
+      }
     }
   }
   // --- เกลี่ยพอร์ต (sell-side lever) — completes the policy's 2nd lever with baht amounts.
