@@ -4379,7 +4379,7 @@ function renderCF(){
   const monthLabel=cf.month?new Date(cf.month+'-01').toLocaleDateString('th-TH',{year:'numeric',month:'long'}):'ยังไม่มีข้อมูล';
   document.getElementById('cfsub').textContent='เดือน: '+monthLabel;
   const realExp=out-(cf.invest||0);   // real expenses — DCA is saving, not a cost, so it's split out below
-  const __pc=v=>inc>0?` <span style="color:var(--t3);font-size:10px;font-weight:400">${(v/inc*100).toFixed(0)}%</span>`:'';
+  const __pc=v=>inc>0?` <span style="color:var(--t2);font-size:12px;font-weight:400;font-variant-numeric:tabular-nums">${(v/inc*100).toFixed(0)}%</span>`:'';
   const __exp=[
     {l:'ส่งแม่/ครอบครัว',v:cf.family||0,c:'var(--red)'},
     {l:'ค่ากินอยู่',v:cf.food||0,c:'var(--red)'},
