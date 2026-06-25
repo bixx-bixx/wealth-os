@@ -3841,7 +3841,10 @@ function renderDash(){
   const dcaSrc=resolveMonthlyDca(),plan=DcaEngine.buildDcaPlan(review,dcaSrc.amount,undefined,h,__mi);
   // DCA Progress — actual invested this cycle vs target (display only)
   const __cycSheet=dcaForMonth(__cyc.key);            // sheet-logged DCA for the cycle month
-  const __dcaAct=(__cycSheet!=null?__cycSheet:(dcaSrc.amount||0)),__dcaTgt=dcat||0;  // actual = sheet · target = Settings DCA
+  const __quests=DB.get('dcaQuests')||{},__qd=(__quests[__cyc.key]||{done:[]}).done||[];
+  const __ticked=(plan.recommended||[]).filter(x=>__qd.includes(x.bucket)).reduce((s,x)=>s+(x.amount||0),0); // sum of ticked buys
+  const __sheetAmt=(__cycSheet!=null?__cycSheet:(dcaSrc.amount||0));
+  const __dcaAct=Math.max(__sheetAmt,__ticked),__dcaTgt=dcat||0;  // actual = max(sheet, ticked plan) · target = Settings DCA
   const __dcaPct=__dcaTgt>0?Math.min(100,Math.round(__dcaAct/__dcaTgt*100)):0;
   const __dcaOn=__dcaTgt>0&&__dcaAct>=__dcaTgt;
   let dcaHtml=`<div class="dca-sec">DCA Progress</div>`;
@@ -3853,7 +3856,6 @@ function renderDash(){
   else{
     const __rots=[],__satBk=(plan.recommended.find(x=>x.role==='satellite')||{}).bucket||null;
     plan.recommended.forEach(x=>{(x.subAllocations||[]).forEach(s=>__rots.push(s));});
-    const __quests=DB.get('dcaQuests')||{},__qd=(__quests[__cyc.key]||{done:[]}).done||[];
     __dcaQuestCtx={key:__cyc.key,need:plan.recommended.map(x=>x.bucket),rotation:(__rots[0]&&__rots[0].name)||null,total:dcaSrc.amount||0,label:__cyc.label};
     const __allDone=__dcaQuestCtx.need.length>0&&__dcaQuestCtx.need.every(b=>__qd.includes(b));
     if(__allDone){
@@ -3869,7 +3871,7 @@ function renderDash(){
       }
     }else{
       // active → per-line checklist (tap to mark each buy done)
-      dcaHtml+=`<div class="dca-sec" style="border-left-color:var(--green)">Buy Plan <span style="color:var(--t3);font-weight:400;text-transform:none;letter-spacing:0">· แตะเมื่อซื้อแล้ว</span></div>`;
+      dcaHtml+=`<div class="dca-sec" style="border-left-color:var(--green)">Buy Plan</div>`;
       plan.recommended.forEach(x=>{const on=__qd.includes(x.bucket),bk=x.bucket.replace(/'/g,"\\'");
         dcaHtml+=`<div class="cfrow"><span class="cfl"><span class="qchk${on?' on':''}" onclick="toggleDcaQuest('${bk}')">${on?'✓':''}</span>${x.bucket}${x.role?` <span style="color:var(--t3)">[${x.role}]</span>`:''}</span><span class="cfv" style="color:${on?'var(--t3)':'var(--green)'}">${fmt(x.amount)}</span></div>`;});
       if(plan.usIndividualPaused)dcaHtml+=`<div class="co co-a" style="font-size:11px;margin-top:6px">US Individual ≥17% — พัก DCA หุ้นเดี่ยว โยกเข้า Index</div>`;
