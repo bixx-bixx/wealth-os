@@ -225,7 +225,7 @@ textarea{resize:vertical;min-height:72px}
 .cfrow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04)}
 .cfrow:last-child{border-bottom:none}
 .cfl{font-size:12px;color:var(--t2)}
-.cfsec{font-size:9px;font-weight:600;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin:10px 0 3px}
+.cfsec{font-size:10px;font-weight:700;color:var(--t2);letter-spacing:.1em;text-transform:uppercase;margin:13px 0 6px;padding-left:9px;border-left:2px solid var(--b2)}
 .cfv{font-family:var(--fd);font-size:13px;font-weight:600}
 .dca-sec{font-size:10px;font-weight:600;color:var(--t2);letter-spacing:.1em;text-transform:uppercase;margin:14px 0 7px;padding-left:9px;border-left:2px solid var(--blue)}
 .dca-sec:first-child{margin-top:0}
@@ -4392,14 +4392,14 @@ function renderCF(){
     ? __exp.map(x=>`<div class="cfrow"><span class="cfl">${x.l}</span><span class="cfv" style="color:${x.c}">-${fmt(x.v)}</span></div>`).join('')
     : `<div class="cfrow"><span class="cfl" style="color:var(--t3)">— ยังไม่มีรายจ่าย —</span></div>`;
   document.getElementById('cfbd').innerHTML=`
-    <div class="cfrow"><span class="cfl" style="color:var(--green)">รายได้</span><span class="cfv up">${fmt(inc)}</span></div>
-    <div class="cfsec">ค่าใช้จ่าย</div>
+    <div class="cfrow"><span class="cfl" style="color:var(--t1);font-weight:600;font-size:13px">รายได้</span><span class="cfv up" style="font-size:15px">${fmt(inc)}</span></div>
+    <div class="cfsec" style="border-left-color:var(--red)">ค่าใช้จ่าย</div>
     ${__expRows}
     <div class="cfrow" style="border-top:1px solid var(--b1);margin-top:2px;padding-top:9px"><span class="cfl" style="color:var(--t1);font-weight:600">รายจ่ายรวม${__pc(realExp)}</span><span class="cfv dn">-${fmt(realExp)}</span></div>
-    <div class="cfsec">การออม</div>
+    <div class="cfsec" style="border-left-color:var(--blue)">การออม</div>
     <div class="cfrow"><span class="cfl">ลงทุน DCA${__pc(cf.invest||0)}</span><span class="cfv" style="color:var(--blue)">-${fmt(cf.invest||0)}</span></div>
     <div class="divider" style="margin:8px 0"></div>
-    <div class="cfrow"><span class="cfl" style="color:var(--t1);font-weight:600">เหลือสุทธิ${__pc(rem)}</span><span class="cfv ${rem>=0?'up':'dn'}">${rem>=0?'+':''}${fmt(rem)}</span></div>
+    <div class="cfrow"><span class="cfl" style="color:var(--t1);font-weight:700">เหลือสุทธิ${__pc(rem)}</span><span class="cfv ${rem>=0?'up':'dn'}" style="font-size:15px">${rem>=0?'+':''}${fmt(rem)}</span></div>
     ${cf.month?`<div class="brow" style="margin-top:10px"><button class="btn" onclick="editCF('${cf.month}')">แก้ไขเดือนนี้</button></div>`:''}`;
   document.getElementById('cfsr').innerHTML=`
     <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px"><span style="font-family:var(--fd);font-size:36px;font-weight:700;color:var(--green)">${potentialSavingRate.toFixed(0)}%</span><span style="font-size:11px;color:var(--t2)">Potential Saving Rate</span></div>
