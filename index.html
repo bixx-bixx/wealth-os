@@ -18,6 +18,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WealthOS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://nplhhyhtstyzqxiymwrq.supabase.co" crossorigin><!-- warm DNS+TLS to Supabase early so the cold-start data pull (auth + wealth_data) isn't waiting on a fresh handshake -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -663,14 +664,15 @@ textarea{resize:vertical;min-height:72px}
       <select id="htype"><option value="fund">กองทุนรวม</option><option value="stock">หุ้นไทย</option><option value="us">หุ้น US / ETF</option><option value="pvd">PVD</option><option value="cash">เงินสด / ประกัน</option><option value="other">อื่นๆ</option></select>
     </div>
     <div class="ff"><label>Theme</label><input id="htheme" placeholder="เช่น AI/US Tech, Dividend"></div>
-    <div class="ff"><label>Ticker (price update)</label>
+    <div class="ff"><label>Ticker / โค้ดกองทุน (price/NAV update)</label>
       <div style="display:flex;gap:6px">
-        <input id="hticker" placeholder="เช่น SPRC.BK, AAPL, QQQ" style="flex:1">
+        <input id="hticker" placeholder="หุ้น: SPRC.BK, AAPL, QQQ · กองทุน: SCBNDQ(A)" style="flex:1">
         <button type="button" class="btn" style="padding:6px 11px;flex-shrink:0;white-space:nowrap" onclick="testTicker()">Test ✓</button>
       </div>
       <div id="ticker-result" style="font-size:11px;margin-top:5px;min-height:16px"></div>
+      <div style="font-size:10px;color:var(--t3);margin-top:3px">กองทุน: ใส่โค้ด SEC พร้อม share class (เช่น SCBNDQ(A), SCBS&amp;P500A) + จำนวนหน่วย → มูลค่าคิดจาก units × NAV เอง</div>
     </div>
-    <div class="ff"><label>จำนวนหน่วย/หุ้น</label><input type="number" id="hunits" placeholder="เช่น 1000 (สำหรับ auto price)"></div>
+    <div class="ff"><label>จำนวนหน่วย/หุ้น</label><input type="number" id="hunits" placeholder="เช่น 1000 (auto price/NAV)"></div>
     <div class="ff"><label>เงินลงทุน (บาท) *</label><input type="number" id="hinv" placeholder="50000"></div>
     <div class="ff"><label>มูลค่าปัจจุบัน (บาท)</label><input type="number" id="hval" placeholder="ถ้าว่างใช้ราคาทุน"></div>
     <div class="ff"><label>เรตซื้อเฉลี่ย USD→THB <span style="color:var(--t3);font-size:10px">(เฉพาะหุ้น US — จำได้เท่าไหร่ใส่เลย)</span></label>
@@ -3054,6 +3056,41 @@ function needsUpdate(history, snap) {
   return existing.net !== s.net || existing.invested !== s.invested;
 }
 
+// Bound history growth WITHOUT distorting what the dashboard shows. The whole-blob
+// cloud sync ships nwHistory on every pull, so an unbounded daily series would slowly
+// inflate every load. Until the series is genuinely large this is a no-op (existing
+// data untouched). Once it crosses `maxEntries`, the last `recentDays` stay at full
+// daily resolution and older days thin to ~weekly — but the first entry (From-Start
+// anchor) and the all-time ATH entry (max net) are ALWAYS kept, so summarize() /
+// ATH / From-Start stay exact. Returns a new sorted array; never mutates input.
+function capHistory(history, opts) {
+  const o = opts || {};
+  const maxEntries = _isFiniteNum(o.maxEntries) ? o.maxEntries : 1100; // ~3y daily before any thinning
+  const recentDays = _isFiniteNum(o.recentDays) ? o.recentDays : 365;  // keep last year at daily resolution
+  const stepDays = _isFiniteNum(o.stepDays) ? o.stepDays : 7;          // thin older data to ~weekly
+  const h = sortByDate(history);
+  if (h.length <= maxEntries) return h; // small -> untouched (your current data path)
+
+  const DAY = 86400000;
+  const lastMs = Date.parse(h[h.length - 1].date);
+  const cutoff = lastMs - recentDays * DAY;
+  // anchors that must survive thinning no matter the cadence
+  const firstDate = h[0].date;
+  let athDate = h[0].date, athNet = -Infinity;
+  for (const e of h) { const n = +e.net || 0; if (n > athNet) { athNet = n; athDate = e.date; } }
+
+  const kept = [];
+  let lastKeptMs = -Infinity;
+  for (const e of h) {
+    const ms = Date.parse(e.date);
+    const isRecent = ms >= cutoff;
+    const isAnchor = e.date === firstDate || e.date === athDate;
+    const dueByStep = ms - lastKeptMs >= stepDays * DAY;
+    if (isRecent || isAnchor || dueByStep) { kept.push(e); lastKeptMs = ms; }
+  }
+  return sortByDate(kept);
+}
+
 // Trend summary across the whole history. Safe on empty / single entry.
 function summarize(history) {
   const h = sortByDate(history);
@@ -3074,6 +3111,7 @@ const __NWHistoryEngine = {
   sortByDate,
   recordSnapshot,
   needsUpdate,
+  capHistory,
   summarize,
 };
 
@@ -3307,7 +3345,8 @@ DB.def('drawdownCfg',{
 // them through the provider is a later phase, because the provider's demo fallback would alter
 // empty-portfolio behavior if used in live aggregates. Do not auto-wire it into UI reads yet.
 
-const fmt=n=>'฿'+Math.round(n).toLocaleString('th-TH');
+const fmt=n=>'฿'+(+n||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}); // 2dp default (units×NAV / US value are fractional)
+const fmtR=n=>'฿'+Math.round(+n||0).toLocaleString('th-TH'); // round baht — dashboard shadows fmt with this (no cents)
 const fmtP=n=>(n>=0?'+':'')+n.toFixed(1)+'%';
 const fxRate=()=>parseFloat(localStorage.getItem('w_fxrate'))||36.5; // cached USD→THB
 // Price API base: always the cloud Edge Function so every device (PC, live site,
@@ -3319,7 +3358,13 @@ const uid=()=>Date.now()+Math.random();
 // summed/shown; writers (buy/reprice/edit) keep using raw DB.get('holdings').
 function liveHoldings(){
   const fx=fxRate();
-  return (DB.get('holdings')||[]).map(h=>h.type==='us'?{...h,value:UsFxEngine.valueTHB(h,fx)}:h);
+  return (DB.get('holdings')||[]).map(h=>{
+    if(h.type==='us')return {...h,value:UsFxEngine.valueTHB(h,fx)};
+    // NAV-tracked fund behaves like a US holding: NAV is the source of truth, so value is
+    // recomputed units*NAV on every read — a stale or hand-edited stored value can't stick.
+    if(h.type==='fund'&&h.nav>0&&h.units>0)return {...h,value:Math.round(h.units*h.nav)};
+    return h;
+  });
 }
 // Symbol to query the price server with. Thai stocks (SET) need a `.BK` suffix for
 // Yahoo Finance — bare 'KKP' returns null. Auto-append it for type 'stock' when no
@@ -3343,7 +3388,8 @@ function inferTrackingMode(h){
   const type=h.type||'';
   if(type==='us')return 'unit';
   if(type==='stock')return (h.units>0)?'unit':'simple';
-  return 'simple'; // fund, cash, pvd, other
+  if(type==='fund')return (h.units>0&&h.ticker)?'unit':'simple'; // NAV-tracked fund = unit holding
+  return 'simple'; // cash, pvd, other
 }
 // migrate*: back-fill missing fields on legacy data. Write back ONLY when something
 // actually changed — an unconditional DB.set markDirty()s every page-load, which bumps
@@ -3708,6 +3754,7 @@ function setTrimMode(m){localStorage.setItem('w_trimMode',m==='buffer'?'buffer':
 // portfolio-breakdown donut view: 'networth' = ทุกอย่าง (รวม PVD+cash) · 'investable' = เฉพาะที่ rebalance เองได้
 function setAllocView(v){localStorage.setItem('w_allocView',v==='investable'?'investable':'networth');markDirty();renderDash();}
 function renderDash(){
+  const fmt=fmtR; // dashboard shows round baht (no cents) — shadows the global 2dp fmt
   const h=liveHoldings(),g=DB.get('goals'),s=DB.get('settings');
   const cf=DB.get('cashflows').sort((a,b)=>b.month.localeCompare(a.month))[0]||{};
   const V=tv(),I=ti(),gain=V-I,gp=I>0?(gain/I)*100:0;
@@ -4013,6 +4060,7 @@ function renderDash(){
 // Phase 8B — net-worth daily snapshot + trend (logic in window.NWHistoryEngine; this is DB/chart glue)
 let chartNW=null;
 function renderNWTrend(net,invested){
+  const fmt=fmtR; // dashboard: round baht (no cents)
   const E=window.NWHistoryEngine;
   const el=document.getElementById('nw-trend'); if(!el||!E)return;
   const bigEl=document.getElementById('nw-big');
@@ -4021,7 +4069,10 @@ function renderNWTrend(net,invested){
   const snap={date:today,net:net,invested:invested};
   let hist=DB.get('nwHistory')||[];
   // write at most once/day and only when value actually moved -> no sync churn on idle re-renders
-  if(E.needsUpdate(hist,snap)){hist=E.recordSnapshot(hist,snap);DB.set('nwHistory',hist);}
+  // write at most once/day (needsUpdate) and bound growth before persisting so the
+  // whole-blob cloud sync never balloons. capHistory is a no-op until the series is
+  // large, and always keeps the first + ATH entries -> chart/summary stay exact.
+  if(E.needsUpdate(hist,snap)){hist=E.recordSnapshot(hist,snap);if(E.capHistory)hist=E.capHistory(hist);DB.set('nwHistory',hist);}
   const sub=document.getElementById('nw-sub'),chips=document.getElementById('nw-chips');
   if(hist.length<2){
     if(chartNW){chartNW.destroy();chartNW=null;}
@@ -4072,13 +4123,14 @@ function renderNWTrend(net,invested){
 // HOLDINGS
 const ALERT_CLASS={HIGH:'co-a',MEDIUM:'co-a',WATCH:'co-a',INFO:'co-b'};
 function renderHoldings(){
-  const h=DB.get('holdings'),V=tv();
+  const h=liveHoldings(),V=tv();  // liveHoldings -> US & NAV-fund values are live (units*price/NAV)
   let rows='',alerts='',invVal=0,invCost=0;  // investable totals (ex-PVD, ex-cash) for the summary strip
   // risk alerts ย้ายไปอยู่ Dashboard อย่างเดียว (กันซ้ำ) — holdings โชว์แค่เตือนรายตัว gp<-15
   h.forEach(x=>{
     const isUS=x.type==='us',fx=fxRate();
     const p=isUS?UsFxEngine.pnl(x,fx):null;       // US: split stock vs FX P&L (cost basis kept in USD)
-    const valTHB=isUS?Math.round(p.valueTHB):x.value; // live THB value at current fx
+    // unrounded so the 2dp value/gain show real cents (US live THB; NAV fund = units*NAV)
+    const valTHB=isUS?p.valueTHB:(x.type==='fund'&&x.nav>0&&x.units>0?x.units*x.nav:x.value);
     const gain=valTHB-x.invested,gp=x.invested>0?(gain/x.invested)*100:0;
     const gpAlert=isUS?p.stockGainPct:gp;          // review-thesis alert tracks the STOCK move, not FX noise
     const al=V>0?(valTHB/V*100):0;
@@ -4103,11 +4155,16 @@ function renderHoldings(){
     const usdSubInv=isUS?`<div style="font-size:9px;color:var(--t3);margin-top:2px">(${usd2(p.costUSD)})</div>`:'';
     const usdSubVal=isUS?`<div style="font-size:9px;color:var(--t3);margin-top:2px">(${usd2(p.valueUSD)})</div>`:'';
     const mode=x.trackingMode||inferTrackingMode(x);
+    // NAV-tracked fund (SEC code + units) renders like a unit holding: NAV per unit + count
+    const navFund=x.type==='fund'&&x.units>0&&!!x.ticker;
     let priceCell;
-    if(mode==='unit'&&x.units>0){
-      const dispPrice=isUS?p.priceUSD:(x.value/x.units);
+    if((mode==='unit'&&x.units>0)||navFund){
+      const dispPrice=isUS?p.priceUSD:(navFund?(x.nav||x.value/x.units):(x.value/x.units));
+      // fund sub-line: source (SCBAM/SEC) + NAV date only when the source actually gives one (SEC does, SCBAM doesn't)
+      const navTag=navFund?((x.navSource?' · '+x.navSource.toUpperCase():'')+(x.navDate?' '+x.navDate:'')):'';
+      const sub=isUS?` · เรท ${fx}`:navTag;
       priceCell=`<td><div style="font-size:12px">${isUS?'$':'฿'}${dispPrice.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
-        <div style="font-size:9px;color:var(--t3);margin-top:2px">×${x.units.toLocaleString()} หน่วย${isUS?` · เรท ${fx}`:''}</div></td>`;
+        <div style="font-size:9px;color:var(--t3);margin-top:2px">×${x.units.toLocaleString()} หน่วย${sub}</div></td>`;
     }else{
       priceCell=`<td><span style="font-size:11px;color:var(--t3)">${mode==='unit'?'ยังไม่ตั้ง units':'manual'}</span></td>`;
     }
@@ -4388,6 +4445,13 @@ function saveHolding(){
     if(buyfx>0)obj.costUSD=Math.round((inv/buyfx)*100)/100;
     Object.assign(obj,UsFxEngine.backfill(obj,fxRate()));
   }
+  // Fund NAV is the source of truth (like US priceUSD): carry it across edits and recompute
+  // value = units*NAV so the manual "current value" field can't override a NAV-tracked fund.
+  if(obj.type==='fund'){
+    const prev=(DB.get('holdings')||[]).find(h=>h.id===eid)||{};
+    obj.nav=prev.nav;obj.navDate=prev.navDate;obj.projId=prev.projId;
+    if(obj.nav>0&&obj.units>0)obj.value=Math.round(obj.units*obj.nav);
+  }
   let hs=DB.get('holdings');hs=(eid&&hs.some(h=>h.id===eid))?hs.map(h=>h.id===eid?obj:h):[...hs,obj];DB.set('holdings',hs);
   document.getElementById('heid').value='';closeM('mh');renderHoldings();renderDash();
 }
@@ -4401,26 +4465,65 @@ async function fetchFx(){
   }catch(e){/* fall through to cached */}
   return parseFloat(localStorage.getItem('w_fxrate'))||36.5;
 }
+// Thai mutual fund NAV via the cloud Edge Function /nav (SEC Open Data). A fund opts in
+// to auto-valuation by carrying its exact SEC class code in `ticker` (e.g. "SCBNDQ(A)")
+// PLUS a unit count — then value = units*NAV, exactly like a stock. Funds with no code or
+// no units stay manual. Returns { "CODE": {nav,date,projId} | {error}, ... } (empty on failure).
+//
+// We pass back each fund's cached projId ("CODE|PROJID") so the server can skip its slow
+// (~20s cold) roster scan; the first resolution returns projId, which applyNav stores on the
+// holding. Timeout is generous to survive that one cold scan — after it, calls are ~2s.
+async function fetchNavMap(funds){
+  const seen=new Map(); // ticker code -> best-known projId
+  funds.forEach(f=>{const c=String(f.ticker||'').trim();if(!c)return;if(!seen.has(c)||(!seen.get(c)&&f.projId))seen.set(c,f.projId||'');});
+  if(!seen.size)return {};
+  const param=[...seen.entries()].map(([c,pid])=>pid?c+'|'+pid:c).join(',');
+  try{
+    const res=await fetch(PRICE_API+'/nav?funds='+encodeURIComponent(param),{signal:AbortSignal.timeout(25000)});
+    if(!res.ok)return {};
+    return await res.json();
+  }catch(e){return {};}
+}
+// Apply a nav map onto a fund holding: value = round(units*NAV), stamp navDate, and cache the
+// resolved projId (so future calls skip the server scan). No-op (returns null) when the fund
+// has no code/units or NAV came back missing.
+function applyNav(x,navMap){
+  if(x.type!=='fund'||!x.ticker||!(x.units>0))return null;
+  const n=navMap[String(x.ticker).trim()];
+  if(!n||n.nav==null)return null;
+  const upd={...x,nav:n.nav,navDate:n.date||'',navSource:n.source||'',value:Math.round(x.units*n.nav)};
+  if(n.projId&&x.projId!==n.projId)upd.projId=n.projId;
+  return upd;
+}
 async function refreshPrices(){
   const h=DB.get('holdings');
   const stocks=h.filter(x=>x.ticker&&x.units>0&&x.type!=='fund');
+  const funds=h.filter(x=>x.type==='fund'&&x.ticker&&x.units>0);
   const noTicker=h.filter(x=>!x.ticker&&['stock','us'].includes(x.type));
   const noUnits=h.filter(x=>x.ticker&&!(x.units>0)&&['stock','us'].includes(x.type));
-  if(!stocks.length){
-    let msg='ไม่มีหุ้น/ETF ที่พร้อม update ราคา\n\n';
+  if(!stocks.length&&!funds.length){
+    let msg='ไม่มี asset ที่พร้อม update ราคา\n\n';
     if(noTicker.length)msg+='ไม่มี Ticker: '+noTicker.map(x=>x.name).join(', ')+'\n';
     if(noUnits.length) msg+='ไม่มีจำนวนหน่วย: '+noUnits.map(x=>x.name).join(', ')+'\n';
-    msg+='\nกรุณาเพิ่มใน "แก้ไข" แต่ละ asset';
+    msg+='\nกรุณาเพิ่มใน "แก้ไข" แต่ละ asset (กองทุน: ใส่โค้ด SEC ในช่อง Ticker + จำนวนหน่วย)';
     alert(msg);return;
   }
   try{
     const fx=await fetchFx();
-    const res=await fetch(PRICE_API+'/prices?tickers='+stocks.map(queryTicker).join(','));
-    if(!res.ok)throw new Error('Server responded '+res.status);
-    const priceMap=await res.json();
-    let updated=0,notFound=[],usedFx=false;
+    // stock/ETF prices (Yahoo) and fund NAV (SEC) in parallel — independent sources
+    const [priceMap,navMap]=await Promise.all([
+      stocks.length?fetch(PRICE_API+'/prices?tickers='+stocks.map(queryTicker).join(',')).then(r=>{if(!r.ok)throw new Error('Server responded '+r.status);return r.json();}):Promise.resolve({}),
+      fetchNavMap(funds),
+    ]);
+    let updated=0,notFound=[],navMiss=[],usedFx=false;
     const newH=h.map(x=>{
-      if(!x.ticker||!(x.units>0)||x.type==='fund')return x;
+      if(x.type==='fund'){
+        if(!x.ticker||!(x.units>0))return x;
+        const upd=applyNav(x,navMap);
+        if(upd){updated++;return upd;}
+        navMiss.push(x.name);return x;
+      }
+      if(!x.ticker||!(x.units>0))return x;
       const px=priceMap[queryTicker(x)];
       if(px!=null){
         const isUS=x.type==='us';
@@ -4442,6 +4545,11 @@ async function refreshPrices(){
     if(noTicker.length) msg+=`\n— ไม่มี Ticker (skip): ${noTicker.map(x=>x.name).join(', ')}`;
     if(noUnits.length)  msg+=`\n— ไม่มีจำนวนหน่วย (skip): ${noUnits.map(x=>x.name).join(', ')}`;
     if(notFound.length) msg+=`\n— ไม่พบราคา ตรวจสอบ Ticker: ${notFound.join(', ')}`;
+    if(navMiss.length)  msg+=`\n— ไม่พบ NAV ตรวจสอบโค้ดกองทุน/share class: ${navMiss.join(', ')}`;
+    // fail-loud: warn when the fresh SCBAM source broke and we fell back to the (older) SEC feed
+    const scbamHealth=navMap&&navMap.__meta&&navMap.__meta.scbam;
+    if(funds.length&&scbamHealth==='layout-changed') msg+=`\n\n⚠ SCBAM เปลี่ยนหน้าเว็บ — ตอนนี้ดึง NAV จาก SEC แทน (เก่ากว่า ~1-2 วัน) ควรเช็ก parser`;
+    else if(funds.length&&scbamHealth==='unreachable') msg+=`\n\n⚠ ต่อ SCBAM ไม่ได้ชั่วคราว — ใช้ NAV จาก SEC แทน (เก่ากว่า)`;
     alert(msg);
   }catch(e){alert('ไม่สามารถเชื่อมต่อ Price Server\nตรวจสอบว่ารัน price_server.py แล้ว\n\nError: '+e.message);}
 }
@@ -4699,6 +4807,7 @@ function delDecision(id){
 }
 // Dashboard small additive section (active / due / latest). Does NOT touch existing metrics.
 function renderDashDecisions(){
+  const fmt=fmtR; // dashboard: round baht (no cents)
   const el=document.getElementById('ddecisions');if(!el)return;
   const all=DB.get('majorDecisions')||[];
   const s=MDE().summarizeDecisions(all,new Date().toISOString().slice(0,10));
@@ -4850,6 +4959,7 @@ function dcaYears(){
   return ys;
 }
 function renderDcaFire(){
+  const fmt=fmtR; // DCA/FIRE page: round baht (no cents)
   const fs=DB.get('fireSettings'),log=DB.get('dcaLog'),target=fs.targetDCA||30000;
   const sel=document.getElementById('dfyear'),years=dcaYears();
   const prev=parseInt(sel.value)||new Date().getFullYear();
@@ -4906,6 +5016,7 @@ function renderDcaFire(){
 // FIRE — Sleeve + PVD as two/three independent compounding engines summed, vesting-aware.
 // `avgActual` = YTD average actual DCA (a hint next to the assumption field).
 function renderFireProjection(avgActual){
+  const fmt=fmtR; // DCA/FIRE page: round baht (no cents)
   const fc=fireCfg();
   const p0={sleeveStart:fc.sleeveStart,dca:fc.projDca,pvdMember:fc.pvdMember,
     pvdEmployer:fc.pvdEmployer,salary:fc.salary,memberRate:fc.memberRate/100,
@@ -4984,6 +5095,7 @@ function renderFireProjection(avgActual){
 //   2) cFireDca   — cumulative DCA actual (dcaLog) vs plan (projDca/เดือน)
 //   3) cFireDelta — investable net worth ahead/behind: actual − plan(base), same basis
 function drawFireCompareCharts(fc,p0){
+  const fmt=fmtR; // DCA/FIRE charts: round baht (no cents)
   if(typeof Chart==='undefined')return;
   const tick='#9896a8',grid='rgba(255,255,255,.05)';
   const bk=v=>'฿'+(Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'M':Math.abs(v)>=1000?(v/1000).toFixed(0)+'K':Math.round(v));
@@ -5227,9 +5339,18 @@ async function testTicker(){
   const raw=document.getElementById('hticker').value.trim();
   const el=document.getElementById('ticker-result');
   if(!raw){el.style.color='var(--amber)';el.textContent='กรุณากรอก Ticker ก่อน';return;}
-  // resolve the same way the price refresh will (Thai stock -> auto .BK)
-  const ticker=queryTicker({ticker:raw,type:document.getElementById('htype').value});
+  const htype=document.getElementById('htype').value;
   el.style.color='var(--t2)';el.textContent='กำลังตรวจสอบ...';
+  // funds resolve NAV from SEC by exact share-class code (e.g. SCBNDQ(A)) — not Yahoo prices
+  if(htype==='fund'){
+    const m=await fetchNavMap([{ticker:raw}]);
+    const r=m[raw.trim()];
+    if(r&&r.nav!=null){el.style.color='var(--green)';el.textContent='✓ พบ NAV: '+r.nav+(r.date?' ('+r.date+')':'')+' — ใช้งานได้';}
+    else{el.style.color='var(--red)';el.textContent='✗ ไม่พบ NAV — ตรวจสอบโค้ด/share class (เช่น SCBNDQ(A), SCBS&P500A)';}
+    return;
+  }
+  // resolve the same way the price refresh will (Thai stock -> auto .BK)
+  const ticker=queryTicker({ticker:raw,type:htype});
   try{
     const res=await fetch(PRICE_API+'/prices?tickers='+encodeURIComponent(ticker),{signal:AbortSignal.timeout(8000)});
     if(!res.ok)throw new Error('server error '+res.status);
@@ -5334,15 +5455,22 @@ async function refreshPricesSilent(){
   refreshBenchmark();                             // independent of holdings — runs even with no stock holdings
   const h=DB.get('holdings');
   const stocks=h.filter(x=>x.ticker&&x.units>0&&x.type!=='fund');
-  if(!stocks.length)return;
+  const funds=h.filter(x=>x.type==='fund'&&x.ticker&&x.units>0);
+  if(!stocks.length&&!funds.length)return;
   try{
     const fx=await fetchFx();
-    const res=await fetch(PRICE_API+'/prices?tickers='+stocks.map(queryTicker).join(','),{signal:AbortSignal.timeout(8000)});
-    if(!res.ok)return;
-    const priceMap=await res.json();
+    const [priceMap,navMap]=await Promise.all([
+      stocks.length?fetch(PRICE_API+'/prices?tickers='+stocks.map(queryTicker).join(','),{signal:AbortSignal.timeout(8000)}).then(r=>r.ok?r.json():{}).catch(()=>({})):Promise.resolve({}),
+      fetchNavMap(funds),
+    ]);
     let updated=0;
     const newH=h.map(x=>{
-      if(!x.ticker||!(x.units>0)||x.type==='fund')return x;
+      if(x.type==='fund'){
+        const upd=applyNav(x,navMap);
+        if(upd){updated++;return upd;}
+        return x;
+      }
+      if(!x.ticker||!(x.units>0))return x;
       const px=priceMap[queryTicker(x)];
       if(px!=null){
         updated++;
@@ -5387,11 +5515,15 @@ function uploadAvatar(input){
   rd.onload=e=>{
     const img=new Image();
     img.onload=()=>{
-      const max=512,sc=Math.min(1,max/Math.max(img.width,img.height));
+      const max=256,sc=Math.min(1,max/Math.max(img.width,img.height)); // 256px is plenty for an avatar (shown small)
       const w=Math.max(1,Math.round(img.width*sc)),h=Math.max(1,Math.round(img.height*sc));
       const c=document.createElement('canvas');c.width=w;c.height=h;
-      const x=c.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(img,0,0,w,h);
-      let url;try{url=c.toDataURL('image/png');}catch{url=e.target.result;} // canvas taint fallback (shouldn't happen for local files)
+      const x=c.getContext('2d');
+      x.fillStyle='#fff';x.fillRect(0,0,w,h);            // JPEG has no alpha -> flatten transparent PNGs onto white (no black corners)
+      x.imageSmoothingEnabled=true;x.imageSmoothingQuality='high';x.drawImage(img,0,0,w,h);
+      // JPEG (lossy) instead of PNG: a photo avatar as PNG base64 was ~565kB and rode the
+      // whole-blob cloud sync on every pull (1.6s). JPEG q0.82 @256px ≈ 15-25kB. Big pull win.
+      let url;try{url=c.toDataURL('image/jpeg',0.82);}catch{url=e.target.result;} // canvas taint fallback (shouldn't happen for local files)
       DB.set('avatar',url);renderProfile();
     };
     img.onerror=()=>alert('โหลดรูปไม่ได้ ลองไฟล์อื่นดูนะ');
