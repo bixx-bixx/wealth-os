@@ -105,7 +105,7 @@ input,select,textarea,button{font-family:var(--fm);font-size:13px}
 .bfill{height:100%;border-radius:2px;transition:width .7s ease;position:relative}
 .bfill::after{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,rgba(255,255,255,.28),transparent 65%);pointer-events:none}
 .asublist{margin:9px 0 2px;padding:2px 0 2px 12px;border-left:2px solid rgba(120,160,255,.18)}
-.asub{display:grid;grid-template-columns:minmax(0,1fr) 88px 58px 62px 62px 62px;align-items:baseline;gap:12px;font-size:12.5px;padding:5px 0}
+.asub{display:grid;grid-template-columns:minmax(0,1fr) 88px 58px 96px 62px 62px;align-items:baseline;gap:12px;font-size:12.5px;padding:5px 0}
 .asub>span:not(.asub-n){text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .asub+.asub{border-top:1px solid rgba(255,255,255,.04)}
 .asub-hd{padding:0 0 5px;border:none}
@@ -314,7 +314,7 @@ textarea{resize:vertical;min-height:72px}
   .modal{padding:18px;border-radius:18px}
   .brow{flex-wrap:wrap}
   /* per-asset breakdown: shrink columns + drop the USD column so the grid fits a narrow card */
-  .asub{grid-template-columns:minmax(0,1fr) 58px 42px 46px 46px;gap:6px;font-size:11px}
+  .asub{grid-template-columns:minmax(0,1fr) 58px 72px 46px 46px;gap:6px;font-size:11px}
   .asub-usd{display:none}
   .asub-n{white-space:normal;overflow-wrap:anywhere;line-height:1.3}
   .asublist{padding-left:9px}
@@ -687,6 +687,8 @@ textarea{resize:vertical;min-height:72px}
     <div class="ff"><label>DCA Status <span style="color:var(--t3);font-size:10px">(หุ้นรายตัว — คุม rotation)</span></label>
       <select id="hdcastatus"><option value="active">Active — DCA ได้ปกติ</option><option value="under_review">Under review — พัก DCA</option><option value="paused">Paused — พักชั่วคราว</option><option value="thesis_broken">Thesis broken — พัก DCA</option></select>
     </div>
+    <div class="ff"><label>DCA น้ำหนักเป้า % <span style="color:var(--t3);font-size:10px">(หุ้นรายตัว — สัดส่วนในตะกร้า)</span></label>
+      <input id="hdcatarget" type="number" step="1" placeholder="เช่น 25"></div>
     <div class="ff"><label>วันที่ซื้อ</label><input type="date" id="hdate"></div>
     <div class="ff full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="hussitus" style="width:auto;margin:0"> US-situs asset? <span style="color:var(--t3);font-size:10px">(VOO/QQQM/TSM/LLY/LIN = ใช่ · Thai feeder = ไม่ · สำหรับ estate tax)</span></label></div>
     <div class="ff full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="hackconc" style="width:auto;margin:0"> ตั้งใจถือกระจุก (ตาม target) <span style="color:var(--t3);font-size:10px">(เช่น KKP ถือเดี่ยวตาม target 15% · ลด alert single-name เป็น INFO "รับทราบแล้ว")</span></label></div>
@@ -1296,11 +1298,12 @@ if (typeof window !== 'undefined') window.Allocation = __Allocation;            
 //   reviewSatelliteAtPct= US Individual bucket > this % → review flag (riskEngine emits the alert)
 //   thaiResumeBelowPct  = Thai stays 0 unless its current % falls below this (manual "after review")
 //   perStockPausePct    = skip a US-individual name if it is ≥ this % of rebalance base
-// US Individual = ฿5,000 into ONE name per month, chosen by a fixed rotation
-// schedule with guardrails (see pickUsIndividual): buy the scheduled name unless it
-// is materially overweight inside the basket or blocked (status / drawdown / size);
-// then fall back to the most-underweight eligible name; if none eligible, redirect
-// the whole amount to the broad index (mainBucket).
+// US Individual = ฿5,000 into ONE name per month, chosen by rotation + guardrails
+// (see pickUsIndividual): buy the scheduled name unless it is materially overweight
+// inside the basket or blocked (status / drawdown / size); then fall back to the
+// most-underweight eligible name; if none eligible, redirect the whole amount to the
+// broad index (mainBucket). Per-stock target weight + the rotation order are NOT
+// hardcoded — they come from each holding's `dcaTarget` (set in Edit Holding).
 const DCA_POLICY={
   satelliteSplit:0.25,           // US Individual fixed share (rest = index pool 0.75)
   broadBucket:'US Broad Index',   broadTarget:50,
@@ -1312,9 +1315,9 @@ const DCA_POLICY={
   thaiBucket:'Thai Dividend/Thai Stocks',
   thaiResumeBelowPct:13,
   perStockPausePct:7,
-  // US Individual rotation
-  usRotationOrder:['GOOGL','LLY','META','TSM','LIN'],     // monthly schedule order
-  usBasketTargets:{ TSM:25, LLY:25, LIN:20, GOOGL:15, META:15 }, // target % INSIDE the basket
+  // US Individual rotation — per-stock target % + rotation order now derived from
+  // holdings (each name's dcaTarget), no longer a hardcoded list. materialOverweightPct
+  // is a tuning threshold (not per-stock data) so it stays here.
   materialOverweightPct:5,  // basket weight > target + this → materially overweight → skip
   drawdownWarnPct:-15,      // -15%..-20% from cost: warn but still buyable
   drawdownBlockPct:-20,     // ≤ -20% from cost: block auto-buy, review_required
@@ -1359,9 +1362,10 @@ function dcaStatus(inv,cash,type,target){
   return 'ต้องเร่งเพิ่ม';
 }
 // Choose the single US-Individual name to buy this month.
-// Schedule = usRotationOrder[monthIndex] among currently-held names. Buy it unless it
-// is materially overweight or blocked; else buy the most-underweight ELIGIBLE name;
-// if none eligible, redirect (caller sends the amount to the broad index).
+// Schedule = basket names ordered by dcaTarget (desc), indexed by monthIndex. Buy the
+// scheduled name unless it is materially overweight or blocked; else buy the most-
+// underweight ELIGIBLE name; if none eligible, redirect (caller sends to the broad index).
+//   target = holding.dcaTarget (manual), normalized to sum 100 across the basket
 //   eligible = status 'active' AND unrealized return > drawdownBlockPct AND size < perStockPausePct
 // Returns { subAllocations, picked, redirect, pausedStocks, reviewStocks, warnStocks }.
 function pickUsIndividual(amount, holdings, rebalanceBase, policy, monthIndex){
@@ -1371,7 +1375,13 @@ function pickUsIndividual(amount, holdings, rebalanceBase, policy, monthIndex){
   const ret=h=>{const inv=+h.invested||0;return inv>0?((+h.value||0)-inv)/inv*100:0;};
   const portPct=h=>rebalanceBase>0?(+h.value||0)/rebalanceBase*100:0;
   const basketPct=h=>basketValue>0?(+h.value||0)/basketValue*100:0;
-  const targetOf=h=>policy.usBasketTargets[(h.name||'').toUpperCase()]||0;
+  // per-stock target % INSIDE the basket — from the manual holding.dcaTarget (de-hardcoded).
+  // Any name without one falls back to its invested (cost-basis) share; the whole set is
+  // normalized to sum 100 so gap = target - currentBasket% stays unbiased.
+  const totalInv=basket.reduce((s,h)=>s+(+h.invested||0),0);
+  const rawTarget=h=>{const t=+h.dcaTarget||0;return t>0?t:(totalInv>0?(+h.invested||0)/totalInv*100:0);};
+  const sumRaw=basket.reduce((s,h)=>s+rawTarget(h),0);
+  const targetOf=h=>sumRaw>0?rawTarget(h)/sumRaw*100:0;
 
   const pausedStocks=[],reviewStocks=[],warnStocks=[];
   const meta=basket.map(h=>{
@@ -1392,8 +1402,11 @@ function pickUsIndividual(amount, holdings, rebalanceBase, policy, monthIndex){
 
   // most-underweight eligible name (largest target-minus-current gap)
   const mostUnder=eligible.slice().sort((a,b)=>b.gap-a.gap)[0];
-  // scheduled name for this month, restricted to currently-held names
-  const order=policy.usRotationOrder.filter(n=>meta.some(m=>(m.name||'').toUpperCase()===n));
+  // rotation schedule order — derived from holdings (highest target first, name tiebreak),
+  // not a hardcoded list; restricted to currently-held basket names (meta = the basket).
+  const order=meta.slice()
+    .sort((a,b)=>targetOf(b.h)-targetOf(a.h)||((a.name||'')>(b.name||'')?1:-1))
+    .map(m=>(m.name||'').toUpperCase());
   let picked=mostUnder;
   if(order.length){
     const schedName=order[((monthIndex%order.length)+order.length)%order.length];
@@ -1742,23 +1755,23 @@ const HOLDINGS = [
   { id: 5, name: 'TSM', type: 'us', theme: 'Semiconductor / Foundry / AI', ticker: 'TSM', units: 14,
     invested: 75000, value: 90000, costUSD: 2206, priceUSD: 176.06, date: '2023-10-22',
     thesis: 'Dominant foundry, AI/compute secular tailwind', dd: '',
-    bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true },
+    bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true, dcaTarget: 25 },
   { id: 6, name: 'LLY', type: 'us', theme: 'Healthcare / Pharma / GLP-1', ticker: 'LLY', units: 5,
     invested: 85000, value: 80000, costUSD: 2500, priceUSD: 438.36, date: '2024-06-08',
     thesis: 'Pharma leader, GLP-1 franchise', dd: '',
-    bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true },
+    bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true, dcaTarget: 25 },
   { id: 7, name: 'GOOGL', type: 'us', theme: 'Communication Services / AI / Cloud', ticker: 'GOOGL', units: 18,
     invested: 70000, value: 80000, costUSD: 2059, priceUSD: 121.77, date: '2024-02-19',
     thesis: 'Search/Cloud/AI franchise, strong free cash flow', dd: '',
-    bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true },
+    bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true, dcaTarget: 15 },
   { id: 8, name: 'META', type: 'us', theme: 'Communication Services / AI Ads / Social', ticker: 'META', units: 8,
     invested: 55000, value: 60000, costUSD: 1618, priceUSD: 205.48, date: '2024-04-30',
     thesis: 'Ads platform with AI-driven efficiency', dd: '',
-    bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true },
+    bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true, dcaTarget: 15 },
   { id: 9, name: 'LIN', type: 'us', theme: 'Industrials / Industrial Gas / Defensive', ticker: 'LIN', units: 4,
     invested: 48000, value: 50000, costUSD: 1412, priceUSD: 342.47, date: '2024-05-21',
     thesis: 'Industrial gas, quality defensive compounder', dd: '',
-    bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true },
+    bucket: 'US Individual Stocks', trackingMode: 'unit', isUSSitus: true, dcaTarget: 20 },
   // ---- Thai Dividend / Thai Stocks (~15%) ----
   { id: 10, name: 'KKP', type: 'stock', theme: 'Thai Financials', ticker: 'KKP', units: 8000,
     invested: 230000, value: 220000, date: '2023-11-20',
@@ -2568,6 +2581,9 @@ function __rpGenerateReport(opts) {
   const g = opts.goals || [];
   const j = (opts.journal || []).slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0, 10);
   const _now = opts.now || new Date();
+  // DCA rotation month: use the caller's 25th-anchored cycle index (dcaCycle().mi) so the
+  // report agrees with the dashboard. Fall back to the raw calendar month (node/tests).
+  const _dcaMi = (opts.monthIndex != null) ? opts.monthIndex : (_now.getFullYear() * 12 + _now.getMonth());
 
   const V = review.netWorth, I = h.reduce((acc, x) => acc + x.invested, 0), gain = V - I, gp = I > 0 ? (gain / I * 100) : 0;
   // investment-only gain (ex-cash, ex-PVD); bad-input guarded
@@ -2698,7 +2714,7 @@ function __rpGenerateReport(opts) {
   });
 
   r += '\n--- NEXT DCA PLAN (fixed split 75/25 + guardrails · DCA from DCA/FIRE sheet) ---\n';
-  __rpGetDcaRecommendation(review, monthlyDca, h, _now.getFullYear() * 12 + _now.getMonth()).forEach(line => { r += line + '\n'; });
+  __rpGetDcaRecommendation(review, monthlyDca, h, _dcaMi).forEach(line => { r += line + '\n'; });
 
   r += '\n--- LOOK-THROUGH EXPOSURE ---\n';
   r += 'Not enabled yet — Phase 2.\n';
@@ -3822,10 +3838,13 @@ function renderDash(){
       const gp=isUS?p.stockGainPct:(inv>0?(av-inv)/inv*100:0);
       const usd=isUS?Math.round(p.valueUSD):0;
       const trim=isSingle&&pctP>=5;
+      // % ถัง shows current / target when this single-name holding has a DCA target set
+      // (display-only reference — no over/under judgment, you read the gap yourself)
+      const __tgt=(isSingle&&+x.dcaTarget>0)?` <span style="color:var(--t3)">/ ${+x.dcaTarget}%</span>`:'';
       sr+=`<div class="asub"><span class="asub-n">${x.name}${trim?'<span class="trimb">trim →3–4%</span>':''}</span>`
         +`<span class="asub-val">${fmt(av)}</span>`
         +`<span class="asub-usd">${isUS?`~$${usd.toLocaleString()}`:''}</span>`
-        +`<span class="asub-num">${pctB.toFixed(1)}%</span>`
+        +`<span class="asub-num">${pctB.toFixed(1)}%${__tgt}</span>`
         +`<span class="asub-num">${pctP.toFixed(1)}%</span>`
         +`<span class="asub-num ${gp>=0?'up':'dn'}">${gp>=0?'+':''}${gp.toFixed(1)}%</span></div>`;
     });
@@ -4428,6 +4447,7 @@ function editH(id){
   document.getElementById('hbucket').value=x.bucket||Allocation.inferBucket(x);
   document.getElementById('hmode').value=x.trackingMode||inferTrackingMode(x);
   document.getElementById('hdcastatus').value=x.dcaStatus||'active';
+  document.getElementById('hdcatarget').value=(x.dcaTarget==null||x.dcaTarget==='')?'':x.dcaTarget;
   document.getElementById('hussitus').checked=(x.isUSSitus==null)?EstateTaxEngine.inferUSSitus(x):x.isUSSitus;
   document.getElementById('hackconc').checked=!!x.ackConcentration;
   document.getElementById('hdate').value=x.date||'';
@@ -4442,7 +4462,7 @@ function saveHolding(){
   const name=document.getElementById('hn').value.trim();if(!name){alert('กรุณากรอกชื่อ');return;}
   const eid=parseFloat(document.getElementById('heid').value)||0;
   const inv=parseFloat(document.getElementById('hinv').value)||0;
-  const obj={id:eid||uid(),name,type:document.getElementById('htype').value,theme:document.getElementById('htheme').value,ticker:document.getElementById('hticker').value,units:parseFloat(document.getElementById('hunits').value)||0,invested:inv,value:parseFloat(document.getElementById('hval').value)||inv,date:document.getElementById('hdate').value,thesis:document.getElementById('hthesis').value,dd:document.getElementById('hdd').value,bucket:document.getElementById('hbucket').value,trackingMode:document.getElementById('hmode').value,dcaStatus:document.getElementById('hdcastatus').value,isUSSitus:document.getElementById('hussitus').checked,ackConcentration:document.getElementById('hackconc').checked};
+  const obj={id:eid||uid(),name,type:document.getElementById('htype').value,theme:document.getElementById('htheme').value,ticker:document.getElementById('hticker').value,units:parseFloat(document.getElementById('hunits').value)||0,invested:inv,value:parseFloat(document.getElementById('hval').value)||inv,date:document.getElementById('hdate').value,thesis:document.getElementById('hthesis').value,dd:document.getElementById('hdd').value,bucket:document.getElementById('hbucket').value,trackingMode:document.getElementById('hmode').value,dcaStatus:document.getElementById('hdcastatus').value,dcaTarget:parseFloat(document.getElementById('hdcatarget').value)||0,isUSSitus:document.getElementById('hussitus').checked,ackConcentration:document.getElementById('hackconc').checked};
   // US: carry the USD cost basis (don't let a rebuild wipe it). A remembered avg buy
   // rate sets costUSD = invested ÷ rate; backfill fills any still-missing USD field.
   if(obj.type==='us'){
@@ -5285,6 +5305,7 @@ function generateReport(){
       majorDecisions:DB.get('majorDecisions'),
       fx:fxRate(),
       monthlyDca:resolveMonthlyDca(),
+      monthIndex:dcaCycle().mi, // 25th-anchored cycle → report rotation matches the dashboard
       emergency:getEmergencyStatus(),
       toV4Holding
     });
